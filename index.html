@@ -139,7 +139,7 @@
       font-family: monospace;
       font-size: 12px;
       color: #4ade80;
-      min-height: 40px;
+      min-height: 44px;
     }
 
     /* ================= ИНТЕРФЕЙС ЗРИТЕЛЯ (?pin=...) ================= */
@@ -1025,14 +1025,14 @@
   <div id="admin-panel">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <h2 style="font-size:18px;">👑 Пульт управления стримера</h2>
-      <span style="font-size:11px; background:#16a34a; padding:3px 8px; border-radius:6px; font-weight:700;">ADMIN ACCESS</span>
+      <span style="font-size:11px; background:#16a34a; padding:3px 8px; border-radius:6px; font-weight:700;">ADMIN V2</span>
     </div>
 
     <!-- Режим АВТОПИЛОТ -->
     <div class="admin-card">
       <h3>🎮 Режим «Автопилот» (Экономия API)</h3>
       <div style="font-size:11.5px; color:#cbd5e1; line-height:1.35;">
-        Чат YouTube опрашивается <b>только когда активен Автопилот</b> (5 мин), чтобы не тратить лимит API за 10-часовой стрим.
+        Чат YouTube опрашивается <b>только когда активен Автопилот</b> (5 мин). Ручные кнопки ниже работают в любой момент.
       </div>
       <input type="text" class="admin-input" id="yt-api-key" placeholder="YouTube Data API v3 Key (AIzaSy...)" />
       <input type="text" class="admin-input" id="yt-video-url" placeholder="Ссылка на стрим YouTube или Video ID" />
@@ -1040,7 +1040,7 @@
         <button class="t-btn gold" id="ap-start-btn">▶️ Включить Автопилот (5 мин)</button>
         <button class="t-btn red" id="ap-stop-btn">⏹ Стоп Автопилот</button>
       </div>
-      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Ручной тест команд на радаре (срабатывают сразу!):</div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Ручной тест команд на радаре:</div>
       <div class="cmd-grid">
         <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
         <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
@@ -1075,18 +1075,18 @@
       </div>
     </div>
 
-    <!-- Симуляция, спидометр и звуки -->
+    <!-- Симуляция, лимиты, спидометр и звуки -->
     <div class="admin-card">
-      <h3>⚡ Быстрые действия и симулятор GPS</h3>
+      <h3>⚡ Быстрые действия и сброс лимитов</h3>
       <div class="admin-grid">
         <button class="t-btn green" id="t-complete-top">🏆 Засчитать верхнюю</button>
         <button class="t-btn" id="t-teleport">🏍 Телепорт к цели (финиш)</button>
+        <button class="t-btn gray" id="t-reset-limits">🔄 Сбросить мои лимиты</button>
         <button class="t-btn gray" id="t-reset-speed">🛑 Сброс скорости на 0</button>
-        <button class="t-btn gray" id="t-sound-pass">🔊 Звук: Mission Passed</button>
       </div>
     </div>
 
-    <div class="test-log" id="test-log">Пульт подключён. Готов к работе...</div>
+    <div class="test-log" id="test-log">Пульт подключён (Канал V2). Готов к работе...</div>
   </div>
 
   <!-- ================= ИНТЕРФЕЙС ЗРИТЕЛЯ (?pin=...) ================= -->
@@ -1228,11 +1228,18 @@
 
   <script>
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoic3RyaW1iYSIsImEiOiJjbXduMTh2ZG0wNXFpMzBwbGpnMDFmNnRjIn0.Y91BGdd5CU6QXz69RNGqQg';
+    // GPS остаётся на прежнем топике (для Traccar Client), а команды переведены на свежий канал V2 для обхода блокировки лимитов IP
     const NTFY_GPS_TOPIC = 'strimba_pattaya_gps_9941';
-    const NTFY_PIN_TOPIC = 'strimba_pattaya_pins_9941';
-    const NTFY_SYNC_TOPIC = 'strimba_pattaya_sync_9941';
+    const NTFY_BUS_TOPIC = 'strimba_pattaya_bus_v2_9941';
 
     const ADMIN_SECRET_KEY = 'strimba_boss_99';
+
+    // Автоматический сброс старых лимитов при обновлении версии
+    if (!localStorage.getItem('limits_reset_v2')) {
+      localStorage.removeItem('free_pin_history');
+      localStorage.removeItem('proposal_history');
+      localStorage.setItem('limits_reset_v2', '1');
+    }
 
     const VIP_TIERS = {
       'vip_1000': { meters: 5000,  label: '👑 VIP 1000₽ (до 5 км)',  maxQuestPrice: 1000 },
@@ -1397,13 +1404,25 @@
       } catch (e) {}
     }
 
-    async function sendCommand(topic, payloadObj) {
-      return fetch(`https://ntfy.sh/${topic}`, {
-        method: 'POST',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-        body: JSON.stringify(payloadObj)
-      });
+    // Единая функция отправки в общий канал с проверкой ошибок сети/лимитов
+    async function sendBusMessage(payloadObj, logCallback = null) {
+      try {
+        const res = await fetch(`https://ntfy.sh/${NTFY_BUS_TOPIC}`, {
+          method: 'POST',
+          cache: 'no-store',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          body: JSON.stringify(payloadObj)
+        });
+        if (!res.ok) {
+          const errText = `⚠️ Ошибка сервера ntfy: HTTP ${res.status} (подожди 10 сек)`;
+          if (logCallback) logCallback(errText, true);
+          return false;
+        }
+        return true;
+      } catch (err) {
+        if (logCallback) logCallback('⚠️ Нет ответа от сети при отправке команды', true);
+        return false;
+      }
     }
 
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
@@ -1465,7 +1484,7 @@
     const clearMode = urlParams.get('clear');
 
     if (clearMode) {
-      sendCommand(NTFY_PIN_TOPIC, { action: clearMode === 'all' ? 'clear_all' : 'clear_one' }).then(() => {
+      sendBusMessage({ type: 'cmd', action: clearMode === 'all' ? 'clear_all' : 'clear_one' }).then(() => {
         const msg = clearMode === 'all' ? '✅ Весь список заданий очищен!' : '✅ Текущая верхняя миссия снята!';
         document.body.innerHTML = `<div style="background:#111;color:#4cd964;height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;">${msg}</div>`;
       });
@@ -1483,8 +1502,10 @@
       let latestTargetCoords = [100.8698, 12.9218];
       let currentAdminQueue = [];
 
-      function logMsg(txt) {
-        if (logEl) logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`;
+      function logMsg(txt, isError = false) {
+        if (!logEl) return;
+        logEl.style.color = isError ? '#f87171' : '#4ade80';
+        logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`;
       }
 
       const ytKeyInput = document.getElementById('yt-api-key');
@@ -1492,42 +1513,35 @@
       if (ytKeyInput) ytKeyInput.value = localStorage.getItem('yt_api_key') || '';
       if (ytUrlInput) ytUrlInput.value = localStorage.getItem('yt_video_id') || '';
 
-      const apStartBtn = document.getElementById('ap-start-btn');
-      if (apStartBtn) {
-        apStartBtn.onclick = async () => {
-          const apiKey = ytKeyInput.value.trim();
-          const videoId = extractYouTubeVideoId(ytUrlInput.value);
-          if (apiKey) localStorage.setItem('yt_api_key', apiKey);
-          if (videoId) localStorage.setItem('yt_video_id', videoId);
+      document.getElementById('ap-start-btn').onclick = async () => {
+        const apiKey = ytKeyInput.value.trim();
+        const videoId = extractYouTubeVideoId(ytUrlInput.value);
+        if (apiKey) localStorage.setItem('yt_api_key', apiKey);
+        if (videoId) localStorage.setItem('yt_video_id', videoId);
 
-          await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_start', apiKey, videoId, durationSec: 300 });
-          logMsg(apiKey && videoId
-            ? '🎮 Автопилот + YouTube чат ВКЛЮЧЕНЫ на 5 минут!'
-            : '🎮 Автопилот ВКЛЮЧЕН на 5 минут!');
-        };
-      }
+        const ok = await sendBusMessage({ type: 'cmd', action: 'ap_start', apiKey, videoId, durationSec: 300 }, logMsg);
+        if (ok) logMsg(apiKey && videoId ? '🎮 Автопилот + YouTube чат ВКЛЮЧЕНЫ на 5 минут!' : '🎮 Автопилот ВКЛЮЧЕН на 5 минут!');
+      };
 
-      const apStopBtn = document.getElementById('ap-stop-btn');
-      if (apStopBtn) {
-        apStopBtn.onclick = async () => {
-          await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_stop' });
-          logMsg('⏹ Автопилот ОСТАНОВЛЕН.');
-        };
-      }
+      document.getElementById('ap-stop-btn').onclick = async () => {
+        const ok = await sendBusMessage({ type: 'cmd', action: 'ap_stop' }, logMsg);
+        if (ok) logMsg('⏹ Автопилот ОСТАНОВЛЕН.');
+      };
 
       document.querySelectorAll('[data-cmd]').forEach(btn => {
         btn.onclick = async () => {
           const cmd = btn.getAttribute('data-cmd');
           const icon = btn.getAttribute('data-icon');
-          await sendCommand(NTFY_PIN_TOPIC, {
+          const ok = await sendBusMessage({
+            type: 'cmd',
             action: 'game_cmd',
             forceManual: true,
             label: `${cmd}!`,
             icon,
             speech: `Команда: ${cmd}`,
             author: 'Стример'
-          });
-          logMsg(`Команда отправлена на радар: ${cmd}`);
+          }, logMsg);
+          if (ok) logMsg(`Команда «${cmd}» доставлена на радар!`);
         };
       });
 
@@ -1565,8 +1579,8 @@
             const id = btn.getAttribute('data-complete');
             currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
             renderAdminQueue();
-            await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_id', id });
-            logMsg('Задание засчитано со звуком Mission Passed!');
+            const ok = await sendBusMessage({ type: 'cmd', action: 'complete_id', id }, logMsg);
+            if (ok) logMsg('Задание засчитано со звуком Mission Passed!');
           };
         });
 
@@ -1575,8 +1589,8 @@
             const id = btn.getAttribute('data-remove');
             currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
             renderAdminQueue();
-            await sendCommand(NTFY_PIN_TOPIC, { action: 'remove_id', id });
-            logMsg('Задание удалено из списка.');
+            const ok = await sendBusMessage({ type: 'cmd', action: 'remove_id', id }, logMsg);
+            if (ok) logMsg('Задание удалено из списка.');
           };
         });
       }
@@ -1596,13 +1610,13 @@
         } catch (err) {}
       };
 
-      const syncSub = new EventSource(`https://ntfy.sh/${NTFY_SYNC_TOPIC}/sse?since=12h`);
-      syncSub.onmessage = (e) => {
+      const busSub = new EventSource(`https://ntfy.sh/${NTFY_BUS_TOPIC}/sse?since=12h`);
+      busSub.onmessage = (e) => {
         try {
           const p = JSON.parse(e.data);
           if (!p.message) return;
           const d = JSON.parse(p.message);
-          if (Array.isArray(d.queue)) {
+          if (d.type === 'sync' && Array.isArray(d.queue)) {
             currentAdminQueue = d.queue;
             if (currentAdminQueue.length > 0) latestTargetCoords = [currentAdminQueue[0].lng, currentAdminQueue[0].lat];
             renderAdminQueue();
@@ -1613,36 +1627,40 @@
       document.getElementById('t-add-free').onclick = async () => {
         const target = [lastKnownStreamerPos[0] + 0.0022, lastKnownStreamerPos[1] + 0.0020];
         latestTargetCoords = target;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'ЗАЕХАТЬ В 7-ELEVEN', vip: false, autoComplete: true });
-        logMsg('Добавлена FREE точка (АВТО-финиш)');
+        const ok = await sendBusMessage({ type: 'cmd', action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'ЗАЕХАТЬ В 7-ELEVEN', vip: false, autoComplete: true }, logMsg);
+        if (ok) logMsg('Добавлена FREE точка (АВТО-финиш)');
       };
 
       document.getElementById('t-add-vip1').onclick = async () => {
         const target = [100.8732, 12.9265];
         latestTargetCoords = target;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'VIP 1000₽: WALKING STREET', vip: true, questIcon: '👑', autoComplete: true });
-        logMsg('Добавлена VIP точка (АВТО-финиш)');
+        const ok = await sendBusMessage({ type: 'cmd', action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'VIP 1000₽: WALKING STREET', vip: true, questIcon: '👑', autoComplete: true }, logMsg);
+        if (ok) logMsg('Добавлена VIP точка (АВТО-финиш)');
       };
 
       document.getElementById('t-add-quest').onclick = async () => {
         const q = QUEST_CATALOG.find(item => item.coords !== null);
         latestTargetCoords = q.coords;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: q.coords[0], lat: q.coords[1], title: `${q.name} (${q.price}₽)`, vip: true, questIcon: q.icon, autoComplete: false });
-        logMsg('Добавлен КВЕСТ (ВРУЧНУЮ)');
+        const ok = await sendBusMessage({ type: 'cmd', action: 'add', id: Date.now().toString(), lng: q.coords[0], lat: q.coords[1], title: `${q.name} (${q.price}₽)`, vip: true, questIcon: q.icon, autoComplete: false }, logMsg);
+        if (ok) logMsg('Добавлен КВЕСТ (ВРУЧНУЮ)');
       };
 
       document.getElementById('t-add-custom').onclick = async () => {
         const target = [lastKnownStreamerPos[0] - 0.002, lastKnownStreamerPos[1] + 0.0018];
         latestTargetCoords = target;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: '💡 1500₽: СЪЕСТЬ ДУРИАН', vip: true, isProposal: true, questIcon: '💡', autoComplete: false });
-        logMsg('Добавлено ПРЕДЛОЖЕНИЕ зрителя (ВРУЧНУЮ)');
+        const ok = await sendBusMessage({ type: 'cmd', action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: '💡 1500₽: СЪЕСТЬ ДУРИАН', vip: true, isProposal: true, questIcon: '💡', autoComplete: false }, logMsg);
+        if (ok) logMsg('Добавлено ПРЕДЛОЖЕНИЕ зрителя (ВРУЧНУЮ)');
       };
 
-      document.getElementById('t-sound-pass').onclick = () => { playMissionPassedSound(); logMsg('Проигран mission_passed.mp3'); };
+      document.getElementById('t-reset-limits').onclick = () => {
+        localStorage.removeItem('free_pin_history');
+        localStorage.removeItem('proposal_history');
+        logMsg('🔄 Все локальные лимиты и кулдауны сброшены!');
+      };
 
       document.getElementById('t-reset-speed').onclick = async () => {
-        await sendCommand(NTFY_GPS_TOPIC, { lat: lastKnownStreamerPos[1], lon: lastKnownStreamerPos[0], speed: 0 });
-        logMsg('Спидометр сброшен на 0 KM/H');
+        const ok = await sendBusMessage({ type: 'cmd', action: 'reset_speed' }, logMsg);
+        if (ok) logMsg('🛑 Спидометр сброшен на 0 KM/H');
       };
 
       document.getElementById('t-complete-top').onclick = async () => {
@@ -1650,20 +1668,20 @@
           currentAdminQueue.shift();
           renderAdminQueue();
         }
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_one' });
-        logMsg('Засчитана верхняя миссия (+Respect)');
+        const ok = await sendBusMessage({ type: 'cmd', action: 'complete_one' }, logMsg);
+        if (ok) logMsg('Засчитана верхняя миссия (+Respect)');
       };
 
       document.getElementById('t-teleport').onclick = async () => {
-        await sendCommand(NTFY_GPS_TOPIC, { lat: latestTargetCoords[1], lon: latestTargetCoords[0], bearing: 0, speed: 0 });
-        logMsg('Байк телепортирован к верхней цели (скорость 0 км/ч)!');
+        const ok = await sendBusMessage({ type: 'cmd', action: 'sim_gps', lat: latestTargetCoords[1], lon: latestTargetCoords[0], speed: 0 }, logMsg);
+        if (ok) logMsg('Байк телепортирован к верхней цели!');
       };
 
       document.getElementById('t-clear-all').onclick = async () => {
         currentAdminQueue = [];
         renderAdminQueue();
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'clear_all' });
-        logMsg('Список полностью очищен');
+        const ok = await sendBusMessage({ type: 'cmd', action: 'clear_all' }, logMsg);
+        if (ok) logMsg('Список полностью очищен');
       };
     }
 
@@ -1979,7 +1997,8 @@
         sendPresetBtn.disabled = true;
         sendPresetBtn.textContent = 'Отправка на радар...';
 
-        await sendCommand(NTFY_PIN_TOPIC, {
+        const ok = await sendBusMessage({
+          type: 'cmd',
           action: 'add',
           id: Date.now().toString(),
           questId: selectedPreset.id,
@@ -1992,7 +2011,7 @@
           autoComplete: false
         });
 
-        sendPresetBtn.textContent = '✅ Отправлено на экран стрима!';
+        sendPresetBtn.textContent = ok ? '✅ Отправлено на экран стрима!' : '⚠️ Ошибка сети, попробуй через 5 сек';
         validateCustomForm();
         setTimeout(() => { qdmModal.style.display = 'none'; }, 1500);
       });
@@ -2038,9 +2057,9 @@
         }
       }
 
-      setInterval(validateCustomForm, 1000);
       customPriceInput.addEventListener('input', validateCustomForm);
       customTextInput.addEventListener('input', validateCustomForm);
+      validateCustomForm();
 
       sendCustomBtn.addEventListener('click', async () => {
         if (!isVip) {
@@ -2059,7 +2078,8 @@
         sendCustomBtn.disabled = true;
         sendCustomBtn.textContent = 'Отправка предложения...';
 
-        await sendCommand(NTFY_PIN_TOPIC, {
+        const ok = await sendBusMessage({
+          type: 'cmd',
           action: 'add',
           id: Date.now().toString(),
           lng: coordsToUse[0],
@@ -2072,7 +2092,7 @@
         });
 
         customTextInput.value = '';
-        sendCustomBtn.textContent = '✅ Предложение отправлено на радар!';
+        sendCustomBtn.textContent = ok ? '✅ Предложение отправлено на радар!' : '⚠️ Ошибка сети, попробуй ещё раз';
         setTimeout(() => { validateCustomForm(); }, 2000);
       });
 
@@ -2126,13 +2146,13 @@
         } catch (e) {}
       };
 
-      const syncStream = new EventSource(`https://ntfy.sh/${NTFY_SYNC_TOPIC}/sse?since=12h`);
-      syncStream.onmessage = (event) => {
+      const busStream = new EventSource(`https://ntfy.sh/${NTFY_BUS_TOPIC}/sse?since=12h`);
+      busStream.onmessage = (event) => {
         try {
           const packet = JSON.parse(event.data);
           if (!packet.message) return;
           const payload = JSON.parse(packet.message);
-          if (Array.isArray(payload.queue)) {
+          if (payload.type === 'sync' && Array.isArray(payload.queue)) {
             liveQueue = payload.queue;
             renderViewerQueue();
             validateCustomForm();
@@ -2207,7 +2227,8 @@
         sendBtn.disabled = true;
         sendBtn.textContent = 'Отправка...';
 
-        await sendCommand(NTFY_PIN_TOPIC, {
+        const ok = await sendBusMessage({
+          type: 'cmd',
           action: 'add',
           id: Date.now().toString(),
           lng: selectedLngLat[0],
@@ -2217,13 +2238,13 @@
           autoComplete: true
         });
 
-        sendBtn.textContent = '✅ Точка добавлена на стрим!';
+        sendBtn.textContent = ok ? '✅ Точка добавлена на стрим!' : '⚠️ Ошибка сети, попробуй ещё раз';
         setTimeout(() => { sendBtn.disabled = false; sendBtn.textContent = 'Выбрать ещё точку'; }, 3000);
       });
     }
 
     // =========================================================================
-    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO (ТОЧНАЯ СКОРОСТЬ ОТ 1 КМ/Ч)
+    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO
     // =========================================================================
     else {
       function updateClock() {
@@ -2388,7 +2409,7 @@
           icon: q.icon,
           autoComplete: q.autoComplete
         }));
-        sendCommand(NTFY_SYNC_TOPIC, { queue: cleanQueue }).catch(() => {});
+        sendBusMessage({ type: 'sync', queue: cleanQueue });
       }
 
       const map = new mapboxgl.Map({
@@ -2640,14 +2661,12 @@
 
         checkProgress(lng, lat);
 
-        // Старый пакет из истории при открытии не подставляет старую скорость
         if (isHistorical) {
           document.getElementById('speed-badge').textContent = '0 KM/H';
           document.getElementById('speed-arc').style.strokeDashoffset = 115;
           return;
         }
 
-        // Показываем точную скорость без фильтрации — даже 1–2 км/ч при ходьбе, беге или на велосипеде!
         if (speed !== null && speed !== undefined && !isNaN(speed)) {
           const kmh = Math.round(speed * 3.6);
           document.getElementById('speed-badge').textContent = `${kmh} KM/H`;
@@ -2716,12 +2735,14 @@
         } catch (e) {}
       };
 
-      const pinEvents = new EventSource(`https://ntfy.sh/${NTFY_PIN_TOPIC}/sse`);
-      pinEvents.onmessage = (event) => {
+      const busEvents = new EventSource(`https://ntfy.sh/${NTFY_BUS_TOPIC}/sse`);
+      busEvents.onmessage = (event) => {
         try {
           const packet = JSON.parse(event.data);
           if (!packet.message) return;
           const data = JSON.parse(packet.message);
+          if (data.type !== 'cmd') return;
+
           if (data.action === 'clear_one') {
             removeQuestByIndex(0, false);
           } else if (data.action === 'complete_one') {
@@ -2734,6 +2755,11 @@
             if (idx !== -1) removeQuestByIndex(idx, false);
           } else if (data.action === 'clear_all') {
             while (questQueue.length > 0) removeQuestByIndex(0, false);
+          } else if (data.action === 'reset_speed') {
+            document.getElementById('speed-badge').textContent = '0 KM/H';
+            document.getElementById('speed-arc').style.strokeDashoffset = 115;
+          } else if (data.action === 'sim_gps') {
+            moveRadar(parseFloat(data.lon), parseFloat(data.lat), 0, parseFloat(data.speed) || 0, false);
           } else if (data.action === 'ap_start') {
             if (data.apiKey) localStorage.setItem('yt_api_key', data.apiKey);
             if (data.videoId) localStorage.setItem('yt_video_id', data.videoId);
