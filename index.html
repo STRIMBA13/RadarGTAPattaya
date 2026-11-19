@@ -72,6 +72,12 @@
       gap: 8px;
     }
 
+    .stars-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
     .cmd-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -95,6 +101,7 @@
     .t-btn.red { background: #dc2626; }
     .t-btn.gray { background: #475569; }
     .t-btn.cmd { background: #1e293b; border: 1px solid #38bdf8; padding: 9px 4px; font-size: 11.5px; }
+    .t-btn.star-btn { background: #1e293b; border: 1px solid #f59e0b; color: #fbbf24; padding: 9px 4px; font-size: 12px; }
 
     .admin-input {
       width: 100%;
@@ -557,18 +564,173 @@
     }
     .viewer-quest-marker:hover { transform: scale(1.12); z-index: 20; }
 
-    /* ================= ОСНОВНОЙ РАДАР ДЛЯ PRISM (ЛЕВЫЙ ВЕРХНИЙ УГОЛ) ================= */
+    /* ================= ПОЛНОЭКРАННЫЙ HUD В PRISM LIVE STUDIO ================= */
     .hud-wrapper {
       position: relative;
-      width: 380px;
-      height: 820px;
-      padding: 10px 15px;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
     }
 
+    /* ПРАВЫЙ ВЕРХНИЙ УГОЛ: Звёзды розыска + Таймер побега + Кэш $ + Respect */
+    .top-right-gta-hud {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      z-index: 30;
+    }
+
+    .wanted-stars-row {
+      display: flex;
+      gap: 4px;
+      font-size: 30px;
+      line-height: 1;
+      filter: drop-shadow(0 3px 4px rgba(0,0,0,0.95));
+    }
+
+    .w-star {
+      color: rgba(255, 255, 255, 0.22);
+      -webkit-text-stroke: 1.5px #000;
+      transition: transform 0.2s, color 0.2s;
+    }
+
+    .w-star.active {
+      color: #ffd54f;
+      transform: scale(1.08);
+    }
+
+    @keyframes policeBlink {
+      0%, 100% { color: #ff2a2a; text-shadow: 0 0 12px #ff0000; }
+      50% { color: #2979ff; text-shadow: 0 0 12px #0066ff; }
+    }
+    .wanted-stars-row.chase-blink .w-star.active {
+      animation: policeBlink 0.7s infinite;
+    }
+
+    .wanted-timer-pill {
+      display: none;
+      background: rgba(127, 29, 29, 0.92);
+      border: 1.5px solid #ef4444;
+      color: #fff;
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      padding: 2px 10px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.85);
+    }
+    .wanted-timer-pill.active { display: block; }
+
+    .gta-cash-display {
+      font-family: 'Pricedown Bl', 'Pricedown', 'Anton', sans-serif;
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1;
+      color: #4ade80;
+      filter:
+        drop-shadow(-2px -2px 0 #000)
+        drop-shadow( 2px -2px 0 #000)
+        drop-shadow(-2px  2px 0 #000)
+        drop-shadow( 2px  2px 0 #000)
+        drop-shadow( 0px  4px 6px rgba(0, 0, 0, 0.9));
+    }
+
+    .respect-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 3px;
+      margin-top: 2px;
+    }
+
+    .respect-label {
+      font-family: 'Oswald', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #ffd54f;
+      text-shadow: 0 1px 3px #000, 0 0 4px #000;
+    }
+
+    .respect-bar-bg {
+      width: 145px;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 1.5px solid #000;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.85);
+    }
+
+    .respect-bar-fill {
+      height: 100%;
+      width: 10%;
+      background: linear-gradient(90deg, #f59e0b, #fde047);
+      transition: width 0.5s ease;
+    }
+
+    /* ПОЛНОЭКРАННАЯ ЗАСТАВКА ПО ЦЕНТРУ ЭКРАНА (MISSION PASSED / BUSTED) */
+    @keyframes splashPop {
+      0% { transform: translate(-50%, -50%) scale(0.75); opacity: 0; }
+      15% { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
+      85% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0; }
+    }
+    .center-gta-splash {
+      display: none;
+      position: absolute;
+      top: 46%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      text-align: center;
+      padding: 18px 34px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.68);
+      backdrop-filter: blur(4px);
+      animation: splashPop 3.6s forwards;
+    }
+    .center-gta-splash.active { display: block; }
+
+    .splash-main-title {
+      font-family: 'Pricedown Bl', 'Pricedown', 'Anton', sans-serif;
+      font-size: 54px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      line-height: 1.05;
+      color: #ffd54f;
+      filter:
+        drop-shadow(-3px -3px 0 #000)
+        drop-shadow( 3px -3px 0 #000)
+        drop-shadow(-3px  3px 0 #000)
+        drop-shadow( 3px  3px 0 #000);
+    }
+    .center-gta-splash.busted .splash-main-title {
+      color: #ef4444;
+    }
+    .splash-sub-title {
+      font-family: 'Oswald', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #4ade80;
+      margin-top: 6px;
+      text-shadow: 0 2px 4px #000;
+    }
+    .center-gta-splash.busted .splash-sub-title {
+      color: #fca5a5;
+    }
+
+    /* ЛЕВЫЙ ВЕРХНИЙ УГОЛ: Радар */
     .header-info {
       position: absolute;
-      top: 2px;
-      left: 14px;
+      top: 10px;
+      left: 18px;
       z-index: 25;
       display: flex;
       align-items: baseline;
@@ -611,8 +773,8 @@
 
     .district-sub {
       position: absolute;
-      top: 38px;
-      left: 16px;
+      top: 46px;
+      left: 20px;
       z-index: 25;
       font-family: 'Oswald', sans-serif;
       font-size: 13px;
@@ -630,8 +792,8 @@
 
     .radar-circle {
       position: absolute;
-      top: 54px;
-      left: 20px;
+      top: 62px;
+      left: 24px;
       width: 280px;
       height: 280px;
       border-radius: 50%;
@@ -696,8 +858,8 @@
 
     .speed-badge {
       position: absolute;
-      top: 298px;
-      left: 256px;
+      top: 306px;
+      left: 260px;
       z-index: 22;
       background: rgba(15, 20, 26, 0.92);
       border: 1.5px solid #00b0ff;
@@ -713,8 +875,8 @@
 
     .target-badge {
       position: absolute;
-      top: 298px;
-      left: 16px;
+      top: 306px;
+      left: 20px;
       z-index: 22;
       background: rgba(35, 10, 35, 0.92);
       border: 1.5px solid #ff00ff;
@@ -730,8 +892,8 @@
 
     .bars-svg {
       position: absolute;
-      top: 54px;
-      left: 20px;
+      top: 62px;
+      left: 24px;
       width: 280px;
       height: 300px;
       z-index: 18;
@@ -748,8 +910,8 @@
 
     .under-radar-panel {
       position: absolute;
-      top: 358px;
-      left: 16px;
+      top: 366px;
+      left: 20px;
       width: 315px;
       display: flex;
       flex-direction: column;
@@ -1029,19 +1191,36 @@
       <span id="mqtt-status-badge" style="font-size:11px; background:#b45309; padding:3px 8px; border-radius:6px; font-weight:700;">🟡 MQTT ПОДКЛЮЧЕНИЕ...</span>
     </div>
 
+    <!-- УПРАВЛЕНИЕ ЗВЁЗДАМИ РОЗЫСКА, КЭШЕМ И РЕПУТАЦИЕЙ -->
+    <div class="admin-card">
+      <h3>🚨 Звёзды розыска (15–45 мин), Кэш и Репа</h3>
+      <div style="font-size:11.5px; color:#cbd5e1;">
+        1★ = 15 мин • 2★ = 20 мин • 3★ = 25 мин • 4★ = 35 мин • 5★ = 45 мин
+      </div>
+      <div class="stars-grid">
+        <button class="t-btn star-btn" data-set-stars="1">1★ (15м)</button>
+        <button class="t-btn star-btn" data-set-stars="2">2★ (20м)</button>
+        <button class="t-btn star-btn" data-set-stars="3">3★ (25м)</button>
+        <button class="t-btn star-btn" data-set-stars="4">4★ (35м)</button>
+        <button class="t-btn star-btn" data-set-stars="5">5★ (45м)</button>
+      </div>
+      <div class="admin-grid">
+        <button class="t-btn green" id="stars-escaped-btn">✅ Оторвался (+Кэш/Репа)</button>
+        <button class="t-btn red" id="stars-busted-btn">🚨 BUSTED (Пойман)</button>
+        <button class="t-btn gray" id="cash-plus-btn">💵 +$500 Кэш / +Репа</button>
+        <button class="t-btn gray" id="cash-reset-btn">🔄 Обнулить Кэш и Репу</button>
+      </div>
+    </div>
+
     <!-- Режим АВТОПИЛОТ -->
     <div class="admin-card">
       <h3>🎮 Режим «Автопилот» (Экономия API)</h3>
-      <div style="font-size:11.5px; color:#cbd5e1; line-height:1.35;">
-        Чат YouTube опрашивается <b>только когда активен Автопилот</b> (5 мин). Ручные кнопки ниже срабатывают на радаре мгновенно!
-      </div>
       <input type="text" class="admin-input" id="yt-api-key" placeholder="YouTube Data API v3 Key (AIzaSy...)" />
       <input type="text" class="admin-input" id="yt-video-url" placeholder="Ссылка на стрим YouTube или Video ID" />
       <div class="admin-grid">
         <button class="t-btn gold" id="ap-start-btn">▶️ Включить Автопилот (5 мин)</button>
         <button class="t-btn red" id="ap-stop-btn">⏹ Стоп Автопилот</button>
       </div>
-      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Команды управления на радаре (озвучка + HUD в эфире):</div>
       <div class="cmd-grid">
         <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
         <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
@@ -1171,8 +1350,34 @@
     </div>
   </div>
 
-  <!-- ================= ОСНОВНОЙ РАДАР ДЛЯ PRISM ================= -->
+  <!-- ================= ПОЛНОЭКРАННЫЙ ИГРОВОЙ HUD ДЛЯ PRISM ================= -->
   <div class="hud-wrapper" id="hud-root">
+    <!-- ПРАВЫЙ ВЕРХНИЙ УГОЛ: ЗВЁЗДЫ + ТАЙМЕР ПОБЕГА + КЭШ + RESPECT -->
+    <div class="top-right-gta-hud">
+      <div class="wanted-stars-row" id="wanted-stars-row">
+        <span class="w-star" id="star-1">★</span>
+        <span class="w-star" id="star-2">★</span>
+        <span class="w-star" id="star-3">★</span>
+        <span class="w-star" id="star-4">★</span>
+        <span class="w-star" id="star-5">★</span>
+      </div>
+      <div class="wanted-timer-pill" id="wanted-timer-pill">⏱ СКРОЙТЕСЬ: 15:00</div>
+      <div class="gta-cash-display" id="gta-cash-display">$000000</div>
+      <div class="respect-box">
+        <div class="respect-label" id="respect-label">RESPECT LVL 1</div>
+        <div class="respect-bar-bg">
+          <div class="respect-bar-fill" id="respect-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ПОЛНОЭКРАННАЯ ЦЕНТРАЛЬНАЯ ЗАСТАВКА (MISSION PASSED / BUSTED) -->
+    <div class="center-gta-splash" id="center-gta-splash">
+      <div class="splash-main-title" id="splash-main-title">MISSION PASSED!</div>
+      <div class="splash-sub-title" id="splash-sub-title">+ RESPECT • +$1000</div>
+    </div>
+
+    <!-- ЛЕВЫЙ ВЕРХНИЙ УГОЛ: РАДАР -->
     <div class="header-info">
       <span class="city-name">Pattaya City</span>
       <span class="clock" id="clock">04:20</span>
@@ -1231,10 +1436,8 @@
 
   <script>
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoic3RyaW1iYSIsImEiOiJjbXduMTh2ZG0wNXFpMzBwbGpnMDFmNnRjIn0.Y91BGdd5CU6QXz69RNGqQg';
-    // GPS остаётся на прежнем канале ntfy для Traccar Client (только чтение — без 429)
     const NTFY_GPS_TOPIC = 'strimba_pattaya_gps_9941';
 
-    // Скоростной WebSocket MQTT-брокер без лимитов по IP (для пульта, зрителей и радара)
     const MQTT_BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
     const MQTT_CMD_TOPIC  = 'strimba/pattaya/gta9941/cmd';
     const MQTT_SYNC_TOPIC = 'strimba/pattaya/gta9941/sync';
@@ -1242,11 +1445,14 @@
 
     const ADMIN_SECRET_KEY = 'strimba_boss_99';
 
-    if (!localStorage.getItem('limits_reset_mqtt_v1')) {
-      localStorage.removeItem('free_pin_history');
-      localStorage.removeItem('proposal_history');
-      localStorage.setItem('limits_reset_mqtt_v1', '1');
-    }
+    // Длительность скрытия от полиции в зависимости от уровня звёзд (15 – 45 мин)
+    const WANTED_DURATIONS_SEC = {
+      1: 15 * 60,
+      2: 20 * 60,
+      3: 25 * 60,
+      4: 35 * 60,
+      5: 45 * 60
+    };
 
     const VIP_TIERS = {
       'vip_1000': { meters: 5000,  label: '👑 VIP 1000₽ (до 5 км)',  maxQuestPrice: 1000 },
@@ -1277,6 +1483,7 @@
     ];
 
     const QUEST_CATALOG = [
+      // 100 – 200 ₽
       { id: 'q_kiss',     price: 100,   icon: '💋', name: 'ПОЦЕЛОВАТЬ ОКСАНУ', desc: 'Поцеловать Оксану в прямом эфире.', coords: null },
       { id: 'q_bug',      price: 100,   icon: '🕹', name: 'БАГ ТЕКСТУР (10 СЕК)', desc: 'Застрять в стене или столбе и шагать на месте 10 секунд.', coords: null },
       { id: 'q_selfie',   price: 100,   icon: '🤳', name: 'НЕЛЕПОЕ СЕЛФИ', desc: 'Сделать селфи с самым странным знаком или объектом рядом и показать в камеру.', coords: null },
@@ -1288,6 +1495,7 @@
       { id: 'q_voice',    price: 200,   icon: '🤖', name: 'СМЕНА ГОЛОСА (2 МИН)', desc: '2 минуты говорить голосом робота, с акцентом или другим тембром.', coords: null },
       { id: 'q_tail',     price: 200,   icon: '🕵️', name: 'СЛЕЖКА (50 МЕТРОВ)', desc: 'Незаметно пройти за прохожим 50 метров в стиле стелс-миссии.', coords: null },
 
+      // 300 – 500 ₽
       { id: 'q_coconut',  price: 300,   icon: '🥥', name: 'ВЫПИТЬ КОКОС У МОРЯ', desc: 'Купить свежий кокос на набережной Донгтан/Бич Роуд и выпить в эфире.', coords: [100.8712, 12.9012] },
       { id: 'q_dogs',     price: 300,   icon: '🐕', name: 'ПОКОРМИТЬ СОБАК', desc: 'Купить сосиски/корм у 7-Eleven на Пратамнаке и покормить уличных собак.', coords: [100.8675, 12.9145] },
       { id: 'q_kick',     price: 300,   icon: '👢', name: 'ПИНОК ОТ ОКСАНЫ', desc: 'Получить постановочный пинок от Оксаны в кадре.', coords: null },
@@ -1301,12 +1509,14 @@
       { id: 'q_skin',     price: 500,   icon: '🕶', name: 'СМЕНА СКИНА (СОИ БУАКХАО)', desc: 'Купить дешёвые очки или кепку на развале Сои Буакхао и носить полчаса.', coords: [100.8855, 12.9302] },
       { id: 'q_bribe',    price: 500,   icon: '🍫', name: 'ВЗЯТКА МЕСТНЫМ', desc: 'Подарить шоколадку охраннику или курьеру: «Спасибо за крышу в районе».', coords: null },
 
+      // 600 – 1 000 ₽
       { id: 'q_exchange', price: 600,   icon: '🪙', name: 'СЕКРЕТНЫЙ РАЗМЕН (TREETOWN)', desc: 'Разменять купюру на мелочь в лавке у TreeTown с видом секретной операции.', coords: [100.8868, 12.9318] },
       { id: 'q_english',  price: 600,   icon: '🇺🇸', name: 'СМЕНА ФРАКЦИИ (15 МИН)', desc: '15 минут разговаривать исключительно на английском.', coords: null },
       { id: 'q_cargo',    price: 600,   icon: '📦', name: 'СЕКРЕТНЫЙ ГРУЗ (100 М)', desc: 'Нести пакет на вытянутой руке 100 метров, никого не задев.', coords: null },
       { id: 'q_drop',     price: 600,   icon: '📸', name: 'СБРОС ЛУТА В ТГ', desc: 'Выложить всё из карманов, сфоткать в Telegram-чат, забрать и убежать.', coords: null },
       { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (5 МИН)', desc: 'Чат 5 минут управляет стримером командами (вперёд, назад, налево, направо, прыжок).', coords: null },
       { id: 'q_statue',   price: 700,   icon: '🗿', name: 'ЖИВАЯ СТАТУЯ (WALKING ST.)', desc: 'Замереть в пафосной позе на 60 секунд посреди оживлённой улицы.', coords: [100.8732, 12.9265] },
+      { id: 'q_wanted1',  price: 1000,  icon: '⭐', name: 'РОЗЫСК: 1 ЗВЕЗДА (15 МИН)', desc: 'Лёгкий шухер: нужно скрываться и менять улицы 15 минут!', coords: null, wantedStars: 1 },
       { id: 'q_flowers',  price: 1000,  icon: '💐', name: 'КУПИТЬ ЦВЕТЫ ОКСАНЕ', desc: 'Найти цветочный ларёк у Централ Фестивал и подарить букет Оксане.', coords: [100.8832, 12.9348] },
       { id: 'q_green',    price: 1000,  icon: '🌿', name: 'ЗЕЛЁНАЯ КОМНАТА', desc: 'Зайти в тематический шоп на Сои Буакхао и сделать обзор.', coords: [100.8862, 12.9312] },
       { id: 'q_market',   price: 1000,  icon: '🍢', name: 'ПОЕСТЬ НА НОЧНОМ РЫНКЕ', desc: 'Заехать на ночной рынок Пратамнака и поужинать в эфире.', coords: [100.8654, 12.9108] },
@@ -1315,13 +1525,16 @@
       { id: 'q_tuktuk',   price: 1000,  icon: '🛺', name: 'РЕЙС НА ТУК-ТУКЕ (SECOND RD)', desc: 'Пересесть на сонгтео (тук-тук) на Второй улице и проехать 2 остановки.', coords: [100.8760, 12.9275] },
       { id: 'q_informer', price: 1000,  icon: '🕴', name: 'ВСТРЕЧА С ИНФОРМАТОРОМ', desc: 'Найти человека в загаданном цвете одежды и попросить передать привет донатеру.', coords: null },
 
+      // 1 200 – 5 000 ₽ (Включая звёзды розыска 2–5★)
       { id: 'q_lady200',  price: 1200,  icon: '💋', name: 'ЧАЕВЫЕ НА WALKING ST.', desc: 'Поговорить с девушкой на Walking Street и оставить 200 бат чаевых.', coords: [100.8730, 12.9262] },
       { id: 'q_taxi',     price: 1200,  icon: '🏍', name: 'ПОДВЕЗТИ ПОПУТЧИЦУ', desc: 'Подвезти девушку на байке по пути.', coords: null },
+      { id: 'q_wanted2',  price: 2000,  icon: '⭐⭐', name: 'РОЗЫСК: 2 ЗВЕЗДЫ (20 МИН)', desc: 'Патруль на хвосте: нужно скрываться 20 минут и уходить дворами!', coords: null, wantedStars: 2 },
       { id: 'q_massage',  price: 2000,  icon: '💆', name: 'ТАЙСКИЙ МАССАЖ НОГ', desc: 'Зайти в салон на Сои Буакхао и сделать массаж ног в эфире.', coords: [100.8855, 12.9302] },
       { id: 'q_rps',      price: 2000,  icon: '✊', name: 'УЛИЧНАЯ РАЗБОРКА (К-Н-Б)', desc: 'Сыграть в «Камень-ножницы-бумага» с прохожим на интерес.', coords: null },
       { id: 'q_pullups',  price: 2000,  icon: '🤸', name: 'ТУРНИКИ НА ПЛЯЖЕ ДОНГТАН', desc: 'Доехать до уличных турников на пляже Донгтан и сделать подход подтягиваний.', coords: [100.8678, 12.9065] },
       { id: 'q_sunset',   price: 2000,  icon: '🌅', name: 'ЗАКАТ НА СМОТРОВОЙ ГОРЕ', desc: 'Подняться на смотровую площадку Пратамнака (Viewpoint) к закату.', coords: [100.8698, 12.9218] },
       { id: 'q_flattire', price: 2000,  icon: '🛞', name: '«ПРОБИЛО КОЛЕСО» (50 М)', desc: 'Катить байк руками 50 метров и громко жаловаться на прокол.', coords: null },
+      { id: 'q_wanted3',  price: 3000,  icon: '⭐⭐⭐', name: 'РОЗЫСК: 3 ЗВЕЗДЫ (25 МИН)', desc: 'Перехват в районе: 25 минут ухода от погони с мигалками!', coords: null, wantedStars: 3 },
       { id: 'q_nasty',    price: 3000,  icon: '🦂', name: 'ЭКЗОТИКА НА ТЕППРАЗИТЕ', desc: 'Заехать на ночной рынок Теппразит и съесть скорпиона, жука или адский сом-там.', coords: [100.8915, 12.9085] },
       { id: 'q_shot',     price: 3000,  icon: '🥃', name: 'ШОТ В БАРЕ (СОИ БУАКХАО)', desc: 'Заехать в бар на Сои Буакхао и выпить шот.', coords: [100.8850, 12.9295] },
       { id: 'q_ferry_bh', price: 3000,  icon: '⛴', name: 'ПАРОМ НА КО ЛАН (ПИРС БАЛИ ХАЙ)', desc: 'Приехать на пирс Бали Хай (Bali Hai Pier) и сесть на паром до острова Ко Лан.', coords: [100.8665, 12.9228] },
@@ -1331,6 +1544,8 @@
       { id: 'q_pool',     price: 3000,  icon: '🏊', name: 'БАССЕЙН В ОДЕЖДЕ (ПРАТАМНАК)', desc: 'Прыгнуть и искупаться в бассейне отеля на Пратамнаке прямо в одежде.', coords: [100.8638, 12.9142] },
       { id: 'q_crab',     price: 3000,  icon: '🦀', name: 'ПОХОДКА «КРАБИКА» (ДЖОМТЬЕН)', desc: 'Пройти походкой краба вдоль кромки воды на пляже Джомтьен.', coords: [100.8745, 12.8975] },
       { id: 'q_sunrise',  price: 3000,  icon: '☕', name: 'РАССВЕТ С КОФЕ (НА-ДЖОМТЬЕН)', desc: 'Встретить рассвет на набережной На-Джомтьен с горячим кофе.', coords: [100.8895, 12.8785] },
+      { id: 'q_wanted4',  price: 4000,  icon: '⭐⭐⭐⭐', name: 'РОЗЫСК: 4 ЗВЕЗДЫ (35 МИН)', desc: 'Спецоперация: 35 минут скрываться, сменить район и транспорт!', coords: null, wantedStars: 4 },
+      { id: 'q_wanted5',  price: 5000,  icon: '⭐⭐⭐⭐⭐', name: 'РОЗЫСК: 5 ЗВЁЗД (45 МИН)', desc: 'МАКСИМАЛЬНЫЙ УРОВЕНЬ! 45 минут хардкорного выживания в городе!', coords: null, wantedStars: 5 },
       { id: 'q_hotel',    price: 5000,  icon: '🏨', name: 'НОМЕР В ОТЕЛЕ НА СУТКИ', desc: 'Заехать в отель у Централ Фестивал и снять номер на сутки для стрима.', coords: [100.8835, 12.9340] },
       { id: 'q_abandoned',price: 5000,  icon: '🏚', name: 'ЗАБРОШКА У ПИРСА (WATERFRONT)', desc: 'Поехать к заброшенному небоскрёбу Waterfront у пирса Бали Хай.', coords: [100.8652, 12.9235] },
       { id: 'q_beard',    price: 70000, icon: '🪒', name: 'СБРИТЬ БОРОДУ В ЭФИРЕ', desc: 'Легендарный челлендж: заехать в барбершоп в центре и сбрить бороду полностью!', coords: [100.8845, 12.9320] }
@@ -1352,7 +1567,6 @@
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    // Подключение к WebSocket MQTT брокеру
     const mqttClient = mqtt.connect(MQTT_BROKER_URL, {
       clientId: 'strimba_gta_' + Math.random().toString(16).slice(2, 10),
       keepalive: 30,
@@ -1398,6 +1612,27 @@
       customPassAudio.volume = 1.0;
       customPassAudio.currentTime = 0;
       customPassAudio.play().catch(() => {});
+    }
+
+    // Короткий звук полицейской сирены при получении звёзд розыска
+    function playPoliceSirenSound() {
+      try {
+        unlockAudio();
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(620, now);
+        osc.frequency.linearRampToValueAtTime(980, now + 0.35);
+        osc.frequency.linearRampToValueAtTime(620, now + 0.7);
+        osc.frequency.linearRampToValueAtTime(980, now + 1.05);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 1.2);
+      } catch (e) {}
     }
 
     function speakGameCommand(text) {
@@ -1479,6 +1714,16 @@
       return match ? match[1] : trimmed;
     }
 
+    // Извлекаем сумму в рублях из названия миссии (например "1500₽" -> 1500)
+    function extractRewardFromTitle(title) {
+      const match = String(title).match(/(\d[\d\s]*)\s*₽/);
+      if (match) {
+        const num = parseInt(match[1].replace(/\s+/g, ''), 10);
+        if (!isNaN(num) && num > 0) return num;
+      }
+      return 250; // Базовая награда за бесплатную точку
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const pinMode = urlParams.get('pin');
     const adminKey = urlParams.get('admin');
@@ -1506,7 +1751,7 @@
       mqttClient.on('connect', () => {
         statusBadge.textContent = '🟢 MQTT ONLINE';
         statusBadge.style.background = '#16a34a';
-        logMsg('Связь установлена! Никаких лимитов 429 — пульт работает мгновенно.');
+        logMsg('Связь установлена! Все функции и звёзды розыска активны.');
         mqttClient.subscribe([MQTT_SYNC_TOPIC, MQTT_GPS_TOPIC]);
       });
 
@@ -1530,6 +1775,35 @@
           }
         } catch (e) {}
       });
+
+      // Управление звёздами розыска и кэшем
+      document.querySelectorAll('[data-set-stars]').forEach(btn => {
+        btn.onclick = () => {
+          const stars = parseInt(btn.getAttribute('data-set-stars'), 10);
+          publishMqtt(MQTT_CMD_TOPIC, { action: 'set_stars', stars });
+          logMsg(`🚨 Включён розыск: ${stars}★ (таймер ${WANTED_DURATIONS_SEC[stars] / 60} мин)`);
+        };
+      });
+
+      document.getElementById('stars-escaped-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'stars_escaped' });
+        logMsg('✅ Отрыв от погони засчитан! Звёзды сняты, кэш и репа начислены.');
+      };
+
+      document.getElementById('stars-busted-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'stars_busted' });
+        logMsg('🚨 Пойман (BUSTED)! Звёзды сброшены.');
+      };
+
+      document.getElementById('cash-plus-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'add_cash', amount: 500, rep: 15 });
+        logMsg('💵 Начислено +$500 кэша и +15% репутации!');
+      };
+
+      document.getElementById('cash-reset-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'reset_cash' });
+        logMsg('🔄 Кэш и репутация на радаре обнулены.');
+      };
 
       const ytKeyInput = document.getElementById('yt-api-key');
       const ytUrlInput = document.getElementById('yt-video-url');
@@ -1602,7 +1876,7 @@
             currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
             renderAdminQueue();
             publishMqtt(MQTT_CMD_TOPIC, { action: 'complete_id', id });
-            logMsg('Задание засчитано со звуком Mission Passed на радаре!');
+            logMsg('Задание засчитано со звуком Mission Passed и начислением кэша!');
           };
         });
 
@@ -1617,7 +1891,6 @@
         });
       }
 
-      // Кнопки проверки звука НА РАДАРЕ (не в пульте!)
       document.getElementById('t-sound-new-radar').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'new' });
         logMsg('🔊 Сигнал «Новая миссия» отправлен на радар PRISM!');
@@ -2031,6 +2304,7 @@
           action: 'add',
           id: Date.now().toString(),
           questId: selectedPreset.id,
+          wantedStars: selectedPreset.wantedStars || 0,
           lng: targetCoords[0],
           lat: targetCoords[1],
           title: `${selectedPreset.name} (${selectedPreset.price}₽)`,
@@ -2152,7 +2426,6 @@
         });
       });
 
-      // Подписка на реальный GPS байка из Traccar
       const gpsStream = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
       gpsStream.onmessage = (event) => {
         try {
@@ -2254,7 +2527,7 @@
     }
 
     // =========================================================================
-    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO (MQTT + ТОЧНАЯ СКОРОСТЬ)
+    // РЕЖИМ 2: ПОЛНОЭКРАННЫЙ HUD В PRISM LIVE STUDIO (ЗВЁЗДЫ + КЭШ + РАДАР)
     // =========================================================================
     else {
       function updateClock() {
@@ -2272,6 +2545,99 @@
       let currentStreamerPos = [100.8685, 12.9185];
       let questQueue = [];
 
+      // ================= КЭШ, РЕПУТАЦИЯ И ЗВЁЗДЫ РОЗЫСКА =================
+      let gtaCash = parseInt(localStorage.getItem('gta_stream_cash') || '0', 10);
+      let gtaRespectXp = parseInt(localStorage.getItem('gta_stream_rep') || '10', 10);
+      let currentWantedStars = 0;
+      let wantedEndTime = 0;
+      let wantedTimerInterval = null;
+
+      function updateCashAndRespectUI() {
+        localStorage.setItem('gta_stream_cash', String(gtaCash));
+        localStorage.setItem('gta_stream_rep', String(gtaRespectXp));
+
+        const formattedCash = '$' + String(Math.max(0, gtaCash)).padStart(6, '0');
+        document.getElementById('gta-cash-display').textContent = formattedCash;
+
+        const level = Math.floor(gtaRespectXp / 100) + 1;
+        const progress = gtaRespectXp % 100;
+        document.getElementById('respect-label').textContent = `RESPECT LVL ${level}`;
+        document.getElementById('respect-bar-fill').style.width = `${Math.max(8, progress)}%`;
+      }
+      updateCashAndRespectUI();
+
+      let splashTimeout = null;
+      function showCenterSplash(title, subtitle, isBusted = false) {
+        const splash = document.getElementById('center-gta-splash');
+        document.getElementById('splash-main-title').textContent = title;
+        document.getElementById('splash-sub-title').textContent = subtitle;
+
+        splash.classList.remove('active', 'busted');
+        void splash.offsetWidth;
+        if (isBusted) splash.classList.add('busted');
+        splash.classList.add('active');
+
+        clearTimeout(splashTimeout);
+        splashTimeout = setTimeout(() => splash.classList.remove('active'), 3600);
+      }
+
+      function renderWantedStars() {
+        const row = document.getElementById('wanted-stars-row');
+        row.classList.toggle('chase-blink', currentWantedStars >= 3);
+        for (let i = 1; i <= 5; i++) {
+          const starEl = document.getElementById(`star-${i}`);
+          if (starEl) starEl.classList.toggle('active', i <= currentWantedStars);
+        }
+      }
+
+      function clearWantedStars(escapedSuccess = false) {
+        const prevStars = currentWantedStars;
+        currentWantedStars = 0;
+        if (wantedTimerInterval) clearInterval(wantedTimerInterval);
+        document.getElementById('wanted-timer-pill').classList.remove('active');
+        renderWantedStars();
+
+        if (escapedSuccess && prevStars > 0) {
+          const bonusCash = prevStars * 1000;
+          const bonusRep = prevStars * 20;
+          gtaCash += bonusCash;
+          gtaRespectXp += bonusRep;
+          updateCashAndRespectUI();
+          playMissionPassedSound();
+          showCenterSplash('ESCAPED!', `+ RESPECT • +$${bonusCash}`, false);
+        }
+      }
+
+      function activateWantedStars(starsCount) {
+        const lvl = Math.min(Math.max(parseInt(starsCount, 10) || 1, 1), 5);
+        currentWantedStars = lvl;
+        const durationSec = WANTED_DURATIONS_SEC[lvl] || 900;
+        wantedEndTime = Date.now() + durationSec * 1000;
+
+        renderWantedStars();
+        playPoliceSirenSound();
+
+        const timerPill = document.getElementById('wanted-timer-pill');
+        timerPill.classList.add('active');
+
+        if (wantedTimerInterval) clearInterval(wantedTimerInterval);
+        const updateTimerDisplay = () => {
+          const leftMs = wantedEndTime - Date.now();
+          if (leftMs <= 0) {
+            clearWantedStars(true);
+            return;
+          }
+          const mins = Math.floor(leftMs / 60000);
+          const secs = String(Math.floor((leftMs % 60000) / 1000)).padStart(2, '0');
+          timerPill.textContent = `⏱ СКРОЙТЕСЬ: ${String(mins).padStart(2, '0')}:${secs}`;
+        };
+        updateTimerDisplay();
+        wantedTimerInterval = setInterval(updateTimerDisplay, 1000);
+
+        showBanner(`🚨 РОЗЫСК: ${lvl} ★`, `Скрывайтесь от погони ${durationSec / 60} мин!`, 'vip');
+      }
+
+      // ================= АВТОПИЛОТ И ЧАТ =================
       let autopilotActive = false;
       let autopilotEndTime = 0;
       let autopilotTimerInterval = null;
@@ -2338,8 +2704,11 @@
         document.getElementById('yt-chat-box').classList.remove('visible');
 
         if (completedNormally) {
+          gtaCash += 700;
+          gtaRespectXp += 15;
+          updateCashAndRespectUI();
           playMissionPassedSound();
-          showBanner('MISSION PASSED! + RESPECT', 'АВТОПИЛОТ ЗАВЕРШЁН (5 МИН)', 'passed');
+          showCenterSplash('MISSION PASSED!', '+ RESPECT • +$700 (АВТОПИЛОТ)', false);
         }
       }
 
@@ -2408,7 +2777,6 @@
         } catch (e) {}
       }
 
-      // Публикуем актуальную очередь с retain: true, чтобы она сохранялась в облаке
       function broadcastQueueState() {
         const cleanQueue = questQueue.map(q => ({
           id: q.id,
@@ -2547,8 +2915,14 @@
           if (currentProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) return;
         }
 
-        if (!silentRestore && data.questId === 'q_autopilot' && isVip && !isProposal) {
-          startAutopilotMode(null, null, 300);
+        // Авто-триггер спецопераций при оплате (Автопилот или Звёзды розыска)
+        if (!silentRestore && isVip && !isProposal) {
+          if (data.questId === 'q_autopilot') {
+            startAutopilotMode(null, null, 300);
+          }
+          if (data.wantedStars && data.wantedStars > 0) {
+            activateWantedStars(data.wantedStars);
+          }
         }
 
         const el = document.createElement('div');
@@ -2605,8 +2979,16 @@
         if (removed.marker) removed.marker.remove();
 
         if (isCompleted) {
+          const reward = extractRewardFromTitle(removed.title);
+          gtaCash += reward;
+          gtaRespectXp += Math.max(10, Math.round(reward / 100));
+          updateCashAndRespectUI();
+
           playMissionPassedSound();
           showBanner('MISSION PASSED! + RESPECT', `${removed.title}`, 'passed');
+          if (reward >= 1000) {
+            showCenterSplash('MISSION PASSED!', `+ RESPECT • +$${reward}`, false);
+          }
         }
 
         renderQuestList();
@@ -2681,7 +3063,6 @@
           return;
         }
 
-        // Точный спидометр от 1 км/ч (пешком, бегом, на велосипеде или байке)
         if (speed !== null && speed !== undefined && !isNaN(speed)) {
           const kmh = Math.round(speed * 3.6);
           document.getElementById('speed-badge').textContent = `${kmh} KM/H`;
@@ -2735,7 +3116,6 @@
         northEl.style.transform = 'none';
       });
 
-      // Чтение GPS от Traccar Client
       const gpsEvents = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
       gpsEvents.onmessage = (event) => {
         try {
@@ -2754,7 +3134,6 @@
         } catch (e) {}
       };
 
-      // Подписка радара на команды MQTT (и восстановление сохранённой очереди при старте)
       let initialSyncDone = false;
       mqttClient.on('connect', () => {
         mqttClient.subscribe([MQTT_CMD_TOPIC, MQTT_SYNC_TOPIC]);
@@ -2786,6 +3165,21 @@
             if (idx !== -1) removeQuestByIndex(idx, false);
           } else if (data.action === 'clear_all') {
             while (questQueue.length > 0) removeQuestByIndex(0, false);
+          } else if (data.action === 'set_stars') {
+            activateWantedStars(data.stars);
+          } else if (data.action === 'stars_escaped') {
+            clearWantedStars(true);
+          } else if (data.action === 'stars_busted') {
+            clearWantedStars(false);
+            showCenterSplash('BUSTED', 'ПОЛИЦИЯ НАСТИГЛА ВАС!', true);
+          } else if (data.action === 'add_cash') {
+            gtaCash += (parseInt(data.amount, 10) || 500);
+            gtaRespectXp += (parseInt(data.rep, 10) || 15);
+            updateCashAndRespectUI();
+          } else if (data.action === 'reset_cash') {
+            gtaCash = 0;
+            gtaRespectXp = 10;
+            updateCashAndRespectUI();
           } else if (data.action === 'reset_speed') {
             document.getElementById('speed-badge').textContent = '0 KM/H';
             document.getElementById('speed-arc').style.strokeDashoffset = 115;
@@ -2807,6 +3201,7 @@
             addQuestToQueue({
               id: data.id,
               questId: data.questId,
+              wantedStars: data.wantedStars,
               lng: parseFloat(data.lng),
               lat: parseFloat(data.lat),
               title: data.title,
