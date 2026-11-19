@@ -6,6 +6,7 @@
   <title>Pattaya Moto GTA 6 Radar & Quests</title>
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
   <style>
     @import url('https://fonts.cdnfonts.com/css/pricedown');
     @import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@500;600;700&family=Inter:wght@500;600;700;800&display=swap');
@@ -1025,14 +1026,14 @@
   <div id="admin-panel">
     <div style="display:flex; justify-content:space-between; align-items:center;">
       <h2 style="font-size:18px;">👑 Пульт управления стримера</h2>
-      <span style="font-size:11px; background:#16a34a; padding:3px 8px; border-radius:6px; font-weight:700;">ADMIN V2</span>
+      <span id="mqtt-status-badge" style="font-size:11px; background:#b45309; padding:3px 8px; border-radius:6px; font-weight:700;">🟡 MQTT ПОДКЛЮЧЕНИЕ...</span>
     </div>
 
     <!-- Режим АВТОПИЛОТ -->
     <div class="admin-card">
       <h3>🎮 Режим «Автопилот» (Экономия API)</h3>
       <div style="font-size:11.5px; color:#cbd5e1; line-height:1.35;">
-        Чат YouTube опрашивается <b>только когда активен Автопилот</b> (5 мин). Ручные кнопки ниже работают в любой момент.
+        Чат YouTube опрашивается <b>только когда активен Автопилот</b> (5 мин). Ручные кнопки ниже срабатывают на радаре мгновенно!
       </div>
       <input type="text" class="admin-input" id="yt-api-key" placeholder="YouTube Data API v3 Key (AIzaSy...)" />
       <input type="text" class="admin-input" id="yt-video-url" placeholder="Ссылка на стрим YouTube или Video ID" />
@@ -1040,7 +1041,7 @@
         <button class="t-btn gold" id="ap-start-btn">▶️ Включить Автопилот (5 мин)</button>
         <button class="t-btn red" id="ap-stop-btn">⏹ Стоп Автопилот</button>
       </div>
-      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Ручной тест команд на радаре:</div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Команды управления на радаре (озвучка + HUD в эфире):</div>
       <div class="cmd-grid">
         <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
         <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
@@ -1075,10 +1076,12 @@
       </div>
     </div>
 
-    <!-- Симуляция, лимиты, спидометр и звуки -->
+    <!-- Проверка звука НА РАДАРЕ и симуляция GPS -->
     <div class="admin-card">
-      <h3>⚡ Быстрые действия и сброс лимитов</h3>
+      <h3>🔊 Звук на радаре, GPS и сброс лимитов</h3>
       <div class="admin-grid">
+        <button class="t-btn gray" id="t-sound-new-radar">🔊 Звук на радаре: Новая</button>
+        <button class="t-btn gray" id="t-sound-pass-radar">🔊 Звук на радаре: Passed</button>
         <button class="t-btn green" id="t-complete-top">🏆 Засчитать верхнюю</button>
         <button class="t-btn" id="t-teleport">🏍 Телепорт к цели (финиш)</button>
         <button class="t-btn gray" id="t-reset-limits">🔄 Сбросить мои лимиты</button>
@@ -1086,7 +1089,7 @@
       </div>
     </div>
 
-    <div class="test-log" id="test-log">Пульт подключён (Канал V2). Готов к работе...</div>
+    <div class="test-log" id="test-log">Подключение к скоростному MQTT-серверу...</div>
   </div>
 
   <!-- ================= ИНТЕРФЕЙС ЗРИТЕЛЯ (?pin=...) ================= -->
@@ -1094,7 +1097,7 @@
     <div class="viewer-header">
       <div>
         <div style="font-weight: 800; font-size: 14.5px;">🎮 GTA 6 PATTAYA • МИССИИ</div>
-        <div style="font-size: 11px; color: #94a3b8;">Выбирай квест или ставь метку на карте</div>
+        <div style="font-size: 11px; color: #94a3b8;" id="viewer-conn-status">Подключение к радару...</div>
       </div>
       <span id="tier-badge" class="badge-tier badge-free">FREE (до 1 км)</span>
     </div>
@@ -1228,17 +1231,21 @@
 
   <script>
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoic3RyaW1iYSIsImEiOiJjbXduMTh2ZG0wNXFpMzBwbGpnMDFmNnRjIn0.Y91BGdd5CU6QXz69RNGqQg';
-    // GPS остаётся на прежнем топике (для Traccar Client), а команды переведены на свежий канал V2 для обхода блокировки лимитов IP
+    // GPS остаётся на прежнем канале ntfy для Traccar Client (только чтение — без 429)
     const NTFY_GPS_TOPIC = 'strimba_pattaya_gps_9941';
-    const NTFY_BUS_TOPIC = 'strimba_pattaya_bus_v2_9941';
+
+    // Скоростной WebSocket MQTT-брокер без лимитов по IP (для пульта, зрителей и радара)
+    const MQTT_BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
+    const MQTT_CMD_TOPIC  = 'strimba/pattaya/gta9941/cmd';
+    const MQTT_SYNC_TOPIC = 'strimba/pattaya/gta9941/sync';
+    const MQTT_GPS_TOPIC  = 'strimba/pattaya/gta9941/gps';
 
     const ADMIN_SECRET_KEY = 'strimba_boss_99';
 
-    // Автоматический сброс старых лимитов при обновлении версии
-    if (!localStorage.getItem('limits_reset_v2')) {
+    if (!localStorage.getItem('limits_reset_mqtt_v1')) {
       localStorage.removeItem('free_pin_history');
       localStorage.removeItem('proposal_history');
-      localStorage.setItem('limits_reset_v2', '1');
+      localStorage.setItem('limits_reset_mqtt_v1', '1');
     }
 
     const VIP_TIERS = {
@@ -1345,6 +1352,21 @@
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
+    // Подключение к WebSocket MQTT брокеру
+    const mqttClient = mqtt.connect(MQTT_BROKER_URL, {
+      clientId: 'strimba_gta_' + Math.random().toString(16).slice(2, 10),
+      keepalive: 30,
+      reconnectPeriod: 2000
+    });
+
+    function publishMqtt(topic, obj, retain = false) {
+      if (mqttClient && mqttClient.connected) {
+        mqttClient.publish(topic, JSON.stringify(obj), { qos: 1, retain });
+        return true;
+      }
+      return false;
+    }
+
     let audioCtx = null;
     let audioUnlocked = false;
     const customNewAudio = new Audio('new_mission.mp3');
@@ -1404,27 +1426,6 @@
       } catch (e) {}
     }
 
-    // Единая функция отправки в общий канал с проверкой ошибок сети/лимитов
-    async function sendBusMessage(payloadObj, logCallback = null) {
-      try {
-        const res = await fetch(`https://ntfy.sh/${NTFY_BUS_TOPIC}`, {
-          method: 'POST',
-          cache: 'no-store',
-          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-          body: JSON.stringify(payloadObj)
-        });
-        if (!res.ok) {
-          const errText = `⚠️ Ошибка сервера ntfy: HTTP ${res.status} (подожди 10 сек)`;
-          if (logCallback) logCallback(errText, true);
-          return false;
-        }
-        return true;
-      } catch (err) {
-        if (logCallback) logCallback('⚠️ Нет ответа от сети при отправке команды', true);
-        return false;
-      }
-    }
-
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1481,23 +1482,17 @@
     const urlParams = new URLSearchParams(window.location.search);
     const pinMode = urlParams.get('pin');
     const adminKey = urlParams.get('admin');
-    const clearMode = urlParams.get('clear');
-
-    if (clearMode) {
-      sendBusMessage({ type: 'cmd', action: clearMode === 'all' ? 'clear_all' : 'clear_one' }).then(() => {
-        const msg = clearMode === 'all' ? '✅ Весь список заданий очищен!' : '✅ Текущая верхняя миссия снята!';
-        document.body.innerHTML = `<div style="background:#111;color:#4cd964;height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;">${msg}</div>`;
-      });
-    }
 
     // =========================================================================
     // РЕЖИМ 0: СЕКРЕТНЫЙ ПУЛЬТ СТРИМЕРА (?admin=strimba_boss_99)
     // =========================================================================
-    else if (adminKey === ADMIN_SECRET_KEY) {
+    if (adminKey === ADMIN_SECRET_KEY) {
       document.body.classList.add('admin-mode');
       const logEl = document.getElementById('test-log');
       const adminListEl = document.getElementById('admin-queue-list');
       const adminCountEl = document.getElementById('admin-q-count');
+      const statusBadge = document.getElementById('mqtt-status-badge');
+
       let lastKnownStreamerPos = [100.8685, 12.9185];
       let latestTargetCoords = [100.8698, 12.9218];
       let currentAdminQueue = [];
@@ -1508,40 +1503,67 @@
         logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`;
       }
 
+      mqttClient.on('connect', () => {
+        statusBadge.textContent = '🟢 MQTT ONLINE';
+        statusBadge.style.background = '#16a34a';
+        logMsg('Связь установлена! Никаких лимитов 429 — пульт работает мгновенно.');
+        mqttClient.subscribe([MQTT_SYNC_TOPIC, MQTT_GPS_TOPIC]);
+      });
+
+      mqttClient.on('offline', () => {
+        statusBadge.textContent = '🔴 ПЕРЕПОДКЛЮЧЕНИЕ...';
+        statusBadge.style.background = '#dc2626';
+      });
+
+      mqttClient.on('message', (topic, message) => {
+        try {
+          const data = JSON.parse(message.toString());
+          if (topic === MQTT_SYNC_TOPIC && Array.isArray(data.queue)) {
+            currentAdminQueue = data.queue;
+            if (currentAdminQueue.length > 0) {
+              latestTargetCoords = [currentAdminQueue[0].lng, currentAdminQueue[0].lat];
+            }
+            renderAdminQueue();
+          } else if (topic === MQTT_GPS_TOPIC && data.lat && data.lon) {
+            lastKnownStreamerPos = [parseFloat(data.lon), parseFloat(data.lat)];
+            if (currentAdminQueue.length > 0) renderAdminQueue();
+          }
+        } catch (e) {}
+      });
+
       const ytKeyInput = document.getElementById('yt-api-key');
       const ytUrlInput = document.getElementById('yt-video-url');
       if (ytKeyInput) ytKeyInput.value = localStorage.getItem('yt_api_key') || '';
       if (ytUrlInput) ytUrlInput.value = localStorage.getItem('yt_video_id') || '';
 
-      document.getElementById('ap-start-btn').onclick = async () => {
+      document.getElementById('ap-start-btn').onclick = () => {
         const apiKey = ytKeyInput.value.trim();
         const videoId = extractYouTubeVideoId(ytUrlInput.value);
         if (apiKey) localStorage.setItem('yt_api_key', apiKey);
         if (videoId) localStorage.setItem('yt_video_id', videoId);
 
-        const ok = await sendBusMessage({ type: 'cmd', action: 'ap_start', apiKey, videoId, durationSec: 300 }, logMsg);
-        if (ok) logMsg(apiKey && videoId ? '🎮 Автопилот + YouTube чат ВКЛЮЧЕНЫ на 5 минут!' : '🎮 Автопилот ВКЛЮЧЕН на 5 минут!');
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'ap_start', apiKey, videoId, durationSec: 300 });
+        logMsg(apiKey && videoId ? '🎮 Автопилот + YouTube чат ВКЛЮЧЕНЫ на 5 минут!' : '🎮 Автопилот ВКЛЮЧЕН на 5 минут!');
       };
 
-      document.getElementById('ap-stop-btn').onclick = async () => {
-        const ok = await sendBusMessage({ type: 'cmd', action: 'ap_stop' }, logMsg);
-        if (ok) logMsg('⏹ Автопилот ОСТАНОВЛЕН.');
+      document.getElementById('ap-stop-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'ap_stop' });
+        logMsg('⏹ Автопилот ОСТАНОВЛЕН.');
       };
 
       document.querySelectorAll('[data-cmd]').forEach(btn => {
-        btn.onclick = async () => {
+        btn.onclick = () => {
           const cmd = btn.getAttribute('data-cmd');
           const icon = btn.getAttribute('data-icon');
-          const ok = await sendBusMessage({
-            type: 'cmd',
+          publishMqtt(MQTT_CMD_TOPIC, {
             action: 'game_cmd',
             forceManual: true,
             label: `${cmd}!`,
             icon,
             speech: `Команда: ${cmd}`,
             author: 'Стример'
-          }, logMsg);
-          if (ok) logMsg(`Команда «${cmd}» доставлена на радар!`);
+          });
+          logMsg(`Команда «${cmd}» отправлена на радар!`);
         };
       });
 
@@ -1575,81 +1597,63 @@
         });
 
         adminListEl.querySelectorAll('[data-complete]').forEach(btn => {
-          btn.onclick = async () => {
+          btn.onclick = () => {
             const id = btn.getAttribute('data-complete');
             currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
             renderAdminQueue();
-            const ok = await sendBusMessage({ type: 'cmd', action: 'complete_id', id }, logMsg);
-            if (ok) logMsg('Задание засчитано со звуком Mission Passed!');
+            publishMqtt(MQTT_CMD_TOPIC, { action: 'complete_id', id });
+            logMsg('Задание засчитано со звуком Mission Passed на радаре!');
           };
         });
 
         adminListEl.querySelectorAll('[data-remove]').forEach(btn => {
-          btn.onclick = async () => {
+          btn.onclick = () => {
             const id = btn.getAttribute('data-remove');
             currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
             renderAdminQueue();
-            const ok = await sendBusMessage({ type: 'cmd', action: 'remove_id', id }, logMsg);
-            if (ok) logMsg('Задание удалено из списка.');
+            publishMqtt(MQTT_CMD_TOPIC, { action: 'remove_id', id });
+            logMsg('Задание удалено из списка.');
           };
         });
       }
 
-      const gpsSub = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
-      gpsSub.onmessage = (e) => {
-        try {
-          const p = JSON.parse(e.data);
-          if (!p.message) return;
-          const d = p.message.trim().startsWith('{') ? JSON.parse(p.message) : Object.fromEntries(new URLSearchParams(p.message));
-          const lat = parseFloat(d.lat || d.latitude);
-          const lon = parseFloat(d.lon || d.lng || d.longitude);
-          if (!isNaN(lat) && !isNaN(lon)) {
-            lastKnownStreamerPos = [lon, lat];
-            if (currentAdminQueue.length > 0) renderAdminQueue();
-          }
-        } catch (err) {}
+      // Кнопки проверки звука НА РАДАРЕ (не в пульте!)
+      document.getElementById('t-sound-new-radar').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'new' });
+        logMsg('🔊 Сигнал «Новая миссия» отправлен на радар PRISM!');
       };
 
-      const busSub = new EventSource(`https://ntfy.sh/${NTFY_BUS_TOPIC}/sse?since=12h`);
-      busSub.onmessage = (e) => {
-        try {
-          const p = JSON.parse(e.data);
-          if (!p.message) return;
-          const d = JSON.parse(p.message);
-          if (d.type === 'sync' && Array.isArray(d.queue)) {
-            currentAdminQueue = d.queue;
-            if (currentAdminQueue.length > 0) latestTargetCoords = [currentAdminQueue[0].lng, currentAdminQueue[0].lat];
-            renderAdminQueue();
-          }
-        } catch (err) {}
+      document.getElementById('t-sound-pass-radar').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'passed' });
+        logMsg('🔊 Сигнал «Mission Passed» отправлен на радар PRISM!');
       };
 
-      document.getElementById('t-add-free').onclick = async () => {
+      document.getElementById('t-add-free').onclick = () => {
         const target = [lastKnownStreamerPos[0] + 0.0022, lastKnownStreamerPos[1] + 0.0020];
         latestTargetCoords = target;
-        const ok = await sendBusMessage({ type: 'cmd', action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'ЗАЕХАТЬ В 7-ELEVEN', vip: false, autoComplete: true }, logMsg);
-        if (ok) logMsg('Добавлена FREE точка (АВТО-финиш)');
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'ЗАЕХАТЬ В 7-ELEVEN', vip: false, autoComplete: true });
+        logMsg('Добавлена FREE точка (АВТО-финиш)');
       };
 
-      document.getElementById('t-add-vip1').onclick = async () => {
+      document.getElementById('t-add-vip1').onclick = () => {
         const target = [100.8732, 12.9265];
         latestTargetCoords = target;
-        const ok = await sendBusMessage({ type: 'cmd', action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'VIP 1000₽: WALKING STREET', vip: true, questIcon: '👑', autoComplete: true }, logMsg);
-        if (ok) logMsg('Добавлена VIP точка (АВТО-финиш)');
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'VIP 1000₽: WALKING STREET', vip: true, questIcon: '👑', autoComplete: true });
+        logMsg('Добавлена VIP точка (АВТО-финиш)');
       };
 
-      document.getElementById('t-add-quest').onclick = async () => {
+      document.getElementById('t-add-quest').onclick = () => {
         const q = QUEST_CATALOG.find(item => item.coords !== null);
         latestTargetCoords = q.coords;
-        const ok = await sendBusMessage({ type: 'cmd', action: 'add', id: Date.now().toString(), lng: q.coords[0], lat: q.coords[1], title: `${q.name} (${q.price}₽)`, vip: true, questIcon: q.icon, autoComplete: false }, logMsg);
-        if (ok) logMsg('Добавлен КВЕСТ (ВРУЧНУЮ)');
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'add', id: Date.now().toString(), lng: q.coords[0], lat: q.coords[1], title: `${q.name} (${q.price}₽)`, vip: true, questIcon: q.icon, autoComplete: false });
+        logMsg('Добавлен КВЕСТ (ВРУЧНУЮ)');
       };
 
-      document.getElementById('t-add-custom').onclick = async () => {
+      document.getElementById('t-add-custom').onclick = () => {
         const target = [lastKnownStreamerPos[0] - 0.002, lastKnownStreamerPos[1] + 0.0018];
         latestTargetCoords = target;
-        const ok = await sendBusMessage({ type: 'cmd', action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: '💡 1500₽: СЪЕСТЬ ДУРИАН', vip: true, isProposal: true, questIcon: '💡', autoComplete: false }, logMsg);
-        if (ok) logMsg('Добавлено ПРЕДЛОЖЕНИЕ зрителя (ВРУЧНУЮ)');
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: '💡 1500₽: СЪЕСТЬ ДУРИАН', vip: true, isProposal: true, questIcon: '💡', autoComplete: false });
+        logMsg('Добавлено ПРЕДЛОЖЕНИЕ зрителя (ВРУЧНУЮ)');
       };
 
       document.getElementById('t-reset-limits').onclick = () => {
@@ -1658,30 +1662,31 @@
         logMsg('🔄 Все локальные лимиты и кулдауны сброшены!');
       };
 
-      document.getElementById('t-reset-speed').onclick = async () => {
-        const ok = await sendBusMessage({ type: 'cmd', action: 'reset_speed' }, logMsg);
-        if (ok) logMsg('🛑 Спидометр сброшен на 0 KM/H');
+      document.getElementById('t-reset-speed').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'reset_speed' });
+        logMsg('🛑 Спидометр сброшен на 0 KM/H');
       };
 
-      document.getElementById('t-complete-top').onclick = async () => {
+      document.getElementById('t-complete-top').onclick = () => {
         if (currentAdminQueue.length > 0) {
           currentAdminQueue.shift();
           renderAdminQueue();
         }
-        const ok = await sendBusMessage({ type: 'cmd', action: 'complete_one' }, logMsg);
-        if (ok) logMsg('Засчитана верхняя миссия (+Respect)');
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'complete_one' });
+        logMsg('Засчитана верхняя миссия (+Respect)');
       };
 
-      document.getElementById('t-teleport').onclick = async () => {
-        const ok = await sendBusMessage({ type: 'cmd', action: 'sim_gps', lat: latestTargetCoords[1], lon: latestTargetCoords[0], speed: 0 }, logMsg);
-        if (ok) logMsg('Байк телепортирован к верхней цели!');
+      document.getElementById('t-teleport').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'sim_gps', lat: latestTargetCoords[1], lon: latestTargetCoords[0], speed: 0 });
+        logMsg('Байк телепортирован к верхней цели!');
       };
 
-      document.getElementById('t-clear-all').onclick = async () => {
+      document.getElementById('t-clear-all').onclick = () => {
         currentAdminQueue = [];
         renderAdminQueue();
-        const ok = await sendBusMessage({ type: 'cmd', action: 'clear_all' }, logMsg);
-        if (ok) logMsg('Список полностью очищен');
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'clear_all' });
+        publishMqtt(MQTT_SYNC_TOPIC, { queue: [] }, true);
+        logMsg('Список полностью очищен');
       };
     }
 
@@ -1698,6 +1703,8 @@
       const tierBadge = document.getElementById('tier-badge');
       tierBadge.textContent = vipConfig ? vipConfig.label : 'FREE (до 1 км)';
       tierBadge.className = isVip ? 'badge-tier badge-vip' : 'badge-tier badge-free';
+
+      const connStatusEl = document.getElementById('viewer-conn-status');
 
       let streamerPos = [100.8685, 12.9185];
       let selectedLngLat = null;
@@ -1725,6 +1732,31 @@
       const streamerEl = document.createElement('div');
       streamerEl.style.cssText = 'width:20px;height:20px;background:#00c8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px #00c8ff;';
       const streamerMarker = new mapboxgl.Marker(streamerEl).setLngLat(streamerPos).addTo(vMap);
+
+      mqttClient.on('connect', () => {
+        connStatusEl.textContent = '🟢 Подключено к радару в реальном времени';
+        connStatusEl.style.color = '#4ade80';
+        mqttClient.subscribe([MQTT_SYNC_TOPIC, MQTT_GPS_TOPIC]);
+      });
+
+      mqttClient.on('message', (topic, message) => {
+        try {
+          const payload = JSON.parse(message.toString());
+          if (topic === MQTT_SYNC_TOPIC && Array.isArray(payload.queue)) {
+            liveQueue = payload.queue;
+            renderViewerQueue();
+            validateCustomForm();
+          } else if (topic === MQTT_GPS_TOPIC && payload.lat && payload.lon) {
+            streamerPos = [parseFloat(payload.lon), parseFloat(payload.lat)];
+            streamerMarker.setLngLat(streamerPos);
+            if (autoFollow) vMap.easeTo({ center: streamerPos, duration: 600 });
+            if (vMap.getSource('allowed-zone')) {
+              vMap.getSource('allowed-zone').setData(createCircleGeoJSON(streamerPos, maxAllowedMeters));
+            }
+            if (liveQueue.length > 0) renderViewerQueue();
+          }
+        } catch (e) {}
+      });
 
       const activePanel = document.getElementById('viewer-live-queue');
       const catalogPanel = document.getElementById('viewer-catalog-panel');
@@ -1974,7 +2006,7 @@
         });
       });
 
-      sendPresetBtn.addEventListener('click', async () => {
+      sendPresetBtn.addEventListener('click', () => {
         if (!selectedPreset) return;
         const canLaunchDirect = vipConfig && vipConfig.maxQuestPrice >= selectedPreset.price;
 
@@ -1995,10 +2027,7 @@
         const targetCoords = selectedPreset.coords ? selectedPreset.coords : streamerPos;
 
         sendPresetBtn.disabled = true;
-        sendPresetBtn.textContent = 'Отправка на радар...';
-
-        const ok = await sendBusMessage({
-          type: 'cmd',
+        publishMqtt(MQTT_CMD_TOPIC, {
           action: 'add',
           id: Date.now().toString(),
           questId: selectedPreset.id,
@@ -2011,9 +2040,9 @@
           autoComplete: false
         });
 
-        sendPresetBtn.textContent = ok ? '✅ Отправлено на экран стрима!' : '⚠️ Ошибка сети, попробуй через 5 сек';
+        sendPresetBtn.textContent = '✅ Отправлено на экран стрима!';
         validateCustomForm();
-        setTimeout(() => { qdmModal.style.display = 'none'; }, 1500);
+        setTimeout(() => { qdmModal.style.display = 'none'; }, 1200);
       });
 
       document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -2061,7 +2090,7 @@
       customTextInput.addEventListener('input', validateCustomForm);
       validateCustomForm();
 
-      sendCustomBtn.addEventListener('click', async () => {
+      sendCustomBtn.addEventListener('click', () => {
         if (!isVip) {
           const spamCheck = checkProposalSpamLimit();
           if (!spamCheck.allowed) {
@@ -2076,10 +2105,7 @@
         const coordsToUse = selectedLngLat ? selectedLngLat : streamerPos;
 
         sendCustomBtn.disabled = true;
-        sendCustomBtn.textContent = 'Отправка предложения...';
-
-        const ok = await sendBusMessage({
-          type: 'cmd',
+        publishMqtt(MQTT_CMD_TOPIC, {
           action: 'add',
           id: Date.now().toString(),
           lng: coordsToUse[0],
@@ -2092,8 +2118,8 @@
         });
 
         customTextInput.value = '';
-        sendCustomBtn.textContent = ok ? '✅ Предложение отправлено на радар!' : '⚠️ Ошибка сети, попробуй ещё раз';
-        setTimeout(() => { validateCustomForm(); }, 2000);
+        sendCustomBtn.textContent = '✅ Предложение отправлено на радар!';
+        setTimeout(() => { validateCustomForm(); }, 1500);
       });
 
       vMap.on('load', () => {
@@ -2126,6 +2152,7 @@
         });
       });
 
+      // Подписка на реальный GPS байка из Traccar
       const gpsStream = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
       gpsStream.onmessage = (event) => {
         try {
@@ -2142,20 +2169,6 @@
               vMap.getSource('allowed-zone').setData(createCircleGeoJSON(streamerPos, maxAllowedMeters));
             }
             if (liveQueue.length > 0) renderViewerQueue();
-          }
-        } catch (e) {}
-      };
-
-      const busStream = new EventSource(`https://ntfy.sh/${NTFY_BUS_TOPIC}/sse?since=12h`);
-      busStream.onmessage = (event) => {
-        try {
-          const packet = JSON.parse(event.data);
-          if (!packet.message) return;
-          const payload = JSON.parse(packet.message);
-          if (payload.type === 'sync' && Array.isArray(payload.queue)) {
-            liveQueue = payload.queue;
-            renderViewerQueue();
-            validateCustomForm();
           }
         } catch (e) {}
       };
@@ -2197,7 +2210,7 @@
         }
       });
 
-      sendBtn.addEventListener('click', async () => {
+      sendBtn.addEventListener('click', () => {
         if (!selectedLngLat) return;
 
         if (!isVip) {
@@ -2225,10 +2238,7 @@
         const cleanTitle = rawTitle.replace(/https?:\/\/\S+/gi, '').toUpperCase();
 
         sendBtn.disabled = true;
-        sendBtn.textContent = 'Отправка...';
-
-        const ok = await sendBusMessage({
-          type: 'cmd',
+        publishMqtt(MQTT_CMD_TOPIC, {
           action: 'add',
           id: Date.now().toString(),
           lng: selectedLngLat[0],
@@ -2238,13 +2248,13 @@
           autoComplete: true
         });
 
-        sendBtn.textContent = ok ? '✅ Точка добавлена на стрим!' : '⚠️ Ошибка сети, попробуй ещё раз';
-        setTimeout(() => { sendBtn.disabled = false; sendBtn.textContent = 'Выбрать ещё точку'; }, 3000);
+        sendBtn.textContent = '✅ Точка добавлена на стрим!';
+        setTimeout(() => { sendBtn.disabled = false; sendBtn.textContent = 'Выбрать ещё точку'; }, 2000);
       });
     }
 
     // =========================================================================
-    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO
+    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO (MQTT + ТОЧНАЯ СКОРОСТЬ)
     // =========================================================================
     else {
       function updateClock() {
@@ -2398,6 +2408,7 @@
         } catch (e) {}
       }
 
+      // Публикуем актуальную очередь с retain: true, чтобы она сохранялась в облаке
       function broadcastQueueState() {
         const cleanQueue = questQueue.map(q => ({
           id: q.id,
@@ -2409,7 +2420,7 @@
           icon: q.icon,
           autoComplete: q.autoComplete
         }));
-        sendBusMessage({ type: 'sync', queue: cleanQueue });
+        publishMqtt(MQTT_SYNC_TOPIC, { queue: cleanQueue }, true);
       }
 
       const map = new mapboxgl.Map({
@@ -2523,10 +2534,12 @@
         });
       }
 
-      function addQuestToQueue(data) {
+      function addQuestToQueue(data, silentRestore = false) {
+        if (questQueue.some(q => String(q.id) === String(data.id))) return;
+
         const isVip = Boolean(data.vip);
         const isProposal = Boolean(data.isProposal);
-        const icon = data.questIcon || (isProposal ? '💡' : (isVip ? '👑' : '🎯'));
+        const icon = data.questIcon || data.icon || (isProposal ? '💡' : (isVip ? '👑' : '🎯'));
         const isAuto = data.autoComplete !== false;
 
         if (isProposal) {
@@ -2534,7 +2547,7 @@
           if (currentProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) return;
         }
 
-        if (data.questId === 'q_autopilot' && isVip && !isProposal) {
+        if (!silentRestore && data.questId === 'q_autopilot' && isVip && !isProposal) {
           startAutopilotMode(null, null, 300);
         }
 
@@ -2568,19 +2581,20 @@
           questQueue.push(task);
         }
 
-        const dist = Math.round(getDistanceMeters(currentStreamerPos[1], currentStreamerPos[0], task.lat, task.lng));
-        const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} КМ` : `${dist} М`;
+        if (!silentRestore) {
+          const dist = Math.round(getDistanceMeters(currentStreamerPos[1], currentStreamerPos[0], task.lat, task.lng));
+          const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} КМ` : `${dist} М`;
 
-        playNewMissionSound();
-        if (isProposal) {
-          showBanner('💡 ПРЕДЛОЖЕННОЕ ЗАДАНИЕ (ЖДЁТ ДОНАТ)', `${task.title}`, 'proposal');
-        } else {
-          showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 НОВОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
+          playNewMissionSound();
+          if (isProposal) {
+            showBanner('💡 ПРЕДЛОЖЕННОЕ ЗАДАНИЕ (ЖДЁТ ДОНАТ)', `${task.title}`, 'proposal');
+          } else {
+            showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 НОВОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
+          }
+          broadcastQueueState();
         }
 
         renderQuestList();
-        broadcastQueueState();
-
         const activeTop = questQueue[0];
         buildRealRoute(currentStreamerPos, [activeTop.lng, activeTop.lat], activeTop.vip);
       }
@@ -2667,6 +2681,7 @@
           return;
         }
 
+        // Точный спидометр от 1 км/ч (пешком, бегом, на велосипеде или байке)
         if (speed !== null && speed !== undefined && !isNaN(speed)) {
           const kmh = Math.round(speed * 3.6);
           document.getElementById('speed-badge').textContent = `${kmh} KM/H`;
@@ -2720,6 +2735,7 @@
         northEl.style.transform = 'none';
       });
 
+      // Чтение GPS от Traccar Client
       const gpsEvents = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
       gpsEvents.onmessage = (event) => {
         try {
@@ -2731,17 +2747,32 @@
           const lon = parseFloat(params.lon || params.lng || params.longitude);
           const bearing = parseFloat(params.bearing || params.heading || params.course);
           const speed = parseFloat(params.speed);
-          if (!isNaN(lat) && !isNaN(lon)) moveRadar(lon, lat, bearing, speed, isHistorical);
+          if (!isNaN(lat) && !isNaN(lon)) {
+            moveRadar(lon, lat, bearing, speed, isHistorical);
+            publishMqtt(MQTT_GPS_TOPIC, { lat, lon }, true);
+          }
         } catch (e) {}
       };
 
-      const busEvents = new EventSource(`https://ntfy.sh/${NTFY_BUS_TOPIC}/sse`);
-      busEvents.onmessage = (event) => {
+      // Подписка радара на команды MQTT (и восстановление сохранённой очереди при старте)
+      let initialSyncDone = false;
+      mqttClient.on('connect', () => {
+        mqttClient.subscribe([MQTT_CMD_TOPIC, MQTT_SYNC_TOPIC]);
+      });
+
+      mqttClient.on('message', (topic, message) => {
         try {
-          const packet = JSON.parse(event.data);
-          if (!packet.message) return;
-          const data = JSON.parse(packet.message);
-          if (data.type !== 'cmd') return;
+          const data = JSON.parse(message.toString());
+
+          if (topic === MQTT_SYNC_TOPIC && !initialSyncDone) {
+            initialSyncDone = true;
+            if (Array.isArray(data.queue) && questQueue.length === 0) {
+              data.queue.forEach(item => addQuestToQueue(item, true));
+            }
+            return;
+          }
+
+          if (topic !== MQTT_CMD_TOPIC) return;
 
           if (data.action === 'clear_one') {
             removeQuestByIndex(0, false);
@@ -2760,6 +2791,10 @@
             document.getElementById('speed-arc').style.strokeDashoffset = 115;
           } else if (data.action === 'sim_gps') {
             moveRadar(parseFloat(data.lon), parseFloat(data.lat), 0, parseFloat(data.speed) || 0, false);
+            publishMqtt(MQTT_GPS_TOPIC, { lat: parseFloat(data.lat), lon: parseFloat(data.lon) }, true);
+          } else if (data.action === 'play_sound') {
+            if (data.sound === 'new') playNewMissionSound();
+            if (data.sound === 'passed') playMissionPassedSound();
           } else if (data.action === 'ap_start') {
             if (data.apiKey) localStorage.setItem('yt_api_key', data.apiKey);
             if (data.videoId) localStorage.setItem('yt_video_id', data.videoId);
@@ -2779,10 +2814,10 @@
               isProposal: Boolean(data.isProposal),
               questIcon: data.questIcon,
               autoComplete: data.autoComplete
-            });
+            }, false);
           }
         } catch (e) {}
-      };
+      });
     }
   </script>
 </body>
