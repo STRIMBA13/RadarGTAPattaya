@@ -1259,6 +1259,8 @@
     <div class="admin-card">
       <h3>🔊 Звук на радаре, GPS и сброс лимитов</h3>
       <div class="admin-grid">
+        <button class="t-btn gray" id="t-sound-siren-radar">🚨 Звук на радаре: Сирена</button>
+        <button class="t-btn gray" id="t-sound-busted-radar">💀 Звук на радаре: Busted</button>
         <button class="t-btn gray" id="t-sound-new-radar">🔊 Звук на радаре: Новая</button>
         <button class="t-btn gray" id="t-sound-pass-radar">🔊 Звук на радаре: Passed</button>
         <button class="t-btn green" id="t-complete-top">🏆 Засчитать верхнюю</button>
@@ -1525,7 +1527,7 @@
       { id: 'q_tuktuk',   price: 1000,  icon: '🛺', name: 'РЕЙС НА ТУК-ТУКЕ (SECOND RD)', desc: 'Пересесть на сонгтео (тук-тук) на Второй улице и проехать 2 остановки.', coords: [100.8760, 12.9275] },
       { id: 'q_informer', price: 1000,  icon: '🕴', name: 'ВСТРЕЧА С ИНФОРМАТОРОМ', desc: 'Найти человека в загаданном цвете одежды и попросить передать привет донатеру.', coords: null },
 
-      // 1 200 – 5 000 ₽ (Включая звёзды розыска 2–5★)
+      // 1 200 – 5 000 ₽
       { id: 'q_lady200',  price: 1200,  icon: '💋', name: 'ЧАЕВЫЕ НА WALKING ST.', desc: 'Поговорить с девушкой на Walking Street и оставить 200 бат чаевых.', coords: [100.8730, 12.9262] },
       { id: 'q_taxi',     price: 1200,  icon: '🏍', name: 'ПОДВЕЗТИ ПОПУТЧИЦУ', desc: 'Подвезти девушку на байке по пути.', coords: null },
       { id: 'q_wanted2',  price: 2000,  icon: '⭐⭐', name: 'РОЗЫСК: 2 ЗВЕЗДЫ (20 МИН)', desc: 'Патруль на хвосте: нужно скрываться 20 минут и уходить дворами!', coords: null, wantedStars: 2 },
@@ -1581,19 +1583,26 @@
       return false;
     }
 
+    // =========================================================================
+    // АУДИО-ФАЙЛЫ ИЗ РЕПОЗИТОРИЯ (new_mission, mission_passed, wanted_siren, busted)
+    // =========================================================================
     let audioCtx = null;
     let audioUnlocked = false;
-    const customNewAudio = new Audio('new_mission.mp3');
-    const customPassAudio = new Audio('mission_passed.mp3');
-    customNewAudio.preload = 'auto';
-    customPassAudio.preload = 'auto';
+    const customNewAudio    = new Audio('new_mission.mp3');
+    const customPassAudio   = new Audio('mission_passed.mp3');
+    const customSirenAudio  = new Audio('wanted_siren.mp3');
+    const customBustedAudio = new Audio('busted.mp3');
+
+    [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio].forEach(a => {
+      a.preload = 'auto';
+    });
 
     function unlockAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') audioCtx.resume();
       if (!audioUnlocked) {
         audioUnlocked = true;
-        [customNewAudio, customPassAudio].forEach(a => {
+        [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio].forEach(a => {
           a.volume = 0.01;
           a.play().then(() => { a.pause(); a.currentTime = 0; a.volume = 1.0; }).catch(() => { a.volume = 1.0; });
         });
@@ -1614,25 +1623,16 @@
       customPassAudio.play().catch(() => {});
     }
 
-    // Короткий звук полицейской сирены при получении звёзд розыска
     function playPoliceSirenSound() {
-      try {
-        unlockAudio();
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(620, now);
-        osc.frequency.linearRampToValueAtTime(980, now + 0.35);
-        osc.frequency.linearRampToValueAtTime(620, now + 0.7);
-        osc.frequency.linearRampToValueAtTime(980, now + 1.05);
-        gain.gain.setValueAtTime(0.18, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.15);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(now);
-        osc.stop(now + 1.2);
-      } catch (e) {}
+      customSirenAudio.volume = 1.0;
+      customSirenAudio.currentTime = 0;
+      customSirenAudio.play().catch(() => {});
+    }
+
+    function playBustedSound() {
+      customBustedAudio.volume = 1.0;
+      customBustedAudio.currentTime = 0;
+      customBustedAudio.play().catch(() => {});
     }
 
     function speakGameCommand(text) {
@@ -1714,14 +1714,13 @@
       return match ? match[1] : trimmed;
     }
 
-    // Извлекаем сумму в рублях из названия миссии (например "1500₽" -> 1500)
     function extractRewardFromTitle(title) {
       const match = String(title).match(/(\d[\d\s]*)\s*₽/);
       if (match) {
         const num = parseInt(match[1].replace(/\s+/g, ''), 10);
         if (!isNaN(num) && num > 0) return num;
       }
-      return 250; // Базовая награда за бесплатную точку
+      return 250;
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -1751,7 +1750,7 @@
       mqttClient.on('connect', () => {
         statusBadge.textContent = '🟢 MQTT ONLINE';
         statusBadge.style.background = '#16a34a';
-        logMsg('Связь установлена! Все функции и звёзды розыска активны.');
+        logMsg('Связь установлена! Звуки сирены и BUSTED подключены.');
         mqttClient.subscribe([MQTT_SYNC_TOPIC, MQTT_GPS_TOPIC]);
       });
 
@@ -1776,12 +1775,11 @@
         } catch (e) {}
       });
 
-      // Управление звёздами розыска и кэшем
       document.querySelectorAll('[data-set-stars]').forEach(btn => {
         btn.onclick = () => {
           const stars = parseInt(btn.getAttribute('data-set-stars'), 10);
           publishMqtt(MQTT_CMD_TOPIC, { action: 'set_stars', stars });
-          logMsg(`🚨 Включён розыск: ${stars}★ (таймер ${WANTED_DURATIONS_SEC[stars] / 60} мин)`);
+          logMsg(`🚨 Включён розыск: ${stars}★ + сирена на радаре!`);
         };
       });
 
@@ -1792,7 +1790,7 @@
 
       document.getElementById('stars-busted-btn').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'stars_busted' });
-        logMsg('🚨 Пойман (BUSTED)! Звёзды сброшены.');
+        logMsg('🚨 Пойман (BUSTED)! Звук busted.mp3 запущен на радаре.');
       };
 
       document.getElementById('cash-plus-btn').onclick = () => {
@@ -1891,14 +1889,24 @@
         });
       }
 
+      document.getElementById('t-sound-siren-radar').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'siren' });
+        logMsg('🚨 Сигнал «wanted_siren.mp3» отправлен на радар PRISM!');
+      };
+
+      document.getElementById('t-sound-busted-radar').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'busted' });
+        logMsg('💀 Сигнал «busted.mp3» отправлен на радар PRISM!');
+      };
+
       document.getElementById('t-sound-new-radar').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'new' });
-        logMsg('🔊 Сигнал «Новая миссия» отправлен на радар PRISM!');
+        logMsg('🔊 Сигнал «new_mission.mp3» отправлен на радар PRISM!');
       };
 
       document.getElementById('t-sound-pass-radar').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'passed' });
-        logMsg('🔊 Сигнал «Mission Passed» отправлен на радар PRISM!');
+        logMsg('🔊 Сигнал «mission_passed.mp3» отправлен на радар PRISM!');
       };
 
       document.getElementById('t-add-free').onclick = () => {
@@ -2545,7 +2553,6 @@
       let currentStreamerPos = [100.8685, 12.9185];
       let questQueue = [];
 
-      // ================= КЭШ, РЕПУТАЦИЯ И ЗВЁЗДЫ РОЗЫСКА =================
       let gtaCash = parseInt(localStorage.getItem('gta_stream_cash') || '0', 10);
       let gtaRespectXp = parseInt(localStorage.getItem('gta_stream_rep') || '10', 10);
       let currentWantedStars = 0;
@@ -2637,7 +2644,6 @@
         showBanner(`🚨 РОЗЫСК: ${lvl} ★`, `Скрывайтесь от погони ${durationSec / 60} мин!`, 'vip');
       }
 
-      // ================= АВТОПИЛОТ И ЧАТ =================
       let autopilotActive = false;
       let autopilotEndTime = 0;
       let autopilotTimerInterval = null;
@@ -2915,7 +2921,6 @@
           if (currentProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) return;
         }
 
-        // Авто-триггер спецопераций при оплате (Автопилот или Звёзды розыска)
         if (!silentRestore && isVip && !isProposal) {
           if (data.questId === 'q_autopilot') {
             startAutopilotMode(null, null, 300);
@@ -2959,7 +2964,7 @@
           const dist = Math.round(getDistanceMeters(currentStreamerPos[1], currentStreamerPos[0], task.lat, task.lng));
           const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} КМ` : `${dist} М`;
 
-          playNewMissionSound();
+          if (!data.wantedStars) playNewMissionSound();
           if (isProposal) {
             showBanner('💡 ПРЕДЛОЖЕННОЕ ЗАДАНИЕ (ЖДЁТ ДОНАТ)', `${task.title}`, 'proposal');
           } else {
@@ -3171,6 +3176,7 @@
             clearWantedStars(true);
           } else if (data.action === 'stars_busted') {
             clearWantedStars(false);
+            playBustedSound();
             showCenterSplash('BUSTED', 'ПОЛИЦИЯ НАСТИГЛА ВАС!', true);
           } else if (data.action === 'add_cash') {
             gtaCash += (parseInt(data.amount, 10) || 500);
@@ -3189,6 +3195,8 @@
           } else if (data.action === 'play_sound') {
             if (data.sound === 'new') playNewMissionSound();
             if (data.sound === 'passed') playMissionPassedSound();
+            if (data.sound === 'siren') playPoliceSirenSound();
+            if (data.sound === 'busted') playBustedSound();
           } else if (data.action === 'ap_start') {
             if (data.apiKey) localStorage.setItem('yt_api_key', data.apiKey);
             if (data.videoId) localStorage.setItem('yt_video_id', data.videoId);
