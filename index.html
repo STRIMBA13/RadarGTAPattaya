@@ -117,12 +117,12 @@
 
     .viewer-header {
       background: linear-gradient(90deg, #111827, #1e1b4b);
-      padding: 10px 14px;
-      border-bottom: 1.5px solid rgba(236, 72, 153, 0.35);
+      padding: 9px 14px;
+      border-bottom: 1.5px solid rgba(236, 72, 153, 0.4);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 25;
+      z-index: 30;
     }
 
     .badge-tier {
@@ -149,87 +149,177 @@
       height: 100%;
     }
 
-    /* Плавающая панель очереди заданий поверх карты */
+    /* СЛЕВА ВВЕРХУ: Активные задания на стриме */
     .viewer-live-queue {
       position: absolute;
       top: 10px;
       left: 10px;
-      right: 10px;
-      max-width: 380px;
+      width: calc(50% - 14px);
+      max-width: 310px;
       background: rgba(11, 16, 28, 0.92);
       backdrop-filter: blur(10px);
-      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      border: 1.5px solid rgba(56, 189, 248, 0.35);
       border-radius: 12px;
-      padding: 9px 11px;
-      z-index: 15;
+      padding: 8px 10px;
+      z-index: 18;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
       display: none;
       flex-direction: column;
       gap: 6px;
     }
 
-    .viewer-queue-header {
+    /* СПРАВА ВВЕРХУ: Каталог всех квестов по возрастанию цены */
+    .viewer-catalog-panel {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: calc(50% - 14px);
+      max-width: 340px;
+      background: rgba(11, 16, 28, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(245, 158, 11, 0.45);
+      border-radius: 12px;
+      padding: 8px 10px;
+      z-index: 18;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.75);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    @media (max-width: 640px) {
+      .viewer-live-queue {
+        width: calc(100% - 20px);
+        max-width: none;
+        position: relative;
+        top: 0;
+        left: 0;
+        margin: 8px 10px 0;
+      }
+      .viewer-catalog-panel {
+        width: calc(100% - 20px);
+        max-width: none;
+        position: relative;
+        top: 0;
+        right: 0;
+        margin: 6px 10px 0;
+      }
+      .floating-panels-stack {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 18;
+        pointer-events: none;
+      }
+      .floating-panels-stack > div { pointer-events: auto; }
+    }
+
+    .panel-hdr {
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 11px;
-      font-weight: 700;
-      color: #94a3b8;
+      font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
+      cursor: pointer;
     }
 
-    .viewer-queue-list {
+    .panel-scroll-list {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      max-height: 155px;
+      gap: 4px;
+      max-height: 175px;
       overflow-y: auto;
+      padding-right: 2px;
     }
+
+    .panel-scroll-list.collapsed { display: none; }
 
     .v-q-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(30, 41, 59, 0.85);
+      background: rgba(30, 41, 59, 0.88);
       border-left: 3.5px solid #ec4899;
-      padding: 6px 9px;
+      padding: 5px 8px;
       border-radius: 7px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       gap: 6px;
+      cursor: pointer;
     }
 
     .v-q-item.vip { border-left-color: #eab308; }
+    .v-q-item.proposal { border-left-color: #a855f7; background: rgba(46, 16, 101, 0.65); }
     .v-q-item.active-route {
-      background: rgba(56, 189, 248, 0.16);
+      background: rgba(56, 189, 248, 0.18);
       border: 1px solid rgba(56, 189, 248, 0.45);
       border-left-width: 4px;
     }
 
+    .catalog-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 6px 8px;
+      border-radius: 7px;
+      font-size: 11.5px;
+      font-weight: 600;
+      gap: 6px;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .catalog-item:hover { background: rgba(51, 65, 85, 0.95); }
+    .catalog-item.selected {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.2);
+    }
+
+    .c-price {
+      background: #f59e0b;
+      color: #000;
+      font-weight: 800;
+      font-size: 10.5px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .c-price.tier-low { background: #22c55e; color: #000; }
+    .c-price.tier-mid { background: #38bdf8; color: #000; }
+    .c-price.tier-high { background: #f59e0b; color: #000; }
+    .c-price.tier-boss { background: #ef4444; color: #fff; }
+
     .v-q-meta {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       flex-shrink: 0;
-    }
-
-    .v-q-tag {
-      font-size: 10px;
-      padding: 2px 5px;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.1);
-      color: #cbd5e1;
     }
 
     .v-q-done-mini {
       background: #22c55e;
       color: #000;
       border: none;
-      border-radius: 5px;
-      padding: 3px 7px;
+      border-radius: 4px;
+      padding: 3px 6px;
       font-weight: 800;
-      font-size: 11px;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .v-q-del-mini {
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-weight: 800;
+      font-size: 10px;
       cursor: pointer;
     }
 
@@ -252,21 +342,21 @@
       cursor: pointer;
     }
 
-    /* Нижняя панель управления в стиле GTA 6 */
+    /* Нижняя компактная панель действий */
     .viewer-drawer {
       background: #111827;
       border-top: 2px solid rgba(236, 72, 153, 0.45);
       padding: 10px 14px 14px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 9px;
       z-index: 25;
-      box-shadow: 0 -8px 25px rgba(0,0,0,0.8);
+      box-shadow: 0 -8px 25px rgba(0,0,0,0.85);
     }
 
     .mode-tabs {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       background: #090d16;
       padding: 4px;
       border-radius: 10px;
@@ -278,8 +368,8 @@
       border: none;
       color: #94a3b8;
       font-weight: 700;
-      font-size: 12px;
-      padding: 8px 4px;
+      font-size: 12.5px;
+      padding: 8px 6px;
       border-radius: 7px;
       cursor: pointer;
       transition: 0.2s;
@@ -298,39 +388,14 @@
     }
     .tab-pane.active { display: flex; }
 
-    /* Горизонтальный или компактный список готовых квестов */
-    .preset-quests-scroll {
-      display: flex;
+    .selected-quest-preview {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid #f59e0b;
+      border-radius: 8px;
+      padding: 7px 10px;
+      display: none;
       flex-direction: column;
-      gap: 6px;
-      max-height: 145px;
-      overflow-y: auto;
-    }
-
-    .preset-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #1e293b;
-      border: 1px solid #334155;
-      padding: 8px 10px;
-      border-radius: 9px;
-      cursor: pointer;
-      transition: 0.15s;
-    }
-    .preset-row.selected {
-      border-color: #eab308;
-      background: rgba(234, 179, 8, 0.15);
-    }
-
-    .preset-price-pill {
-      background: #f59e0b;
-      color: #000;
-      font-weight: 800;
-      font-size: 12px;
-      padding: 3px 8px;
-      border-radius: 6px;
-      white-space: nowrap;
+      gap: 3px;
     }
 
     .v-input {
@@ -369,6 +434,11 @@
       color: #000;
     }
 
+    .primary-btn.proposal-btn {
+      background: linear-gradient(90deg, #c084fc, #ec4899);
+      color: #fff;
+    }
+
     .primary-btn:disabled {
       background: #334155;
       color: #64748b;
@@ -393,10 +463,10 @@
       background: #111827;
       border: 2px solid #f59e0b;
       color: #fff;
-      padding: 3px 7px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10.5px;
+      font-weight: 800;
       white-space: nowrap;
       box-shadow: 0 3px 8px rgba(0,0,0,0.85);
       cursor: pointer;
@@ -405,7 +475,7 @@
     /* ================= ОСНОВНОЙ РАДАР ДЛЯ PRISM (ЛЕВЫЙ ВЕРХНИЙ УГОЛ) ================= */
     .hud-wrapper {
       position: relative;
-      width: 360px;
+      width: 365px;
       height: 700px;
       padding: 10px 15px;
     }
@@ -595,7 +665,7 @@
       position: absolute;
       top: 358px;
       left: 16px;
-      width: 305px;
+      width: 310px;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -632,6 +702,11 @@
       background: linear-gradient(90deg, rgba(55, 35, 5, 0.96), rgba(15, 18, 25, 0.96));
     }
 
+    .zone-banner.proposal-style {
+      border-left-color: #c084fc;
+      background: linear-gradient(90deg, rgba(45, 15, 65, 0.96), rgba(15, 18, 25, 0.96));
+    }
+
     .zone-banner.passed-style {
       border-left-color: #39ff14;
       background: linear-gradient(90deg, rgba(15, 45, 20, 0.97), rgba(12, 18, 22, 0.97));
@@ -646,6 +721,7 @@
     }
 
     .zone-banner.vip-style .zone-banner-title { color: #ffd700; }
+    .zone-banner.proposal-style .zone-banner-title { color: #e879f9; }
     .zone-banner.passed-style .zone-banner-title {
       font-family: 'Pricedown Bl', 'Pricedown', 'Anton', sans-serif;
       font-size: 22px;
@@ -702,6 +778,11 @@
       background: rgba(32, 24, 12, 0.92);
     }
 
+    .quest-item.is-proposal {
+      border-left-color: #c084fc;
+      background: rgba(35, 16, 48, 0.92);
+    }
+
     .quest-item.is-current {
       border: 1px solid rgba(255, 255, 255, 0.25);
       border-left-width: 4px;
@@ -734,6 +815,7 @@
     }
 
     .quest-item.is-vip .quest-item-dist { color: #ffd700; }
+    .quest-item.is-proposal .quest-item-dist { color: #e879f9; }
 
     .gta-pin {
       width: 24px;
@@ -798,13 +880,13 @@
       <div class="test-grid">
         <button class="t-btn purple" id="t-add-free">📍 Точка (АВТО-финиш)</button>
         <button class="t-btn gold" id="t-add-vip1">👑 VIP 1000₽ (АВТО)</button>
-        <button class="t-btn gold" id="t-add-quest">🏍 Квест (ВРУЧНУЮ)</button>
-        <button class="t-btn gold" id="t-add-custom">💡 Свой квест (ВРУЧНУЮ)</button>
+        <button class="t-btn gold" id="t-add-quest">🏍 Квест из каталога</button>
+        <button class="t-btn purple" id="t-add-custom">💡 Предложение зрителя</button>
       </div>
     </div>
 
     <div class="test-card">
-      <h3>3. Управление и симуляция</h3>
+      <h3>3. Завершение и симуляция</h3>
       <div class="test-grid">
         <button class="t-btn green" id="t-complete-top">🏆 Засчитать верхнюю</button>
         <button class="t-btn" id="t-teleport">🏍 Телепорт байка к цели</button>
@@ -820,8 +902,8 @@
   <div id="viewer-ui">
     <div class="viewer-header">
       <div>
-        <div style="font-weight: 800; font-size: 15px;" id="viewer-main-title">🎮 GTA 6 PATTAYA • МИССИИ</div>
-        <div id="viewer-sub" style="font-size: 11px; color: #94a3b8;">Управляй маршрутом стримера в реальном времени</div>
+        <div style="font-weight: 800; font-size: 14.5px;" id="viewer-main-title">🎮 GTA 6 PATTAYA • МИССИИ</div>
+        <div id="viewer-sub" style="font-size: 11px; color: #94a3b8;">Выбирай квест из списка или ставь точку на карте</div>
       </div>
       <span id="tier-badge" class="badge-tier badge-free">FREE (до 1 км)</span>
     </div>
@@ -829,13 +911,25 @@
     <div class="map-container-wrap">
       <div id="viewer-map"></div>
 
-      <!-- Живая очередь активных заданий с историей -->
-      <div class="viewer-live-queue" id="viewer-live-queue">
-        <div class="viewer-queue-header">
-          <span>📋 Активные задания на стриме</span>
-          <span id="v-queue-count" style="color:#38bdf8;">0</span>
+      <!-- Плавающие панели сверху слева (Активные) и справа (Каталог квестов) -->
+      <div class="floating-panels-stack">
+        <!-- ЛЕВАЯ ПАНЕЛЬ: Активные задания на стриме -->
+        <div class="viewer-live-queue" id="viewer-live-queue">
+          <div class="panel-hdr" id="toggle-active-hdr">
+            <span style="color:#38bdf8;">📋 Активные на стриме (<span id="v-queue-count">0</span>)</span>
+            <span style="color:#94a3b8;">▼</span>
+          </div>
+          <div class="panel-scroll-list" id="viewer-queue-list"></div>
         </div>
-        <div class="viewer-queue-list" id="viewer-queue-list"></div>
+
+        <!-- ПРАВАЯ ПАНЕЛЬ: Весь каталог квестов по возрастанию цены -->
+        <div class="viewer-catalog-panel" id="viewer-catalog-panel">
+          <div class="panel-hdr" id="toggle-catalog-hdr">
+            <span style="color:#fbbf24;">🏆 Каталог квестов (<span id="catalog-count">0</span>)</span>
+            <span style="color:#94a3b8;">▼</span>
+          </div>
+          <div class="panel-scroll-list" id="preset-quests-list"></div>
+        </div>
       </div>
 
       <button class="recenter-btn" id="recenter-btn" title="Найти байк">🏍</button>
@@ -848,36 +942,38 @@
         <button style="background:#ef4444; color:#fff;" id="admin-clear-btn">🗑 Очистить все</button>
       </div>
 
-      <!-- Вкладки для зрителей (?pin=...) -->
+      <!-- Панель зрителя (?pin=...) -->
       <div id="viewer-tabs-wrapper" style="display:flex; flex-direction:column; gap:8px;">
+        <!-- Карточка выбранного квеста из правого списка (появляется при клике на квест) -->
+        <div class="selected-quest-preview" id="selected-quest-preview">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:12px; font-weight:800; color:#fbbf24;" id="sq-title">КВЕСТ</span>
+            <span style="font-size:11px; color:#94a3b8; cursor:pointer;" id="sq-close">✕ Закрыть</span>
+          </div>
+          <div style="font-size:11.5px; color:#e2e8f0;" id="sq-desc">Описание</div>
+          <button class="primary-btn vip-btn" id="send-preset-btn" style="margin-top:4px; padding:9px;">Запустить квест</button>
+        </div>
+
         <div class="mode-tabs">
           <button class="tab-btn active" data-tab="tab-point">📍 Точка на карте</button>
-          <button class="tab-btn" data-tab="tab-presets">🏆 Квесты</button>
-          <button class="tab-btn" data-tab="tab-custom">💡 Свой квест</button>
+          <button class="tab-btn" data-tab="tab-custom">💡 Предложить своё задание</button>
         </div>
 
         <!-- Вкладка 1: Поставить точку на карте (автозакрытие при приезде) -->
         <div class="tab-pane active" id="tab-point">
-          <div id="dist-info" style="font-size: 12px; color: #38bdf8;">Ткни в любое место на карте Паттайи...</div>
+          <div id="dist-info" style="font-size: 12px; color: #38bdf8;">Ткни в карту Паттайи или выбери квест из списка справа ↗</div>
           <input type="text" class="v-input" id="pin-title" maxlength="26" placeholder="Куда заехать? (напр: 7-Eleven / Пирс)" />
           <button class="primary-btn" id="send-pin-btn" disabled>Выбери точку на карте</button>
         </div>
 
-        <!-- Вкладка 2: Готовые квесты на карте (закрываются стримером вручную) -->
-        <div class="tab-pane" id="tab-presets">
-          <div class="preset-quests-scroll" id="preset-quests-list"></div>
-          <div id="preset-status" style="font-size: 11px; color: #fbbf24;">Выбери квест из списка выше</div>
-          <button class="primary-btn vip-btn" id="send-preset-btn" disabled>Выбери квест</button>
-        </div>
-
-        <!-- Вкладка 3: Предложить свой кастомный квест с ценой и меткой -->
+        <!-- Вкладка 2: Предложить своё задание с ценой (отправляется на радар без блокировки!) -->
         <div class="tab-pane" id="tab-custom">
-          <div id="custom-map-hint" style="font-size: 12px; color: #c084fc;">1. Ткни точку на карте, где выполнить задание</div>
+          <div id="custom-map-hint" style="font-size: 11.5px; color: #e879f9;">Необязательно: ткни точку на карте (иначе привяжется к стримеру)</div>
           <div class="custom-row-inputs">
-            <input type="number" class="v-input" id="custom-price" min="300" step="100" placeholder="Цена ₽ (1500)" />
-            <input type="text" class="v-input" id="custom-text" maxlength="32" placeholder="Суть задания (напр: Съесть дуриан)" />
+            <input type="number" class="v-input" id="custom-price" min="100" step="50" placeholder="Цена ₽ (500)" />
+            <input type="text" class="v-input" id="custom-text" maxlength="36" placeholder="Текст задания (напр: Съесть дуриан)" />
           </div>
-          <button class="primary-btn vip-btn" id="send-custom-btn" disabled>Отправить свой квест на радар</button>
+          <button class="primary-btn proposal-btn" id="send-custom-btn" disabled>💡 Отправить задание на радар стримеру</button>
         </div>
       </div>
     </div>
@@ -930,25 +1026,84 @@
     const NTFY_SYNC_TOPIC = 'strimba_pattaya_sync_9941';
 
     const VIP_TIERS = {
-      'vip_1000': { meters: 5000,  label: '👑 VIP 1000₽ (до 5 км)',  allowQuests: false },
-      'vip_2000': { meters: 10000, label: '👑 VIP 2000₽ (до 10 км)', allowQuests: true },
-      'vip_3000': { meters: 15000, label: '👑 VIP 3000₽ (до 15 км)', allowQuests: true },
-      'vip_5000': { meters: 25000, label: '👑 VIP 5000₽ (до 25 км)', allowQuests: true }
+      'vip_1000': { meters: 5000,  label: '👑 VIP 1000₽ (до 5 км)',  maxQuestPrice: 1000 },
+      'vip_2000': { meters: 10000, label: '👑 VIP 2000₽ (до 10 км)', maxQuestPrice: 2000 },
+      'vip_3000': { meters: 15000, label: '👑 VIP 3000₽ (до 15 км)', maxQuestPrice: 3000 },
+      'vip_5000': { meters: 25000, label: '👑 VIP 5000₽ (до 25 км)', maxQuestPrice: 70000 }
     };
 
     const FREE_MAX_METERS = 1000;
     const FREE_COOLDOWN_MIN = 30;
     const FREE_MAX_PER_STREAM = 3;
 
-    // Сюжетные квесты на карте (закрываются стримером вручную после исполнения!)
-    const QUEST_LOCATIONS = [
-      { id: 'sportbike', name: 'АРЕНДОВАТЬ СПОРТБАЙК', price: '6 000 ₽', coords: [100.8785, 12.9245], icon: '🏍' },
-      { id: 'scorpion',  name: 'СЪЕСТЬ СКОРПИОНА НА РЫНКЕ', price: '1 500 ₽', coords: [100.8892, 12.9125], icon: '🦂' },
-      { id: 'pushups',   name: '30 ОТЖИМАНИЙ НА СМОТРОВОЙ', price: '1 000 ₽', coords: [100.8698, 12.9218], icon: '💪' },
-      { id: 'massage',   name: 'ТАЙСКИЙ МАССАЖ НОГ В ЭФИРЕ', price: '1 500 ₽', coords: [100.8855, 12.9302], icon: '💆' },
-      { id: 'coconut',   name: 'ВЫПИТЬ 2 КОКОСА ЗАЛПОМ', price: '800 ₽', coords: [100.8712, 12.9012], icon: '🥥' },
-      { id: 'truth',     name: 'ЭКСКУРСИЯ В ХРАМ ИСТИНЫ', price: '3 500 ₽', coords: [100.8888, 12.9725], icon: '🏛' },
-      { id: 'buddha_mt', name: 'ПОЕЗДКА К ГОРЕ ЗОЛОТОГО БУДДЫ', price: '5 000 ₽', coords: [100.9565, 12.7645], icon: '⛰' }
+    // =========================================================================
+    // ПОЛНЫЙ КАТАЛОГ КВЕСТОВ ПО ВОЗРАСТАНИЮ ЦЕНЫ И СЛОЖНОСТИ
+    // coords: null -> привязывается к текущей точке стримера («здесь и сейчас»)
+    // coords: [lng, lat] -> гео-точка на карте Паттайи (камера летит на неё)
+    // =========================================================================
+    const QUEST_CATALOG = [
+      // 100 – 200 ₽ (Лайт / Фан)
+      { id: 'q_kiss',     price: 100,   icon: '💋', name: 'ПОЦЕЛОВАТЬ ОКСАНУ', desc: 'Поцеловать Оксану в прямом эфире.', coords: null },
+      { id: 'q_bug',      price: 100,   icon: '🕹', name: 'БАГ ТЕКСТУР (10 СЕК)', desc: 'Застрять в стене или столбе и шагать на месте 10 секунд.', coords: null },
+      { id: 'q_selfie',   price: 100,   icon: '🤳', name: 'НЕЛЕПОЕ СЕЛФИ', desc: 'Сделать селфи с самым странным знаком/объектом рядом и показать в кадр.', coords: null },
+      { id: 'q_squat',    price: 150,   icon: '🏋️', name: '5 ПРИСЕДАНИЙ', desc: 'Сделать 5 чётких приседаний прямо на месте.', coords: null },
+      { id: 'q_run',      price: 150,   icon: '🏃', name: 'СПРИНТ 20 СЕКУНД', desc: 'Ускориться и бежать 20 секунд в стиле Си-Джея.', coords: null },
+      { id: 'q_homeless', price: 150,   icon: '💵', name: 'ПОМОЩЬ УЛИЦЕ (20 Б)', desc: 'Дать 20 бат нуждающемуся и сказать, от кого подгон.', coords: null },
+      { id: 'q_pushup',   price: 200,   icon: '💪', name: '5 ОТЖИМАНИЙ', desc: 'Сделать 5 отжиманий от асфальта/плитки.', coords: null },
+      { id: 'q_music',    price: 200,   icon: '🎵', name: 'ВКЛЮЧИТЬ МУЗЫКУ', desc: 'Врубить трек для вайба на стриме.', coords: null },
+      { id: 'q_voice',    price: 200,   icon: '🤖', name: 'СМЕНА ГОЛОСА (2 МИН)', desc: '2 минуты говорить голосом робота, с акцентом или другим тембром.', coords: null },
+      { id: 'q_tail',     price: 200,   icon: '🕵️', name: 'СЛЕЖКА (50 МЕТРОВ)', desc: 'Незаметно пройти за прохожим 50 метров в стиле стелс-миссии.', coords: null },
+
+      // 300 – 500 ₽ (Средний интерактив и прохожие)
+      { id: 'q_coconut',  price: 300,   icon: '🥥', name: 'ВЫПИТЬ КОКОС', desc: 'Купить свежий кокос на набережной и выпить в эфире.', coords: [100.8712, 12.9012] },
+      { id: 'q_dogs',     price: 300,   icon: '🐕', name: 'ПОКОРМИТЬ СОБАК', desc: 'Купить сосиски/корм в 7-Eleven и покормить уличных собак.', coords: [100.8675, 12.9145] },
+      { id: 'q_kick',     price: 300,   icon: '👢', name: 'ПИНОК ОТ ОКСАНЫ', desc: 'Получить постановочный пинок от Оксаны в кадре.', coords: null },
+      { id: 'q_fakeway',  price: 300,   icon: '🗺', name: 'ПРОВЕРКА СВЯЗЕЙ', desc: 'Спросить у прохожего дорогу до вымышленного места.', coords: null },
+      { id: 'q_backwalk', price: 300,   icon: '⏪', name: 'ХОДЬБА ЗАДОМ (2 МИН)', desc: 'Идти спиной вперёд 2 минуты по тротуару.', coords: null },
+      { id: 'q_stash',    price: 400,   icon: '🎒', name: 'НАЙТИ ТАЙНИК', desc: 'Найти ярко-красный объект в радиусе 10 м и забрать «броню».', coords: null },
+      { id: 'q_escape',   price: 400,   icon: '🚨', name: 'УХОД ОТ ПОГОНИ', desc: 'Резко свернуть с маршрута и спрятаться за углом/колонной на 20 сек.', coords: null },
+      { id: 'q_tape',     price: 500,   icon: '🤐', name: 'ОБЕТ МОЛЧАНИЯ (10 МИН)', desc: 'Заклеить рот скотчем на 10 минут стрима.', coords: null },
+      { id: 'q_cartel',   price: 500,   icon: '🗣️', name: 'КОМПЛИМЕНТ ОТ КАРТЕЛЯ', desc: 'Подойти к прохожему и сделать комплимент или задать вопрос от донатера.', coords: null },
+      { id: 'q_711',      price: 500,   icon: '🏪', name: 'ЗАКУПКА ПРОВИАНТА 7/11', desc: 'Зайти в 7-Eleven, купить самый странный продукт и озвучить как герой GTA.', coords: [100.8662, 12.9122] },
+      { id: 'q_skin',     price: 500,   icon: '🕶', name: 'СМЕНА СКИНА (30 МИН)', desc: 'Купить дешёвые очки или кепку на развале и носить полчаса.', coords: [100.8855, 12.9302] },
+      { id: 'q_bribe',    price: 500,   icon: '🍫', name: 'ВЗЯТКА МЕСТНЫМ', desc: 'Подарить шоколадку охраннику или курьеру: «Спасибо за крышу в районе».', coords: null },
+
+      // 600 – 1 000 ₽ (Экшен, движение, социум)
+      { id: 'q_exchange', price: 600,   icon: '🪙', name: 'СЕКРЕТНЫЙ РАЗМЕН', desc: 'Разменять купюру на мелочь в лавке с видом секретной операции.', coords: [100.8868, 12.9318] },
+      { id: 'q_english',  price: 600,   icon: '🇺🇸', name: 'СМЕНА ФРАКЦИИ (15 МИН)', desc: '15 минут разговаривать исключительно на английском.', coords: null },
+      { id: 'q_cargo',    price: 600,   icon: '📦', name: 'СЕКРЕТНЫЙ ГРУЗ (100 М)', desc: 'Нести пакет на вытянутой руке 100 метров, никого не задев.', coords: null },
+      { id: 'q_drop',     price: 600,   icon: '📸', name: 'СБРОС ЛУТА В ТГ', desc: 'Выложить всё из карманов, сфоткать в Telegram-чат, забрать и убежать.', coords: null },
+      { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (5 МИН)', desc: 'Чат 5 минут управляет стримером командами (право, лево, вперёд, назад).', coords: null },
+      { id: 'q_statue',   price: 700,   icon: '🗿', name: 'ЖИВАЯ СТАТУЯ (60 СЕК)', desc: 'Замереть в пафосной позе на 60 секунд посреди оживлённой улицы.', coords: [100.8732, 12.9265] },
+      { id: 'q_flowers',  price: 1000,  icon: '💐', name: 'КУПИТЬ ЦВЕТЫ ОКСАНЕ', desc: 'Найти цветочный ларёк и подарить букет Оксане.', coords: [100.8832, 12.9348] },
+      { id: 'q_green',    price: 1000,  icon: '🌿', name: 'ЗЕЛЁНАЯ КОМНАТА', desc: 'Зайти в тематический шоп на районе и сделать обзор.', coords: [100.8862, 12.9312] },
+      { id: 'q_market',   price: 1000,  icon: '🍢', name: 'ПОЕСТЬ НА НОЧНОМ РЫНКЕ', desc: 'Заехать на ночной рынок Пратамнака или Джомтьена и поужинать.', coords: [100.8654, 12.9108] },
+      { id: 'q_meetgirl', price: 1000,  icon: '💃', name: 'ПОЗНАКОМИТЬСЯ С ДЕВУШКОЙ', desc: 'Подойти и красиво познакомиться на улице или набережной.', coords: [100.8815, 12.9330] },
+      { id: 'q_dance',    price: 1000,  icon: '🕺', name: 'УЛИЧНЫЙ ТАНЕЦ', desc: 'Станцевать на улице под музыку на глазах у прохожих.', coords: [100.8735, 12.9268] },
+      { id: 'q_tuktuk',   price: 1000,  icon: '🛺', name: 'РЕЙС НА ТУК-ТУКЕ', desc: 'Пересесть на сонгтео (тук-тук) и проехать 2 остановки по маршруту.', coords: [100.8760, 12.9275] },
+      { id: 'q_informer', price: 1000,  icon: '🕴', name: 'ВСТРЕЧА С ИНФОРМАТОРОМ', desc: 'Найти человека в загаданном цвете одежды и попросить передать привет донатеру.', coords: null },
+
+      // 1 200 – 5 000 ₽ (Крупные приключения и выезды)
+      { id: 'q_lady200',  price: 1200,  icon: '💋', name: 'ЧАЕВЫЕ НА WALKING ST.', desc: 'Поговорить с девушкой на Walking Street и оставить 200 бат чаевых.', coords: [100.8730, 12.9262] },
+      { id: 'q_taxi',     price: 1200,  icon: '🏍', name: 'ПОДВЕЗТИ ПОПУТЧИЦУ', desc: 'Подвезти девушку на байке по пути.', coords: null },
+      { id: 'q_massage',  price: 2000,  icon: '💆', name: 'ТАЙСКИЙ МАССАЖ НОГ', desc: 'Зайти в салон на Сои Буакхао и сделать массаж ног в эфире.', coords: [100.8855, 12.9302] },
+      { id: 'q_rps',      price: 2000,  icon: '✊', name: 'УЛИЧНАЯ РАЗБОРКА (К-Н-Б)', desc: 'Сыграть в «Камень-ножницы-бумага» с прохожим на интерес.', coords: null },
+      { id: 'q_pullups',  price: 2000,  icon: '🤸', name: 'ПОДТЯГИВАНИЯ НА ПЛЯЖЕ', desc: 'Доехать до уличных турников на пляже Донгтан и сделать подход.', coords: [100.8678, 12.9065] },
+      { id: 'q_sunset',   price: 2000,  icon: '🌅', name: 'ВСТРЕТИТЬ ЗАКАТ НА ГОРЕ', desc: 'Подняться на смотровую площадку Пратамнака к закату.', coords: [100.8698, 12.9218] },
+      { id: 'q_flattire', price: 2000,  icon: '🛞', name: '«ПРОБИЛО КОЛЕСО» (50 М)', desc: 'Катить байк руками 50 метров и громко жаловаться на прокол.', coords: null },
+      { id: 'q_nasty',    price: 3000,  icon: '🦂', name: 'СЪЕСТЬ ЭКЗОТИКУ / ОСТРОЕ', desc: 'Съесть скорпиона, жука или адски острый сом-там на рынке.', coords: [100.8798, 12.8935] },
+      { id: 'q_shot',     price: 3000,  icon: '🥃', name: 'ШОТ В БАРЕ', desc: 'Заехать в бар на Сои Буакхао или Walking Street и выпить шот.', coords: [100.8850, 12.9295] },
+      { id: 'q_ferry',    price: 3000,  icon: '⛴', name: 'ПАРОМ НА КО ЛАН', desc: 'Доехать до пирса Бали Хай и отправиться на пароме на остров.', coords: [100.8665, 12.9228] },
+      { id: 'q_club',     price: 3000,  icon: '🪩', name: 'КЛУБ / НОЧНОЕ ШОУ', desc: 'Заглянуть в ночной клуб или гоу-гоу бар в центре.', coords: [100.8728, 12.9260] },
+      { id: 'q_sea',      price: 3000,  icon: '🌊', name: 'ЗАЙТИ В МОРЕ', desc: 'Доехать до пляжа и зайти в Сиамский залив.', coords: [100.8712, 12.9012] },
+      { id: 'q_pool',     price: 3000,  icon: '🏊', name: 'БАССЕЙН В ОДЕЖДЕ', desc: 'Прыгнуть и искупаться в бассейне прямо в одежде.', coords: null },
+      { id: 'q_crab',     price: 3000,  icon: '🦀', name: 'ПОХОДКА «КРАБИКА» У МОРЯ', desc: 'Пройти походкой краба вдоль кромки воды на пляже Джомтьен.', coords: [100.8745, 12.8975] },
+      { id: 'q_sunrise',  price: 3000,  icon: '☕', name: 'РАССВЕТ С КОФЕ', desc: 'Встретить рассвет на набережной с горячим кофе.', coords: [100.8810, 12.9360] },
+      { id: 'q_hotel',    price: 5000,  icon: '🏨', name: 'НОМЕР В ОТЕЛЕ НА СУТКИ', desc: 'Заехать в отель и снять номер на сутки для стрима.', coords: [100.8835, 12.9340] },
+      { id: 'q_abandoned',price: 5000,  icon: '🏚', name: 'ВЫЛАЗКА НА ЗАБРОШКУ', desc: 'Поехать исследовать заброшенное здание в Паттайе.', coords: [100.8640, 12.9235] },
+
+      // 70 000 ₽ (Легендарный босс-квест)
+      { id: 'q_beard',    price: 70000, icon: '🪒', name: 'СБРИТЬ БОРОДУ В ЭФИРЕ', desc: 'Легендарный челлендж: заехать в барбершоп и сбрить бороду полностью!', coords: [100.8845, 12.9320] }
     ];
 
     const POI_LOCATIONS = [
@@ -1093,17 +1248,17 @@
       };
 
       document.getElementById('t-add-quest').onclick = async () => {
-        const q = QUEST_LOCATIONS[0];
+        const q = QUEST_CATALOG.find(item => item.coords !== null);
         latestTargetCoords = q.coords;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: q.coords[0], lat: q.coords[1], title: `${q.name} (${q.price})`, vip: true, questIcon: q.icon, autoComplete: false });
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: q.coords[0], lat: q.coords[1], title: `${q.name} (${q.price}₽)`, vip: true, questIcon: q.icon, autoComplete: false });
         logMsg('Добавлен КВЕСТ (закроется только ВРУЧНУЮ)');
       };
 
       document.getElementById('t-add-custom').onclick = async () => {
         const target = [lastKnownStreamerPos[0] - 0.002, lastKnownStreamerPos[1] + 0.0018];
         latestTargetCoords = target;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: '💡 1500₽: СЪЕСТЬ ДУРИАН', vip: true, questIcon: '💡', autoComplete: false });
-        logMsg('Добавлен СВОЙ КВЕСТ зрителя (закроется ВРУЧНУЮ)');
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: '💡 1500₽: СЪЕСТЬ ДУРИАН', vip: true, isProposal: true, questIcon: '💡', autoComplete: false });
+        logMsg('Добавлено ПРЕДЛОЖЕНИЕ зрителя (закроется ВРУЧНУЮ)');
       };
 
       document.getElementById('t-complete-top').onclick = async () => {
@@ -1157,7 +1312,6 @@
       let liveQueue = [];
       let liveMarkers = [];
       let autoFollow = true;
-      let activeTab = 'tab-point';
 
       const vMap = new mapboxgl.Map({
         container: 'viewer-map',
@@ -1176,6 +1330,14 @@
       const streamerEl = document.createElement('div');
       streamerEl.style.cssText = 'width:20px;height:20px;background:#00c8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px #00c8ff;';
       const streamerMarker = new mapboxgl.Marker(streamerEl).setLngLat(streamerPos).addTo(vMap);
+
+      // Сворачивание/разворачивание плавающих списков
+      document.getElementById('toggle-active-hdr').addEventListener('click', () => {
+        document.getElementById('viewer-queue-list').classList.toggle('collapsed');
+      });
+      document.getElementById('toggle-catalog-hdr').addEventListener('click', () => {
+        document.getElementById('preset-quests-list').classList.toggle('collapsed');
+      });
 
       function createCircleGeoJSON(center, radiusInMeters) {
         const points = 64;
@@ -1233,7 +1395,7 @@
         }
 
         qBox.style.display = 'flex';
-        qCount.textContent = `${liveQueue.length} шт.`;
+        qCount.textContent = liveQueue.length;
         qList.innerHTML = '';
 
         liveQueue.forEach((task, idx) => {
@@ -1242,36 +1404,43 @@
 
           const el = document.createElement('div');
           el.className = 'viewer-target-pin';
-          el.style.backgroundColor = task.vip ? '#eab308' : '#ff00ff';
+          el.style.backgroundColor = task.isProposal ? '#a855f7' : (task.vip ? '#eab308' : '#ff00ff');
           el.innerHTML = `<span>${task.icon || '🎯'}</span>`;
           const m = new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat([task.lng, task.lat]).addTo(vMap);
           liveMarkers.push(m);
 
           const row = document.createElement('div');
-          row.className = `v-q-item ${task.vip ? 'vip' : ''} ${idx === 0 ? 'active-route' : ''}`;
+          row.className = `v-q-item ${task.isProposal ? 'proposal' : (task.vip ? 'vip' : '')} ${idx === 0 ? 'active-route' : ''}`;
 
-          const modeTag = task.autoComplete === false ? 'Вручную' : 'Авто';
-          const adminBtnHtml = mapAdminMode
-            ? `<button class="v-q-done-mini" data-id="${task.id}">✅</button>`
-            : `<span class="v-q-tag">${modeTag}</span>`;
+          const adminBtnsHtml = mapAdminMode
+            ? `<button class="v-q-done-mini" data-id="${task.id}" title="Выполнено">✅</button>
+               <button class="v-q-del-mini" data-id="${task.id}" title="Отклонить">✕</button>`
+            : '';
 
           row.innerHTML = `
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${idx === 0 ? '➡️ ' : ''}${task.icon || '🎯'} ${task.title}</span>
             <div class="v-q-meta">
               <span style="color:#38bdf8;white-space:nowrap;">${distStr}</span>
-              ${adminBtnHtml}
+              ${adminBtnsHtml}
             </div>
           `;
+
+          // Клик по активному заданию переносит камеру на его точку
+          row.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            autoFollow = false;
+            vMap.flyTo({ center: [task.lng, task.lat], zoom: 16 });
+          });
+
           qList.appendChild(row);
         });
 
-        // Индивидуальное закрытие конкретного задания в режиме стримера (?map=1)
         if (mapAdminMode) {
           qList.querySelectorAll('.v-q-done-mini').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const targetId = btn.getAttribute('data-id');
-              sendCommand(NTFY_PIN_TOPIC, { action: 'complete_id', id: targetId });
-            });
+            btn.addEventListener('click', () => sendCommand(NTFY_PIN_TOPIC, { action: 'complete_id', id: btn.getAttribute('data-id') }));
+          });
+          qList.querySelectorAll('.v-q-del-mini').forEach(btn => {
+            btn.addEventListener('click', () => sendCommand(NTFY_PIN_TOPIC, { action: 'remove_id', id: btn.getAttribute('data-id') }));
           });
         }
 
@@ -1279,68 +1448,105 @@
         drawViewerRoute(streamerPos, [first.lng, first.lat], first.vip);
       }
 
-      // Переключение вкладок зрителя
+      // Заполнение ПРАВОЙ панели каталога всех квестов по возрастанию цены
+      const presetListEl = document.getElementById('preset-quests-list');
+      const sqPreview = document.getElementById('selected-quest-preview');
+      const sqTitle = document.getElementById('sq-title');
+      const sqDesc = document.getElementById('sq-desc');
+      const sendPresetBtn = document.getElementById('send-preset-btn');
+
+      document.getElementById('catalog-count').textContent = QUEST_CATALOG.length;
+
+      function getPriceBadgeClass(price) {
+        if (price <= 200) return 'tier-low';
+        if (price <= 1000) return 'tier-mid';
+        if (price <= 5000) return 'tier-high';
+        return 'tier-boss';
+      }
+
+      QUEST_CATALOG.forEach(q => {
+        const row = document.createElement('div');
+        row.className = 'catalog-item';
+        const geoTag = q.coords ? '📍' : '⚡';
+        row.innerHTML = `
+          <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${q.icon} ${q.name} <span style="opacity:0.6;font-size:10px;">${geoTag}</span></div>
+          <span class="c-price ${getPriceBadgeClass(q.price)}">${q.price.toLocaleString('ru-RU')} ₽</span>
+        `;
+
+        row.addEventListener('click', () => {
+          document.querySelectorAll('.catalog-item').forEach(r => r.classList.remove('selected'));
+          row.classList.add('selected');
+          selectedPreset = q;
+
+          // Переносим камеру на точку квеста (если гео-точка) или на байк стримера (если экшен)
+          autoFollow = false;
+          const targetCoords = q.coords ? q.coords : streamerPos;
+          vMap.flyTo({ center: targetCoords, zoom: 15.8 });
+
+          if (!mapAdminMode) {
+            sqPreview.style.display = 'flex';
+            sqTitle.textContent = `${q.icon} ${q.name} — ${q.price.toLocaleString('ru-RU')} ₽`;
+            sqDesc.textContent = q.desc;
+
+            // Проверяем, хватает ли текущего VIP-тарифа ссылки для запуска напрямую
+            const canLaunchDirect = vipConfig && vipConfig.maxQuestPrice >= q.price;
+            if (canLaunchDirect) {
+              sendPresetBtn.disabled = false;
+              sendPresetBtn.className = 'primary-btn vip-btn';
+              sendPresetBtn.textContent = `👑 Запустить квест (${q.price.toLocaleString('ru-RU')} ₽)`;
+            } else {
+              // Даже без VIP-ссылки зритель может отправить заявку с ценой на рассмотрение стримеру!
+              sendPresetBtn.disabled = false;
+              sendPresetBtn.className = 'primary-btn proposal-btn';
+              sendPresetBtn.textContent = `💡 Предложить квест (${q.price.toLocaleString('ru-RU')} ₽) на радар`;
+            }
+          }
+        });
+
+        presetListEl.appendChild(row);
+      });
+
+      document.getElementById('sq-close').addEventListener('click', () => {
+        sqPreview.style.display = 'none';
+        document.querySelectorAll('.catalog-item').forEach(r => r.classList.remove('selected'));
+        selectedPreset = null;
+      });
+
+      sendPresetBtn.addEventListener('click', async () => {
+        if (!selectedPreset) return;
+        const canLaunchDirect = vipConfig && vipConfig.maxQuestPrice >= selectedPreset.price;
+        const targetCoords = selectedPreset.coords ? selectedPreset.coords : streamerPos;
+
+        sendPresetBtn.disabled = true;
+        sendPresetBtn.textContent = 'Отправка на радар...';
+
+        await sendCommand(NTFY_PIN_TOPIC, {
+          action: 'add',
+          id: Date.now().toString(),
+          lng: targetCoords[0],
+          lat: targetCoords[1],
+          title: `${selectedPreset.name} (${selectedPreset.price}₽)`,
+          vip: canLaunchDirect,
+          isProposal: !canLaunchDirect,
+          questIcon: selectedPreset.icon,
+          autoComplete: false // Все квесты из каталога закрываются стримером ВРУЧНУЮ!
+        });
+
+        sendPresetBtn.textContent = '✅ Отправлено на экран стрима!';
+        setTimeout(() => { sqPreview.style.display = 'none'; }, 1800);
+      });
+
+      // Переключение нижних вкладок
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
           document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
           btn.classList.add('active');
-          activeTab = btn.getAttribute('data-tab');
-          document.getElementById(activeTab).classList.add('active');
+          document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
         });
       });
 
-      // Заполнение списка готовых квестов во вкладке "🏆 Квесты"
-      const presetListEl = document.getElementById('preset-quests-list');
-      const sendPresetBtn = document.getElementById('send-preset-btn');
-      const presetStatus = document.getElementById('preset-status');
-
-      QUEST_LOCATIONS.forEach(q => {
-        const row = document.createElement('div');
-        row.className = 'preset-row';
-        row.innerHTML = `
-          <div style="font-size:13px;font-weight:700;">${q.icon} ${q.name}</div>
-          <span class="preset-price-pill">${q.price}</span>
-        `;
-        row.addEventListener('click', () => {
-          document.querySelectorAll('.preset-row').forEach(r => r.classList.remove('selected'));
-          row.classList.add('selected');
-          selectedPreset = q;
-          vMap.flyTo({ center: q.coords, zoom: 15.2 });
-
-          if (vipConfig && vipConfig.allowQuests) {
-            presetStatus.style.color = '#4ade80';
-            presetStatus.textContent = '✅ Доступ открыт! Квест закроется стримером после исполнения.';
-            sendPresetBtn.disabled = false;
-            sendPresetBtn.textContent = `👑 Запустить квест: ${q.price}`;
-          } else {
-            presetStatus.style.color = '#fbbf24';
-            presetStatus.textContent = `🔒 Задонать ${q.price}, чтобы получить VIP-ссылку для запуска!`;
-            sendPresetBtn.disabled = true;
-            sendPresetBtn.textContent = `Нужен донат ${q.price}`;
-          }
-        });
-        presetListEl.appendChild(row);
-      });
-
-      sendPresetBtn.addEventListener('click', async () => {
-        if (!selectedPreset) return;
-        sendPresetBtn.disabled = true;
-        sendPresetBtn.textContent = 'Отправка квеста...';
-        await sendCommand(NTFY_PIN_TOPIC, {
-          action: 'add',
-          id: Date.now().toString(),
-          lng: selectedPreset.coords[0],
-          lat: selectedPreset.coords[1],
-          title: `${selectedPreset.name} (${selectedPreset.price})`,
-          vip: true,
-          questIcon: selectedPreset.icon,
-          autoComplete: false
-        });
-        sendPresetBtn.textContent = '✅ Квест добавлен на радар!';
-      });
-
-      // Логика вкладки "💡 Свой квест"
+      // Вкладка "💡 Предложить своё задание" (ВСЕГДА ДОСТУПНА БЕЗ БЛОКИРОВКИ!)
       const customPriceInput = document.getElementById('custom-price');
       const customTextInput = document.getElementById('custom-text');
       const sendCustomBtn = document.getElementById('send-custom-btn');
@@ -1349,50 +1555,40 @@
       function validateCustomForm() {
         const priceVal = parseInt(customPriceInput.value);
         const textVal = customTextInput.value.trim();
-        if (!selectedLngLat) {
-          customHint.style.color = '#c084fc';
-          customHint.textContent = '1. Ткни точку на карте, где выполнить задание';
-          sendCustomBtn.disabled = true;
-          return;
-        }
-        if (isNaN(priceVal) || priceVal < 300 || textVal.length < 3) {
-          customHint.style.color = '#38bdf8';
-          customHint.textContent = '📍 Точка выбрана! Укажи цену (от 300 ₽) и описание задания';
-          sendCustomBtn.disabled = true;
-          return;
-        }
-        if (isVip) {
-          customHint.style.color = '#4ade80';
-          customHint.textContent = `✅ Готово к отправке: ${priceVal} ₽ • Закроется стримером вручную`;
+        if (!isNaN(priceVal) && priceVal >= 50 && textVal.length >= 2) {
           sendCustomBtn.disabled = false;
-          sendCustomBtn.textContent = `💡 Отправить квест за ${priceVal} ₽`;
+          sendCustomBtn.textContent = `💡 Отправить задание (${priceVal} ₽) на радар`;
         } else {
-          customHint.style.color = '#fbbf24';
-          customHint.textContent = `🔒 Задонать ${priceVal} ₽ с этим текстом — бот пришлёт VIP-ссылку!`;
           sendCustomBtn.disabled = true;
-          sendCustomBtn.textContent = `Нужен донат ${priceVal} ₽`;
+          sendCustomBtn.textContent = 'Укажи цену и текст задания';
         }
       }
       customPriceInput.addEventListener('input', validateCustomForm);
       customTextInput.addEventListener('input', validateCustomForm);
 
       sendCustomBtn.addEventListener('click', async () => {
-        if (!selectedLngLat) return;
         const priceVal = parseInt(customPriceInput.value);
         const cleanText = customTextInput.value.trim().replace(/https?:\/\/\S+/gi, '').toUpperCase();
+        const coordsToUse = selectedLngLat ? selectedLngLat : streamerPos;
+
         sendCustomBtn.disabled = true;
-        sendCustomBtn.textContent = 'Отправка квеста...';
+        sendCustomBtn.textContent = 'Отправка предложения...';
+
         await sendCommand(NTFY_PIN_TOPIC, {
           action: 'add',
           id: Date.now().toString(),
-          lng: selectedLngLat[0],
-          lat: selectedLngLat[1],
+          lng: coordsToUse[0],
+          lat: coordsToUse[1],
           title: `${priceVal}₽: ${cleanText}`,
-          vip: true,
+          vip: isVip,
+          isProposal: !isVip,
           questIcon: '💡',
-          autoComplete: false
+          autoComplete: false // Предложенные задания закрываются стримером ВРУЧНУЮ
         });
-        sendCustomBtn.textContent = '✅ Свой квест отправлен на стрим!';
+
+        customTextInput.value = '';
+        sendCustomBtn.textContent = '✅ Предложение отправлено на радар!';
+        setTimeout(() => { validateCustomForm(); }, 2500);
       });
 
       vMap.on('load', () => {
@@ -1415,15 +1611,15 @@
           });
         }
 
-        QUEST_LOCATIONS.forEach(q => {
+        // Маркеры только для тех квестов, у которых есть конкретная точка на карте
+        QUEST_CATALOG.filter(q => q.coords !== null).forEach(q => {
           const el = document.createElement('div');
           el.className = 'viewer-quest-marker';
-          el.innerHTML = `${q.icon} ${q.price}`;
+          el.innerHTML = `${q.icon} ${q.price}₽`;
           new mapboxgl.Marker(el).setLngLat(q.coords).addTo(vMap);
         });
       });
 
-      // Подгружаем историю за 12 часов (?since=12h), чтобы карта НЕ открывалась пустой!
       const gpsStream = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
       gpsStream.onmessage = (event) => {
         try {
@@ -1444,7 +1640,6 @@
         } catch (e) {}
       };
 
-      // Подгружаем последнюю актуальную очередь миссий за 12 часов (?since=12h)
       const syncStream = new EventSource(`https://ntfy.sh/${NTFY_SYNC_TOPIC}/sse?since=12h`);
       syncStream.onmessage = (event) => {
         try {
@@ -1489,7 +1684,8 @@
             userMarker.setLngLat(selectedLngLat);
           }
 
-          validateCustomForm();
+          customHint.style.color = '#4ade80';
+          customHint.textContent = '📍 Точка на карте выбрана для вашего задания!';
 
           const dist = Math.round(getDistanceMeters(streamerPos[1], streamerPos[0], selectedLngLat[1], selectedLngLat[0]));
           const km = (dist / 1000).toFixed(1);
@@ -1544,7 +1740,7 @@
             lat: selectedLngLat[1],
             title: cleanTitle,
             vip: isVip,
-            autoComplete: true // Обычные точки маршрута закрываются АВТОМАТИЧЕСКИ
+            autoComplete: true
           });
 
           sendBtn.textContent = '✅ Точка добавлена на стрим!';
@@ -1579,6 +1775,7 @@
           lat: q.lat,
           title: q.title,
           vip: q.vip,
+          isProposal: q.isProposal,
           icon: q.icon,
           autoComplete: q.autoComplete
         }));
@@ -1603,7 +1800,7 @@
         new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat(poi.coords).addTo(map);
       });
 
-      QUEST_LOCATIONS.forEach(q => {
+      QUEST_CATALOG.filter(q => q.coords !== null).forEach(q => {
         const el = document.createElement('div');
         el.className = 'gta-pin';
         el.style.backgroundColor = '#ffd700';
@@ -1617,8 +1814,9 @@
         document.getElementById('zone-banner-title').textContent = subtitle;
         document.getElementById('zone-name').textContent = title;
 
-        banner.classList.remove('vip-style', 'passed-style');
+        banner.classList.remove('vip-style', 'passed-style', 'proposal-style');
         if (mode === 'vip') banner.classList.add('vip-style');
+        if (mode === 'proposal') banner.classList.add('proposal-style');
         if (mode === 'passed') banner.classList.add('passed-style');
 
         banner.classList.add('active');
@@ -1679,11 +1877,11 @@
 
           if (index === 0) {
             targetBadge.style.display = 'block';
-            targetBadge.textContent = `${item.vip ? '👑' : '🎯'} ${distText}`;
+            targetBadge.textContent = `${item.vip ? '👑' : (item.isProposal ? '💡' : '🎯')} ${distText}`;
           }
 
           const row = document.createElement('div');
-          row.className = `quest-item ${item.vip ? 'is-vip' : ''} ${index === 0 ? 'is-current' : ''}`;
+          row.className = `quest-item ${item.isProposal ? 'is-proposal' : (item.vip ? 'is-vip' : '')} ${index === 0 ? 'is-current' : ''}`;
           row.innerHTML = `
             <div class="quest-item-left">
               <span>${item.icon}</span>
@@ -1697,12 +1895,13 @@
 
       function addQuestToQueue(data) {
         const isVip = Boolean(data.vip);
-        const icon = data.questIcon || (isVip ? '👑' : '🎯');
+        const isProposal = Boolean(data.isProposal);
+        const icon = data.questIcon || (isProposal ? '💡' : (isVip ? '👑' : '🎯'));
         const isAuto = data.autoComplete !== false;
 
         const el = document.createElement('div');
         el.className = 'viewer-target-pin';
-        el.style.backgroundColor = isVip ? '#eab308' : '#ff00ff';
+        el.style.backgroundColor = isProposal ? '#a855f7' : (isVip ? '#eab308' : '#ff00ff');
         el.innerHTML = `<span>${icon}</span>`;
         const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
           .setLngLat([data.lng, data.lat])
@@ -1714,6 +1913,7 @@
           lat: data.lat,
           title: data.title,
           vip: isVip,
+          isProposal: isProposal,
           icon: icon,
           autoComplete: isAuto,
           arrivedNotified: false,
@@ -1732,7 +1932,11 @@
         const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} КМ` : `${dist} М`;
 
         playNewMissionSound();
-        showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 НОВОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
+        if (isProposal) {
+          showBanner('💡 ПРЕДЛОЖЕННОЕ ЗАДАНИЕ (ЖДЁТ ДОНАТ)', `${task.title}`, 'proposal');
+        } else {
+          showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 НОВОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
+        }
 
         renderQuestList();
         broadcastQueueState();
@@ -1778,11 +1982,9 @@
             const dist = getDistanceMeters(lat, lng, task.lat, task.lng);
             if (dist <= 45) {
               if (task.autoComplete) {
-                // Обычная точка маршрута закрывается автоматически
                 removeQuestByIndex(i, true);
                 return;
               } else if (!task.arrivedNotified) {
-                // Квест с действием ждёт ручного подтверждения стримера
                 task.arrivedNotified = true;
                 showBanner('📍 ВЫ НА МЕСТЕ КВЕСТА!', `${task.title} (Закройте после исполнения)`, 'vip');
               }
@@ -1862,7 +2064,6 @@
         northEl.style.transform = 'none';
       });
 
-      // Подгружаем историю координат (?since=12h), чтобы точка старта была актуальной с первой секунды
       const gpsEvents = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
       gpsEvents.onmessage = (event) => {
         try {
@@ -1890,6 +2091,9 @@
           } else if (data.action === 'complete_id') {
             const idx = questQueue.findIndex(q => q.id === data.id);
             if (idx !== -1) removeQuestByIndex(idx, true);
+          } else if (data.action === 'remove_id') {
+            const idx = questQueue.findIndex(q => q.id === data.id);
+            if (idx !== -1) removeQuestByIndex(idx, false);
           } else if (data.action === 'clear_all') {
             while (questQueue.length > 0) removeQuestByIndex(0, false);
           } else if (data.action === 'add' || data.action === 'set') {
@@ -1899,6 +2103,7 @@
               lat: parseFloat(data.lat),
               title: data.title,
               vip: Boolean(data.vip),
+              isProposal: Boolean(data.isProposal),
               questIcon: data.questIcon,
               autoComplete: data.autoComplete
             });
