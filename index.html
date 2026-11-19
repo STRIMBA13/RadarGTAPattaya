@@ -24,7 +24,7 @@
       overflow: hidden;
     }
 
-    /* ================= ИНТЕРФЕЙС ЗРИТЕЛЯ (?pin=...) ================= */
+    /* ================= ИНТЕРФЕЙС ЗРИТЕЛЯ И НАВИГАТОРА (?pin=... или ?map=1) ================= */
     body.viewer-mode {
       background: #0f172a !important;
       color: #fff;
@@ -38,6 +38,7 @@
       width: 100%;
       height: 100%;
       flex-direction: column;
+      position: relative;
     }
 
     body.viewer-mode .hud-wrapper { display: none; }
@@ -50,7 +51,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      z-index: 10;
+      z-index: 20;
     }
 
     .badge-tier {
@@ -62,10 +63,90 @@
     }
     .badge-free { background: #16a34a; color: #fff; }
     .badge-vip { background: linear-gradient(90deg, #f59e0b, #eab308); color: #000; }
+    .badge-admin { background: #00b0ff; color: #000; }
+
+    .map-container-wrap {
+      flex: 1;
+      position: relative;
+      width: 100%;
+    }
 
     #viewer-map {
-      flex: 1;
       width: 100%;
+      height: 100%;
+    }
+
+    /* Плавающий список активных заданий на карте зрителя / навигатора */
+    .viewer-live-queue {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      max-width: 340px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(6px);
+      border: 1.5px solid #334155;
+      border-radius: 10px;
+      padding: 8px 10px;
+      z-index: 15;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.65);
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .viewer-queue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .viewer-queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      max-height: 135px;
+      overflow-y: auto;
+    }
+
+    .v-q-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(30, 41, 59, 0.9);
+      border-left: 3px solid #ff00ff;
+      padding: 5px 8px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .v-q-item.vip { border-left-color: #eab308; }
+    .v-q-item.active-route { background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(56, 189, 248, 0.4); border-left-width: 3px; }
+
+    /* Кнопка центрирования на байке */
+    .recenter-btn {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      z-index: 15;
+      background: #1e293b;
+      color: #fff;
+      border: 1.5px solid #00b0ff;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+      cursor: pointer;
     }
 
     .viewer-controls {
@@ -75,7 +156,21 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      z-index: 10;
+      z-index: 20;
+    }
+
+    .admin-bar {
+      display: none;
+      gap: 8px;
+    }
+    .admin-bar button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
     }
 
     .quest-card {
@@ -97,7 +192,7 @@
       outline: none;
     }
 
-    .viewer-controls button {
+    .viewer-controls button.primary-btn {
       width: 100%;
       padding: 12px;
       border-radius: 8px;
@@ -110,7 +205,7 @@
       transition: 0.2s;
     }
 
-    .viewer-controls button:disabled {
+    .viewer-controls button.primary-btn:disabled {
       background: #475569;
       color: #94a3b8;
       cursor: not-allowed;
@@ -137,7 +232,6 @@
       padding: 10px 15px;
     }
 
-    /* Главный заголовок PATTAYA CITY и часы */
     .header-info {
       position: absolute;
       top: 2px;
@@ -182,7 +276,6 @@
         drop-shadow( 0px    4px 5px rgba(0, 0, 0, 0.85));
     }
 
-    /* Аккуратный подзаголовок текущего района под Pattaya City */
     .district-sub {
       position: absolute;
       top: 38px;
@@ -320,7 +413,6 @@
     }
     .hp-bar { animation: hpPulse 3s infinite ease-in-out; }
 
-    /* ================= БЛОК ПОД РАДАРОМ: ОПОВЕЩЕНИЯ И СПИСОК МИССИЙ ================= */
     .under-radar-panel {
       position: absolute;
       top: 358px;
@@ -508,24 +600,48 @@
 </head>
 <body>
 
-  <!-- ================= ИНТЕРФЕЙС ДЛЯ ЗРИТЕЛЯ ================= -->
+  <!-- ================= ИНТЕРФЕЙС ДЛЯ ЗРИТЕЛЯ И ТВОЕГО НАВИГАТОРА (?pin=... / ?map=1) ================= -->
   <div id="viewer-ui">
     <div class="viewer-header">
       <div>
-        <div style="font-weight: 700; font-size: 15px;">🏍 Навигатор и Квесты стрима</div>
+        <div style="font-weight: 700; font-size: 15px;" id="viewer-main-title">🏍 Навигатор и Квесты стрима</div>
         <div id="viewer-sub" style="font-size: 11px; color: #94a3b8;">Выбери квест с ценой или ткни в карту</div>
       </div>
       <span id="tier-badge" class="badge-tier badge-free">FREE (до 1 км)</span>
     </div>
-    <div id="viewer-map"></div>
-    <div class="viewer-controls">
-      <div class="quest-card" id="quest-card">
-        <div style="font-size: 12px; color: #f59e0b; font-weight: 700;" id="quest-card-price">КВЕСТ: 5 000 ₽</div>
-        <div style="font-size: 14px; font-weight: 700;" id="quest-card-title">Арендовать спортбайк</div>
+
+    <div class="map-container-wrap">
+      <div id="viewer-map"></div>
+
+      <!-- Живая очередь активных заданий поверх карты -->
+      <div class="viewer-live-queue" id="viewer-live-queue">
+        <div class="viewer-queue-header">
+          <span>📋 Активный маршрут и задания</span>
+          <span id="v-queue-count" style="color:#38bdf8;">0</span>
+        </div>
+        <div class="viewer-queue-list" id="viewer-queue-list"></div>
       </div>
-      <div id="dist-info" style="font-size: 12px; color: #38bdf8;">Нажми на карту или выбери жёлтый значок квеста...</div>
-      <input type="text" id="pin-title" maxlength="25" placeholder="Комментарий / задание (до 25 симв.)" />
-      <button id="send-pin-btn" disabled>Выбери точку на карте</button>
+
+      <button class="recenter-btn" id="recenter-btn" title="Найти байк">🏍</button>
+    </div>
+
+    <div class="viewer-controls">
+      <!-- Панель управления для стримера в режиме ?map=1 -->
+      <div class="admin-bar" id="admin-bar">
+        <button style="background:#22c55e; color:#000;" id="admin-done-btn">✅ Засчитать верхнюю</button>
+        <button style="background:#ef4444; color:#fff;" id="admin-clear-btn">🗑 Очистить все</button>
+      </div>
+
+      <!-- Панель добавления точки для зрителей -->
+      <div id="viewer-input-area" style="display:flex; flex-direction:column; gap:8px;">
+        <div class="quest-card" id="quest-card">
+          <div style="font-size: 12px; color: #f59e0b; font-weight: 700;" id="quest-card-price">КВЕСТ: 5 000 ₽</div>
+          <div style="font-size: 14px; font-weight: 700;" id="quest-card-title">Арендовать спортбайк</div>
+        </div>
+        <div id="dist-info" style="font-size: 12px; color: #38bdf8;">Нажми на карту или выбери жёлтый значок квеста...</div>
+        <input type="text" id="pin-title" maxlength="25" placeholder="Комментарий / задание (до 25 симв.)" />
+        <button class="primary-btn" id="send-pin-btn" disabled>Выбери точку на карте</button>
+      </div>
     </div>
   </div>
 
@@ -573,6 +689,7 @@
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoic3RyaW1iYSIsImEiOiJjbXduMTh2ZG0wNXFpMzBwbGpnMDFmNnRjIn0.Y91BGdd5CU6QXz69RNGqQg';
     const NTFY_GPS_TOPIC = 'strimba_pattaya_gps_9941';
     const NTFY_PIN_TOPIC = 'strimba_pattaya_pins_9941';
+    const NTFY_SYNC_TOPIC = 'strimba_pattaya_sync_9941';
 
     const VIP_TIERS = {
       'vip_1000': { meters: 5000,  label: '👑 VIP 1000₽ (до 5 км)',  allowQuests: false },
@@ -610,7 +727,13 @@
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
+    // =========================================================================
+    // ЗВУКОВОЙ МОДУЛЬ (Поддержка оригинальных MP3 из GitHub + запасной синтезатор)
+    // =========================================================================
     let audioCtx = null;
+    const customNewAudio = new Audio('new_mission.mp3');
+    const customPassAudio = new Audio('mission_passed.mp3');
+
     function unlockAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -618,7 +741,7 @@
     document.addEventListener('touchstart', unlockAudio, { passive: true });
     document.addEventListener('click', unlockAudio);
 
-    function playNewMissionSound() {
+    function playFallbackNewSound() {
       try {
         unlockAudio();
         const now = audioCtx.currentTime;
@@ -639,7 +762,7 @@
       } catch (e) {}
     }
 
-    function playMissionPassedSound() {
+    function playFallbackPassedSound() {
       try {
         unlockAudio();
         const now = audioCtx.currentTime;
@@ -667,6 +790,16 @@
       } catch (e) {}
     }
 
+    function playNewMissionSound() {
+      customNewAudio.currentTime = 0;
+      customNewAudio.play().catch(() => playFallbackNewSound());
+    }
+
+    function playMissionPassedSound() {
+      customPassAudio.currentTime = 0;
+      customPassAudio.play().catch(() => playFallbackPassedSound());
+    }
+
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -688,6 +821,7 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const pinMode = urlParams.get('pin');
+    const mapAdminMode = urlParams.get('map') === '1';
     const clearMode = urlParams.get('clear');
 
     if (clearMode) {
@@ -701,24 +835,35 @@
     }
 
     // =========================================================================
-    // РЕЖИМ 1: СТРАНИЦА ДЛЯ ЗРИТЕЛЯ
+    // РЕЖИМ 1: ИНТЕРАКТИВНАЯ КАРТА ЗРИТЕЛЯ (?pin=...) И НАВИГАТОР СТРИМЕРА (?map=1)
     // =========================================================================
-    else if (pinMode) {
+    else if (pinMode || mapAdminMode) {
       document.body.classList.add('viewer-mode');
 
-      const vipConfig = VIP_TIERS[pinMode] || null;
+      const vipConfig = pinMode ? (VIP_TIERS[pinMode] || null) : null;
       const maxAllowedMeters = vipConfig ? vipConfig.meters : FREE_MAX_METERS;
       const isVip = Boolean(vipConfig);
-      const tierLabel = vipConfig ? vipConfig.label : 'FREE (до 1 км)';
 
       const tierBadge = document.getElementById('tier-badge');
-      tierBadge.textContent = tierLabel;
-      tierBadge.className = isVip ? 'badge-tier badge-vip' : 'badge-tier badge-free';
+      if (mapAdminMode) {
+        document.getElementById('viewer-main-title').textContent = '🏍 Навигатор стримера (Live)';
+        document.getElementById('viewer-sub').textContent = 'Отслеживание маршрута и управление миссиями';
+        tierBadge.textContent = 'STREAMER HUD';
+        tierBadge.className = 'badge-tier badge-admin';
+        document.getElementById('admin-bar').style.display = 'flex';
+        document.getElementById('viewer-input-area').style.display = 'none';
+      } else {
+        tierBadge.textContent = vipConfig ? vipConfig.label : 'FREE (до 1 км)';
+        tierBadge.className = isVip ? 'badge-tier badge-vip' : 'badge-tier badge-free';
+      }
 
       let streamerPos = [100.8685, 12.9185];
       let selectedLngLat = null;
       let selectedQuest = null;
       let userMarker = null;
+      let liveQueue = [];
+      let liveMarkers = [];
+      let autoFollow = true;
 
       const distInfo = document.getElementById('dist-info');
       const sendBtn = document.getElementById('send-pin-btn');
@@ -729,11 +874,18 @@
         container: 'viewer-map',
         style: 'mapbox://styles/mapbox/streets-v12',
         center: streamerPos,
-        zoom: isVip ? 12.8 : 14.8
+        zoom: mapAdminMode ? 15.2 : (isVip ? 12.8 : 14.8)
+      });
+
+      vMap.on('dragstart', () => { autoFollow = false; });
+
+      document.getElementById('recenter-btn').addEventListener('click', () => {
+        autoFollow = true;
+        vMap.easeTo({ center: streamerPos, zoom: 15.5 });
       });
 
       const streamerEl = document.createElement('div');
-      streamerEl.style.cssText = 'width:18px;height:18px;background:#00c8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px #00c8ff;';
+      streamerEl.style.cssText = 'width:20px;height:20px;background:#00c8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px #00c8ff;';
       const streamerMarker = new mapboxgl.Marker(streamerEl).setLngLat(streamerPos).addTo(vMap);
 
       function createCircleGeoJSON(center, radiusInMeters) {
@@ -749,55 +901,133 @@
         return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
       }
 
+      async function drawViewerRoute(startLngLat, endLngLat, vipRoute) {
+        try {
+          const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${startLngLat[0]},${startLngLat[1]};${endLngLat[0]},${endLngLat[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (!json.routes || !json.routes[0]) return;
+
+          const routeGeoJSON = { type: 'Feature', geometry: json.routes[0].geometry };
+          const lineColor = vipRoute ? '#eab308' : '#ec4899';
+
+          if (vMap.getSource('v-active-route')) {
+            vMap.getSource('v-active-route').setData(routeGeoJSON);
+            vMap.setPaintProperty('v-active-route-line', 'line-color', lineColor);
+          } else {
+            vMap.addSource('v-active-route', { type: 'geojson', data: routeGeoJSON });
+            vMap.addLayer({
+              id: 'v-active-route-line',
+              type: 'line',
+              source: 'v-active-route',
+              layout: { 'line-join': 'round', 'line-cap': 'round' },
+              paint: { 'line-color': lineColor, 'line-width': 5 }
+            });
+          }
+        } catch (e) {}
+      }
+
+      function renderViewerQueue() {
+        const qBox = document.getElementById('viewer-live-queue');
+        const qList = document.getElementById('viewer-queue-list');
+        const qCount = document.getElementById('v-queue-count');
+
+        liveMarkers.forEach(m => m.remove());
+        liveMarkers = [];
+
+        if (!liveQueue || liveQueue.length === 0) {
+          qBox.style.display = 'none';
+          if (vMap.getSource('v-active-route')) {
+            vMap.getSource('v-active-route').setData({ type: 'FeatureCollection', features: [] });
+          }
+          return;
+        }
+
+        qBox.style.display = 'flex';
+        qCount.textContent = `${liveQueue.length} шт.`;
+        qList.innerHTML = '';
+
+        liveQueue.forEach((task, idx) => {
+          const dist = Math.round(getDistanceMeters(streamerPos[1], streamerPos[0], task.lat, task.lng));
+          const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} км` : `${dist} м`;
+
+          // Маркер на карте
+          const el = document.createElement('div');
+          el.className = 'viewer-target-pin';
+          el.style.backgroundColor = task.vip ? '#eab308' : '#ff00ff';
+          el.innerHTML = `<span>${task.icon || '🎯'}</span>`;
+          const m = new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat([task.lng, task.lat]).addTo(vMap);
+          liveMarkers.push(m);
+
+          // Строка в списке
+          const row = document.createElement('div');
+          row.className = `v-q-item ${task.vip ? 'vip' : ''} ${idx === 0 ? 'active-route' : ''}`;
+          row.innerHTML = `
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${idx === 0 ? '➡️ ' : ''}${task.icon || '🎯'} ${task.title}</span>
+            <span style="color:#38bdf8;margin-left:8px;white-space:nowrap;">${distStr}</span>
+          `;
+          qList.appendChild(row);
+        });
+
+        // Прокладываем маршрут на карте к самой первой текущей цели
+        const first = liveQueue[0];
+        drawViewerRoute(streamerPos, [first.lng, first.lat], first.vip);
+      }
+
       vMap.on('load', () => {
-        vMap.addSource('allowed-zone', {
-          type: 'geojson',
-          data: createCircleGeoJSON(streamerPos, maxAllowedMeters)
-        });
-        vMap.addLayer({
-          id: 'allowed-zone-fill',
-          type: 'fill',
-          source: 'allowed-zone',
-          paint: { 'fill-color': isVip ? '#eab308' : '#22c55e', 'fill-opacity': 0.14 }
-        });
-        vMap.addLayer({
-          id: 'allowed-zone-line',
-          type: 'line',
-          source: 'allowed-zone',
-          paint: { 'line-color': isVip ? '#eab308' : '#22c55e', 'line-width': 2 }
-        });
+        if (!mapAdminMode) {
+          vMap.addSource('allowed-zone', {
+            type: 'geojson',
+            data: createCircleGeoJSON(streamerPos, maxAllowedMeters)
+          });
+          vMap.addLayer({
+            id: 'allowed-zone-fill',
+            type: 'fill',
+            source: 'allowed-zone',
+            paint: { 'fill-color': isVip ? '#eab308' : '#22c55e', 'fill-opacity': 0.14 }
+          });
+          vMap.addLayer({
+            id: 'allowed-zone-line',
+            type: 'line',
+            source: 'allowed-zone',
+            paint: { 'line-color': isVip ? '#eab308' : '#22c55e', 'line-width': 2 }
+          });
+        }
 
         QUEST_LOCATIONS.forEach(q => {
           const el = document.createElement('div');
           el.className = 'viewer-quest-marker';
           el.innerHTML = `${q.icon} ${q.price}`;
-          el.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            selectedQuest = q;
-            selectedLngLat = q.coords;
-            if (userMarker) { userMarker.remove(); userMarker = null; }
+          if (!mapAdminMode) {
+            el.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              selectedQuest = q;
+              selectedLngLat = q.coords;
+              if (userMarker) { userMarker.remove(); userMarker = null; }
 
-            questCard.style.display = 'block';
-            document.getElementById('quest-card-price').textContent = `СЮЖЕТНЫЙ КВЕСТ • ${q.price}`;
-            document.getElementById('quest-card-title').textContent = `${q.icon} ${q.name}`;
-            titleInput.value = q.name;
+              questCard.style.display = 'block';
+              document.getElementById('quest-card-price').textContent = `СЮЖЕТНЫЙ КВЕСТ • ${q.price}`;
+              document.getElementById('quest-card-title').textContent = `${q.icon} ${q.name}`;
+              titleInput.value = q.name;
 
-            if (vipConfig && vipConfig.allowQuests) {
-              distInfo.style.color = '#4ade80';
-              distInfo.textContent = '✅ VIP-доступ активен! Можешь добавить этот квест в список.';
-              sendBtn.disabled = false;
-              sendBtn.textContent = `👑 Запустить квест (${q.price})`;
-            } else {
-              distInfo.style.color = '#fbbf24';
-              distInfo.textContent = `🔒 Для запуска квестов задонать ${q.price} — бот пришлёт VIP-ссылку!`;
-              sendBtn.disabled = true;
-              sendBtn.textContent = `Нужен донат ${q.price}`;
-            }
-          });
+              if (vipConfig && vipConfig.allowQuests) {
+                distInfo.style.color = '#4ade80';
+                distInfo.textContent = '✅ VIP-доступ активен! Можешь добавить этот квест в список.';
+                sendBtn.disabled = false;
+                sendBtn.textContent = `👑 Запустить квест (${q.price})`;
+              } else {
+                distInfo.style.color = '#fbbf24';
+                distInfo.textContent = `🔒 Для запуска квестов задонать ${q.price} — бот пришлёт VIP-ссылку!`;
+                sendBtn.disabled = true;
+                sendBtn.textContent = `Нужен донат ${q.price}`;
+              }
+            });
+          }
           new mapboxgl.Marker(el).setLngLat(q.coords).addTo(vMap);
         });
       });
 
+      // Подписываемся на живой GPS стримера
       const gpsStream = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse`);
       gpsStream.onmessage = (event) => {
         try {
@@ -809,85 +1039,111 @@
           if (!isNaN(lat) && !isNaN(lon)) {
             streamerPos = [lon, lat];
             streamerMarker.setLngLat(streamerPos);
-            if (vMap.getSource('allowed-zone')) {
+            if (autoFollow) vMap.easeTo({ center: streamerPos, duration: 800 });
+            if (!mapAdminMode && vMap.getSource('allowed-zone')) {
               vMap.getSource('allowed-zone').setData(createCircleGeoJSON(streamerPos, maxAllowedMeters));
             }
+            if (liveQueue.length > 0) renderViewerQueue();
           }
         } catch (e) {}
       };
 
-      vMap.on('click', (e) => {
-        selectedQuest = null;
-        questCard.style.display = 'none';
-        selectedLngLat = [e.lngLat.lng, e.lngLat.lat];
+      // Подписываемся на синхронизацию очереди заданий от радара PRISM
+      const syncStream = new EventSource(`https://ntfy.sh/${NTFY_SYNC_TOPIC}/sse`);
+      syncStream.onmessage = (event) => {
+        try {
+          const packet = JSON.parse(event.data);
+          if (!packet.message) return;
+          const payload = JSON.parse(packet.message);
+          if (Array.isArray(payload.queue)) {
+            liveQueue = payload.queue;
+            renderViewerQueue();
+          }
+        } catch (e) {}
+      };
 
-        if (!userMarker) {
-          userMarker = new mapboxgl.Marker({ color: isVip ? '#eab308' : '#ec4899' }).setLngLat(selectedLngLat).addTo(vMap);
-        } else {
-          userMarker.setLngLat(selectedLngLat);
-        }
+      if (mapAdminMode) {
+        document.getElementById('admin-done-btn').addEventListener('click', () => {
+          fetch(`https://ntfy.sh/${NTFY_PIN_TOPIC}`, { method: 'POST', body: JSON.stringify({ action: 'complete_one' }) });
+        });
+        document.getElementById('admin-clear-btn').addEventListener('click', () => {
+          fetch(`https://ntfy.sh/${NTFY_PIN_TOPIC}`, { method: 'POST', body: JSON.stringify({ action: 'clear_all' }) });
+        });
+      } else {
+        vMap.on('click', (e) => {
+          selectedQuest = null;
+          questCard.style.display = 'none';
+          selectedLngLat = [e.lngLat.lng, e.lngLat.lat];
 
-        const dist = Math.round(getDistanceMeters(streamerPos[1], streamerPos[0], selectedLngLat[1], selectedLngLat[0]));
-        const km = (dist / 1000).toFixed(1);
-
-        if (dist > maxAllowedMeters) {
-          distInfo.style.color = '#f87171';
-          distInfo.textContent = `❌ Дистанция ${km} км. Нужен тариф: ${getRequiredDonationText(dist)}`;
-          sendBtn.disabled = true;
-          sendBtn.textContent = 'Точка дальше вашего тарифа';
-        } else {
-          distInfo.style.color = '#4ade80';
-          distInfo.textContent = `✅ Дистанция по карте: ${dist} м (${km} км) • Тариф подходит!`;
-          sendBtn.disabled = false;
-          sendBtn.textContent = isVip ? '👑 Добавить VIP-метку в список' : '📍 Добавить бесплатную метку';
-        }
-      });
-
-      sendBtn.addEventListener('click', async () => {
-        if (!selectedLngLat) return;
-
-        if (!isVip) {
-          const now = Date.now();
-          let history = JSON.parse(localStorage.getItem('free_pin_history') || '[]');
-          history = history.filter(ts => (now - ts) < 12 * 3600 * 1000);
-
-          if (history.length >= FREE_MAX_PER_STREAM) {
-            alert(`Ты уже использовал все ${FREE_MAX_PER_STREAM} бесплатные метки за этот стрим! Дальше — только через донат.`);
-            return;
+          if (!userMarker) {
+            userMarker = new mapboxgl.Marker({ color: isVip ? '#eab308' : '#ec4899' }).setLngLat(selectedLngLat).addTo(vMap);
+          } else {
+            userMarker.setLngLat(selectedLngLat);
           }
 
-          const lastTs = history[history.length - 1];
-          if (lastTs && (now - lastTs) < FREE_COOLDOWN_MIN * 60 * 1000) {
-            const leftMin = Math.ceil((FREE_COOLDOWN_MIN * 60 * 1000 - (now - lastTs)) / 60000);
-            alert(`Перезарядка бесплатной метки! Подожди ещё ${leftMin} мин.`);
-            return;
+          const dist = Math.round(getDistanceMeters(streamerPos[1], streamerPos[0], selectedLngLat[1], selectedLngLat[0]));
+          const km = (dist / 1000).toFixed(1);
+
+          if (dist > maxAllowedMeters) {
+            distInfo.style.color = '#f87171';
+            distInfo.textContent = `❌ Дистанция ${km} км. Нужен тариф: ${getRequiredDonationText(dist)}`;
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Точка дальше вашего тарифа';
+          } else {
+            distInfo.style.color = '#4ade80';
+            distInfo.textContent = `✅ Дистанция по карте: ${dist} м (${km} км) • Тариф подходит!`;
+            sendBtn.disabled = false;
+            sendBtn.textContent = isVip ? '👑 Добавить VIP-метку в список' : '📍 Добавить бесплатную метку';
           }
-
-          history.push(now);
-          localStorage.setItem('free_pin_history', JSON.stringify(history));
-        }
-
-        const rawTitle = titleInput.value.trim() || (selectedQuest ? selectedQuest.name : (isVip ? 'VIP ТОЧКА ДОНАТЕРА' : 'МЕТКА ИЗ ЧАТА'));
-        const cleanTitle = rawTitle.replace(/https?:\/\/\S+/gi, '').toUpperCase();
-
-        sendBtn.disabled = true;
-        sendBtn.textContent = 'Отправка на байк...';
-
-        await fetch(`https://ntfy.sh/${NTFY_PIN_TOPIC}`, {
-          method: 'POST',
-          body: JSON.stringify({
-            action: 'add',
-            id: Date.now().toString(),
-            lng: selectedLngLat[0],
-            lat: selectedLngLat[1],
-            title: cleanTitle,
-            vip: isVip,
-            questIcon: selectedQuest ? selectedQuest.icon : null
-          })
         });
 
-        sendBtn.textContent = '✅ Задание добавлено на экран стрима!';
-      });
+        sendBtn.addEventListener('click', async () => {
+          if (!selectedLngLat) return;
+
+          if (!isVip) {
+            const now = Date.now();
+            let history = JSON.parse(localStorage.getItem('free_pin_history') || '[]');
+            history = history.filter(ts => (now - ts) < 12 * 3600 * 1000);
+
+            if (history.length >= FREE_MAX_PER_STREAM) {
+              alert(`Ты уже использовал все ${FREE_MAX_PER_STREAM} бесплатные метки за этот стрим! Дальше — только через донат.`);
+              return;
+            }
+
+            const lastTs = history[history.length - 1];
+            if (lastTs && (now - lastTs) < FREE_COOLDOWN_MIN * 60 * 1000) {
+              const leftMin = Math.ceil((FREE_COOLDOWN_MIN * 60 * 1000 - (now - lastTs)) / 60000);
+              alert(`Перезарядка бесплатной метки! Подожди ещё ${leftMin} мин.`);
+              return;
+            }
+
+            history.push(now);
+            localStorage.setItem('free_pin_history', JSON.stringify(history));
+          }
+
+          const rawTitle = titleInput.value.trim() || (selectedQuest ? selectedQuest.name : (isVip ? 'VIP ТОЧКА ДОНАТЕРА' : 'МЕТКА ИЗ ЧАТА'));
+          const cleanTitle = rawTitle.replace(/https?:\/\/\S+/gi, '').toUpperCase();
+
+          sendBtn.disabled = true;
+          sendBtn.textContent = 'Отправка на байк...';
+
+          await fetch(`https://ntfy.sh/${NTFY_PIN_TOPIC}`, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'add',
+              id: Date.now().toString(),
+              lng: selectedLngLat[0],
+              lat: selectedLngLat[1],
+              title: cleanTitle,
+              vip: isVip,
+              questIcon: selectedQuest ? selectedQuest.icon : null
+            })
+          });
+
+          sendBtn.textContent = '✅ Задание добавлено на экран стрима!';
+          setTimeout(() => { sendBtn.disabled = false; sendBtn.textContent = 'Выбрать ещё точку'; }, 3000);
+        });
+      }
     }
 
     // =========================================================================
@@ -908,6 +1164,22 @@
 
       let currentStreamerPos = [100.8685, 12.9185];
       let questQueue = [];
+
+      // Рассылаем актуальный список миссий на карты зрителей и твой второй телефон
+      function broadcastQueueState() {
+        const cleanQueue = questQueue.map(q => ({
+          id: q.id,
+          lng: q.lng,
+          lat: q.lat,
+          title: q.title,
+          vip: q.vip,
+          icon: q.icon
+        }));
+        fetch(`https://ntfy.sh/${NTFY_SYNC_TOPIC}`, {
+          method: 'POST',
+          body: JSON.stringify({ queue: cleanQueue })
+        }).catch(() => {});
+      }
 
       const map = new mapboxgl.Map({
         container: 'map',
@@ -1056,6 +1328,8 @@
         showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 НОВОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
 
         renderQuestList();
+        broadcastQueueState();
+
         const activeTop = questQueue[0];
         buildRealRoute(currentStreamerPos, [activeTop.lng, activeTop.lat], activeTop.vip);
       }
@@ -1071,6 +1345,7 @@
         }
 
         renderQuestList();
+        broadcastQueueState();
 
         if (questQueue.length > 0) {
           const nextTask = questQueue[0];
@@ -1082,7 +1357,6 @@
 
       let lastBannerZone = '';
       function checkProgress(lng, lat) {
-        // Обновляем подзаголовок района под Pattaya City
         const distSubEl = document.getElementById('district-sub');
         if (lat < 12.8750) distSubEl.textContent = 'NA JOMTIEN';
         else if (lat < 12.9035) distSubEl.textContent = 'JOMTIEN BEACH';
@@ -1195,6 +1469,8 @@
           const data = JSON.parse(packet.message);
           if (data.action === 'clear_one') {
             removeQuestByIndex(0, false);
+          } else if (data.action === 'complete_one') {
+            removeQuestByIndex(0, true);
           } else if (data.action === 'clear_all') {
             while (questQueue.length > 0) removeQuestByIndex(0, false);
           } else if (data.action === 'add' || data.action === 'set') {
