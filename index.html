@@ -756,7 +756,6 @@
       z-index: 30;
     }
 
-    /* Статус активного режима АВТОПИЛОТ с таймером */
     .autopilot-status-bar {
       display: none;
       background: linear-gradient(90deg, rgba(234, 179, 8, 0.95), rgba(217, 119, 6, 0.95));
@@ -1029,7 +1028,7 @@
       <span style="font-size:11px; background:#16a34a; padding:3px 8px; border-radius:6px; font-weight:700;">ADMIN ACCESS</span>
     </div>
 
-    <!-- Режим АВТОПИЛОТ (включается ТОЛЬКО при оплате задания — экономия API 95%) -->
+    <!-- Режим АВТОПИЛОТ -->
     <div class="admin-card">
       <h3>🎮 Режим «Автопилот» (Экономия API)</h3>
       <div style="font-size:11.5px; color:#cbd5e1; line-height:1.35;">
@@ -1041,7 +1040,7 @@
         <button class="t-btn gold" id="ap-start-btn">▶️ Включить Автопилот (5 мин)</button>
         <button class="t-btn red" id="ap-stop-btn">⏹ Стоп Автопилот</button>
       </div>
-      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Ручной тест команд (работает только при включённом Автопилоте):</div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Ручной тест команд на радаре (срабатывают сразу!):</div>
       <div class="cmd-grid">
         <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
         <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
@@ -1065,18 +1064,29 @@
       </div>
     </div>
 
-    <!-- Симуляция и быстрые действия -->
+    <!-- Тестовое добавление разных типов заданий -->
+    <div class="admin-card">
+      <h3>🧪 Тест добавления миссий в очередь</h3>
+      <div class="admin-grid">
+        <button class="t-btn purple" id="t-add-free">📍 FREE точка (АВТО)</button>
+        <button class="t-btn gold" id="t-add-vip1">👑 VIP 1000₽ (АВТО)</button>
+        <button class="t-btn gold" id="t-add-quest">🏍 Квест (ВРУЧНУЮ)</button>
+        <button class="t-btn purple" id="t-add-custom">💡 Предложение зрителя</button>
+      </div>
+    </div>
+
+    <!-- Симуляция, спидометр и звуки -->
     <div class="admin-card">
       <h3>⚡ Быстрые действия и симулятор GPS</h3>
       <div class="admin-grid">
         <button class="t-btn green" id="t-complete-top">🏆 Засчитать верхнюю</button>
         <button class="t-btn" id="t-teleport">🏍 Телепорт к цели (финиш)</button>
-        <button class="t-btn gray" id="t-sound-new">🔊 Звук: Новая миссия</button>
+        <button class="t-btn gray" id="t-reset-speed">🛑 Сброс скорости на 0</button>
         <button class="t-btn gray" id="t-sound-pass">🔊 Звук: Mission Passed</button>
       </div>
     </div>
 
-    <div class="test-log" id="test-log">Пульт подключён. Автопилот в режиме ожидания...</div>
+    <div class="test-log" id="test-log">Пульт подключён. Готов к работе...</div>
   </div>
 
   <!-- ================= ИНТЕРФЕЙС ЗРИТЕЛЯ (?pin=...) ================= -->
@@ -1182,38 +1192,33 @@
       <path d="M 38 238 A 146 146 0 0 0 138 286" fill="none" stroke="#000" stroke-width="11" stroke-linecap="round"/>
       <path d="M 142 286 A 146 146 0 0 0 242 238" fill="none" stroke="#000" stroke-width="11" stroke-linecap="round"/>
       <path class="hp-bar" d="M 38 238 A 146 146 0 0 0 138 286" fill="none" stroke="#39ff14" stroke-width="7" stroke-linecap="round"/>
-      <path id="speed-arc" d="M 142 286 A 146 146 0 0 0 242 238" fill="none" stroke="#00b0ff" stroke-width="7" stroke-linecap="round" stroke-dasharray="115" stroke-dashoffset="90" style="transition: stroke-dashoffset 0.6s ease;"/>
+      <path id="speed-arc" d="M 142 286 A 146 146 0 0 0 242 238" fill="none" stroke="#00b0ff" stroke-width="7" stroke-linecap="round" stroke-dasharray="115" stroke-dashoffset="115" style="transition: stroke-dashoffset 0.6s ease;"/>
     </svg>
 
     <div class="under-radar-panel">
-      <!-- Полоса статуса активного Автопилота с таймером -->
       <div class="autopilot-status-bar" id="autopilot-status-bar">
         <span>🎮 АВТОПИЛОТ АКТИВЕН (ПИШИТЕ КОМАНДЫ!)</span>
         <span id="ap-timer-text">05:00</span>
       </div>
 
-      <!-- Всплывающая команда из чата -->
       <div class="autopilot-hud" id="autopilot-hud">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="ap-cmd-icon" id="ap-cmd-icon">🦘</span>
           <div>
-            <div style="font-size:10px; color:#38bdf8; font-weight:800; letter-spacing:1px;">🎮 КОМАНДА ЧАТА</div>
+            <div style="font-size:10px; color:#38bdf8; font-weight:800; letter-spacing:1px;">🎮 КОМАНДА УПРАВЛЕНИЯ</div>
             <div class="ap-cmd-text" id="ap-cmd-text">ПРЫЖОК!</div>
           </div>
         </div>
         <div class="ap-cmd-author" id="ap-cmd-author">@Viewer</div>
       </div>
 
-      <!-- 3 последние строки чата (показываются во время Автопилота) -->
       <div class="yt-chat-box" id="yt-chat-box"></div>
 
-      <!-- Баннер локаций и миссий -->
       <div class="zone-banner" id="zone-banner">
         <div class="zone-banner-title" id="zone-banner-title">★ ЛОКАЦИЯ ОБНАРУЖЕНА</div>
         <div class="zone-banner-name" id="zone-name">PRATAMNAK HILL</div>
       </div>
 
-      <!-- Список активных заданий -->
       <div class="quest-list-box" id="quest-list-box">
         <div class="quest-list-header">📋 АКТИВНЫЕ ЗАДАНИЯ:</div>
         <div id="quest-items-container" style="display:flex; flex-direction:column; gap:5px;"></div>
@@ -1493,21 +1498,29 @@
 
         await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_start', apiKey, videoId, durationSec: 300 });
         logMsg(apiKey && videoId
-          ? '🎮 Автопилот + опрос YouTube чата ВКЛЮЧЕНЫ на 5 минут!'
-          : '🎮 Автопилот ВКЛЮЧЕН на 5 минут (ручной режим без YouTube API).');
+          ? '🎮 Автопилот + YouTube чат ВКЛЮЧЕНЫ на 5 минут!'
+          : '🎮 Автопилот ВКЛЮЧЕН на 5 минут!');
       };
 
       document.getElementById('ap-stop-btn').onclick = async () => {
         await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_stop' });
-        logMsg('⏹ Автопилот ОСТАНОВЛЕН, расход API прекращён.');
+        logMsg('⏹ Автопилот ОСТАНОВЛЕН.');
       };
 
+      // Ручные кнопки команд (срабатывают на радаре мгновенно!)
       document.querySelectorAll('[data-cmd]').forEach(btn => {
         btn.onclick = async () => {
           const cmd = btn.getAttribute('data-cmd');
           const icon = btn.getAttribute('data-icon');
-          await sendCommand(NTFY_PIN_TOPIC, { action: 'game_cmd', label: `${cmd}!`, icon, speech: `Команда чата: ${cmd}`, author: 'Стример' });
-          logMsg(`Отправлена команда: ${cmd}`);
+          await sendCommand(NTFY_PIN_TOPIC, {
+            action: 'game_cmd',
+            forceManual: true,
+            label: `${cmd}!`,
+            icon,
+            speech: `Команда: ${cmd}`,
+            author: 'Стример'
+          });
+          logMsg(`Команда отправлена на радар: ${cmd}`);
         };
       });
 
@@ -1542,14 +1555,21 @@
 
         adminListEl.querySelectorAll('[data-complete]').forEach(btn => {
           btn.onclick = async () => {
-            await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_id', id: btn.getAttribute('data-complete') });
+            const id = btn.getAttribute('data-complete');
+            // Optimistic UI: сразу убираем из пульта без ожидания ответа от радара
+            currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
+            renderAdminQueue();
+            await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_id', id });
             logMsg('Задание засчитано со звуком Mission Passed!');
           };
         });
 
         adminListEl.querySelectorAll('[data-remove]').forEach(btn => {
           btn.onclick = async () => {
-            await sendCommand(NTFY_PIN_TOPIC, { action: 'remove_id', id: btn.getAttribute('data-remove') });
+            const id = btn.getAttribute('data-remove');
+            currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
+            renderAdminQueue();
+            await sendCommand(NTFY_PIN_TOPIC, { action: 'remove_id', id });
             logMsg('Задание удалено из списка.');
           };
         });
@@ -1584,27 +1604,67 @@
         } catch (err) {}
       };
 
-      document.getElementById('t-sound-new').onclick = () => { playNewMissionSound(); logMsg('Проигран new_mission.mp3'); };
+      // Возвращённые кнопки тестового добавления миссий
+      document.getElementById('t-add-free').onclick = async () => {
+        const target = [lastKnownStreamerPos[0] + 0.0022, lastKnownStreamerPos[1] + 0.0020];
+        latestTargetCoords = target;
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'ЗАЕХАТЬ В 7-ELEVEN', vip: false, autoComplete: true });
+        logMsg('Добавлена FREE точка (АВТО-финиш)');
+      };
+
+      document.getElementById('t-add-vip1').onclick = async () => {
+        const target = [100.8732, 12.9265];
+        latestTargetCoords = target;
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'VIP 1000₽: WALKING STREET', vip: true, questIcon: '👑', autoComplete: true });
+        logMsg('Добавлена VIP точка (АВТО-финиш)');
+      };
+
+      document.getElementById('t-add-quest').onclick = async () => {
+        const q = QUEST_CATALOG.find(item => item.coords !== null);
+        latestTargetCoords = q.coords;
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: q.coords[0], lat: q.coords[1], title: `${q.name} (${q.price}₽)`, vip: true, questIcon: q.icon, autoComplete: false });
+        logMsg('Добавлен КВЕСТ (ВРУЧНУЮ)');
+      };
+
+      document.getElementById('t-add-custom').onclick = async () => {
+        const target = [lastKnownStreamerPos[0] - 0.002, lastKnownStreamerPos[1] + 0.0018];
+        latestTargetCoords = target;
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: '💡 1500₽: СЪЕСТЬ ДУРИАН', vip: true, isProposal: true, questIcon: '💡', autoComplete: false });
+        logMsg('Добавлено ПРЕДЛОЖЕНИЕ зрителя (ВРУЧНУЮ)');
+      };
+
       document.getElementById('t-sound-pass').onclick = () => { playMissionPassedSound(); logMsg('Проигран mission_passed.mp3'); };
 
+      document.getElementById('t-reset-speed').onclick = async () => {
+        await sendCommand(NTFY_GPS_TOPIC, { lat: lastKnownStreamerPos[1], lon: lastKnownStreamerPos[0], speed: 0 });
+        logMsg('Спидометр сброшен на 0 KM/H');
+      };
+
       document.getElementById('t-complete-top').onclick = async () => {
+        if (currentAdminQueue.length > 0) {
+          currentAdminQueue.shift();
+          renderAdminQueue();
+        }
         await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_one' });
         logMsg('Засчитана верхняя миссия (+Respect)');
       };
 
       document.getElementById('t-teleport').onclick = async () => {
-        await sendCommand(NTFY_GPS_TOPIC, { lat: latestTargetCoords[1], lon: latestTargetCoords[0], bearing: 0, speed: 12 });
-        logMsg('Байк телепортирован к верхней цели!');
+        // Передаём speed: 0, чтобы спидометр не зависал на 43 км/ч
+        await sendCommand(NTFY_GPS_TOPIC, { lat: latestTargetCoords[1], lon: latestTargetCoords[0], bearing: 0, speed: 0 });
+        logMsg('Байк телепортирован к верхней цели (скорость 0 км/ч)!');
       };
 
       document.getElementById('t-clear-all').onclick = async () => {
+        currentAdminQueue = [];
+        renderAdminQueue();
         await sendCommand(NTFY_PIN_TOPIC, { action: 'clear_all' });
         logMsg('Список полностью очищен');
       };
     }
 
     // =========================================================================
-    // РЕЖИМ 1: ИНТЕРАКТИВНАЯ КАРТА ЗРИТЕЛЯ (?pin=...) С МОБИЛЬНОЙ ШТОРКОЙ
+    // РЕЖИМ 1: ИНТЕРАКТИВНАЯ КАРТА ЗРИТЕЛЯ (?pin=...)
     // =========================================================================
     else if (pinMode) {
       document.body.classList.add('viewer-mode');
@@ -2159,7 +2219,7 @@
     }
 
     // =========================================================================
-    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO (ЭКОНОМНЫЙ АВТОПИЛОТ)
+    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO (С УМНЫМ СПИДОМЕТРОМ)
     // =========================================================================
     else {
       function updateClock() {
@@ -2176,8 +2236,17 @@
 
       let currentStreamerPos = [100.8685, 12.9185];
       let questQueue = [];
+      let lastSpeedUpdateTs = 0;
 
-      // Состояние режима «АВТОПИЛОТ» (по умолчанию ВЫКЛЮЧЕН — 0 расхода API!)
+      // Автосброс спидометра на 0 KM/H, если свежих GPS-пакетов нет больше 15 секунд
+      setInterval(() => {
+        if (lastSpeedUpdateTs > 0 && (Date.now() - lastSpeedUpdateTs) > 15000) {
+          document.getElementById('speed-badge').textContent = '0 KM/H';
+          document.getElementById('speed-arc').style.strokeDashoffset = 115;
+          lastSpeedUpdateTs = 0;
+        }
+      }, 3000);
+
       let autopilotActive = false;
       let autopilotEndTime = 0;
       let autopilotTimerInterval = null;
@@ -2187,9 +2256,9 @@
       let lastCommandTimestamp = 0;
 
       let apHudTimeout = null;
-      function triggerGameCommandHUD(label, icon, speechText, authorName) {
-        // Команды срабатывают ТОЛЬКО когда режим Автопилот включён!
-        if (!autopilotActive) return;
+      function triggerGameCommandHUD(label, icon, speechText, authorName, forceManual = false) {
+        // Если это чат — работает только при активном Автопилоте; если кнопка стримера из пульта — срабатывает всегда!
+        if (!autopilotActive && !forceManual) return;
 
         const hud = document.getElementById('autopilot-hud');
         document.getElementById('ap-cmd-icon').textContent = icon || '🎮';
@@ -2227,7 +2296,7 @@
           if (cmd.keys.some(k => lower === k || lower.startsWith(k + ' ') || lower.startsWith('!' + k))) {
             if (Date.now() - lastCommandTimestamp > 2500) {
               lastCommandTimestamp = Date.now();
-              triggerGameCommandHUD(cmd.label, cmd.icon, cmd.speech, author);
+              triggerGameCommandHUD(cmd.label, cmd.icon, cmd.speech, author, false);
             }
             break;
           }
@@ -2270,7 +2339,6 @@
           timerText.textContent = `${String(m).padStart(2, '0')}:${s}`;
         }, 1000);
 
-        // Если переданы API Key и Video ID — запускаем чтение чата строго на эти 5 минут
         const useKey = apiKey || localStorage.getItem('yt_api_key');
         const useVid = videoId || localStorage.getItem('yt_video_id');
         if (!useKey || !useVid) return;
@@ -2452,7 +2520,6 @@
           if (currentProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) return;
         }
 
-        // Если квест АВТОПИЛОТ запущен напрямую (оплачен VIP) — автоматически активируем режим управления на 5 минут!
         if (data.questId === 'q_autopilot' && isVip && !isProposal) {
           startAutopilotMode(null, null, 300);
         }
@@ -2572,7 +2639,7 @@
         }
       }
 
-      function moveRadar(lng, lat, bearing, speed) {
+      function moveRadar(lng, lat, bearing, speed, isHistorical = false) {
         currentStreamerPos = [lng, lat];
         const cameraOptions = { center: [lng, lat], duration: 1000 };
         if (bearing !== null && bearing !== undefined && !isNaN(bearing)) cameraOptions.bearing = bearing;
@@ -2580,8 +2647,17 @@
 
         checkProgress(lng, lat);
 
+        // Если пакет из старой истории (?since=12h), не ставим старую скорость 43 км/ч — обнуляем!
+        if (isHistorical) {
+          document.getElementById('speed-badge').textContent = '0 KM/H';
+          document.getElementById('speed-arc').style.strokeDashoffset = 115;
+          return;
+        }
+
         if (speed !== null && speed !== undefined && !isNaN(speed)) {
-          const kmh = Math.round(speed * 3.6);
+          lastSpeedUpdateTs = Date.now();
+          // Фильтр дрейфа GPS на месте (< 1.2 м/с = ~4 км/ч считаем за 0 KM/H)
+          const kmh = speed < 1.2 ? 0 : Math.round(speed * 3.6);
           document.getElementById('speed-badge').textContent = `${kmh} KM/H`;
           const offset = 115 - (115 * Math.min(kmh / 80, 1));
           document.getElementById('speed-arc').style.strokeDashoffset = offset;
@@ -2638,12 +2714,14 @@
         try {
           const packet = JSON.parse(event.data);
           if (!packet.message) return;
+          // Если пакет старше 20 секунд — считаем его историческим, чтобы не показывать старую скорость
+          const isHistorical = packet.time && ((Date.now() / 1000 - packet.time) > 20);
           const params = packet.message.trim().startsWith('{') ? JSON.parse(packet.message) : Object.fromEntries(new URLSearchParams(packet.message));
           const lat = parseFloat(params.lat || params.latitude);
           const lon = parseFloat(params.lon || params.lng || params.longitude);
           const bearing = parseFloat(params.bearing || params.heading || params.course);
           const speed = parseFloat(params.speed);
-          if (!isNaN(lat) && !isNaN(lon)) moveRadar(lon, lat, bearing, speed);
+          if (!isNaN(lat) && !isNaN(lon)) moveRadar(lon, lat, bearing, speed, isHistorical);
         } catch (e) {}
       };
 
@@ -2672,7 +2750,7 @@
           } else if (data.action === 'ap_stop') {
             stopAutopilotMode(false);
           } else if (data.action === 'game_cmd') {
-            triggerGameCommandHUD(data.label, data.icon, data.speech, data.author);
+            triggerGameCommandHUD(data.label, data.icon, data.speech, data.author, Boolean(data.forceManual));
           } else if (data.action === 'add' || data.action === 'set') {
             addQuestToQueue({
               id: data.id,
