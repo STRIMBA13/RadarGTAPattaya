@@ -1483,31 +1483,38 @@
       let latestTargetCoords = [100.8698, 12.9218];
       let currentAdminQueue = [];
 
-      function logMsg(txt) { logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`; }
+      function logMsg(txt) {
+        if (logEl) logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`;
+      }
 
       const ytKeyInput = document.getElementById('yt-api-key');
       const ytUrlInput = document.getElementById('yt-video-url');
-      ytKeyInput.value = localStorage.getItem('yt_api_key') || '';
-      ytUrlInput.value = localStorage.getItem('yt_video_id') || '';
+      if (ytKeyInput) ytKeyInput.value = localStorage.getItem('yt_api_key') || '';
+      if (ytUrlInput) ytUrlInput.value = localStorage.getItem('yt_video_id') || '';
 
-      document.getElementById('ap-start-btn').onclick = async () => {
-        const apiKey = ytKeyInput.value.trim();
-        const videoId = extractYouTubeVideoId(ytUrlInput.value);
-        if (apiKey) localStorage.setItem('yt_api_key', apiKey);
-        if (videoId) localStorage.setItem('yt_video_id', videoId);
+      const apStartBtn = document.getElementById('ap-start-btn');
+      if (apStartBtn) {
+        apStartBtn.onclick = async () => {
+          const apiKey = ytKeyInput.value.trim();
+          const videoId = extractYouTubeVideoId(ytUrlInput.value);
+          if (apiKey) localStorage.setItem('yt_api_key', apiKey);
+          if (videoId) localStorage.setItem('yt_video_id', videoId);
 
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_start', apiKey, videoId, durationSec: 300 });
-        logMsg(apiKey && videoId
-          ? '🎮 Автопилот + YouTube чат ВКЛЮЧЕНЫ на 5 минут!'
-          : '🎮 Автопилот ВКЛЮЧЕН на 5 минут!');
-      };
+          await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_start', apiKey, videoId, durationSec: 300 });
+          logMsg(apiKey && videoId
+            ? '🎮 Автопилот + YouTube чат ВКЛЮЧЕНЫ на 5 минут!'
+            : '🎮 Автопилот ВКЛЮЧЕН на 5 минут!');
+        };
+      }
 
-      document.getElementById('ap-stop-btn').onclick = async () => {
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_stop' });
-        logMsg('⏹ Автопилот ОСТАНОВЛЕН.');
-      };
+      const apStopBtn = document.getElementById('ap-stop-btn');
+      if (apStopBtn) {
+        apStopBtn.onclick = async () => {
+          await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_stop' });
+          logMsg('⏹ Автопилот ОСТАНОВЛЕН.');
+        };
+      }
 
-      // Ручные кнопки команд (срабатывают на радаре мгновенно!)
       document.querySelectorAll('[data-cmd]').forEach(btn => {
         btn.onclick = async () => {
           const cmd = btn.getAttribute('data-cmd');
@@ -1556,7 +1563,6 @@
         adminListEl.querySelectorAll('[data-complete]').forEach(btn => {
           btn.onclick = async () => {
             const id = btn.getAttribute('data-complete');
-            // Optimistic UI: сразу убираем из пульта без ожидания ответа от радара
             currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
             renderAdminQueue();
             await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_id', id });
@@ -1604,7 +1610,6 @@
         } catch (err) {}
       };
 
-      // Возвращённые кнопки тестового добавления миссий
       document.getElementById('t-add-free').onclick = async () => {
         const target = [lastKnownStreamerPos[0] + 0.0022, lastKnownStreamerPos[1] + 0.0020];
         latestTargetCoords = target;
@@ -1650,7 +1655,6 @@
       };
 
       document.getElementById('t-teleport').onclick = async () => {
-        // Передаём speed: 0, чтобы спидометр не зависал на 43 км/ч
         await sendCommand(NTFY_GPS_TOPIC, { lat: latestTargetCoords[1], lon: latestTargetCoords[0], bearing: 0, speed: 0 });
         logMsg('Байк телепортирован к верхней цели (скорость 0 км/ч)!');
       };
@@ -2219,7 +2223,7 @@
     }
 
     // =========================================================================
-    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO (С УМНЫМ СПИДОМЕТРОМ)
+    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO (ТОЧНАЯ СКОРОСТЬ ОТ 1 КМ/Ч)
     // =========================================================================
     else {
       function updateClock() {
@@ -2236,16 +2240,6 @@
 
       let currentStreamerPos = [100.8685, 12.9185];
       let questQueue = [];
-      let lastSpeedUpdateTs = 0;
-
-      // Автосброс спидометра на 0 KM/H, если свежих GPS-пакетов нет больше 15 секунд
-      setInterval(() => {
-        if (lastSpeedUpdateTs > 0 && (Date.now() - lastSpeedUpdateTs) > 15000) {
-          document.getElementById('speed-badge').textContent = '0 KM/H';
-          document.getElementById('speed-arc').style.strokeDashoffset = 115;
-          lastSpeedUpdateTs = 0;
-        }
-      }, 3000);
 
       let autopilotActive = false;
       let autopilotEndTime = 0;
@@ -2257,7 +2251,6 @@
 
       let apHudTimeout = null;
       function triggerGameCommandHUD(label, icon, speechText, authorName, forceManual = false) {
-        // Если это чат — работает только при активном Автопилоте; если кнопка стримера из пульта — срабатывает всегда!
         if (!autopilotActive && !forceManual) return;
 
         const hud = document.getElementById('autopilot-hud');
@@ -2647,17 +2640,16 @@
 
         checkProgress(lng, lat);
 
-        // Если пакет из старой истории (?since=12h), не ставим старую скорость 43 км/ч — обнуляем!
+        // Старый пакет из истории при открытии не подставляет старую скорость
         if (isHistorical) {
           document.getElementById('speed-badge').textContent = '0 KM/H';
           document.getElementById('speed-arc').style.strokeDashoffset = 115;
           return;
         }
 
+        // Показываем точную скорость без фильтрации — даже 1–2 км/ч при ходьбе, беге или на велосипеде!
         if (speed !== null && speed !== undefined && !isNaN(speed)) {
-          lastSpeedUpdateTs = Date.now();
-          // Фильтр дрейфа GPS на месте (< 1.2 м/с = ~4 км/ч считаем за 0 KM/H)
-          const kmh = speed < 1.2 ? 0 : Math.round(speed * 3.6);
+          const kmh = Math.round(speed * 3.6);
           document.getElementById('speed-badge').textContent = `${kmh} KM/H`;
           const offset = 115 - (115 * Math.min(kmh / 80, 1));
           document.getElementById('speed-arc').style.strokeDashoffset = offset;
@@ -2714,7 +2706,6 @@
         try {
           const packet = JSON.parse(event.data);
           if (!packet.message) return;
-          // Если пакет старше 20 секунд — считаем его историческим, чтобы не показывать старую скорость
           const isHistorical = packet.time && ((Date.now() / 1000 - packet.time) > 20);
           const params = packet.message.trim().startsWith('{') ? JSON.parse(packet.message) : Object.fromEntries(new URLSearchParams(packet.message));
           const lat = parseFloat(params.lat || params.latitude);
