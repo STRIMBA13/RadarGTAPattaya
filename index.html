@@ -35,11 +35,11 @@
 
     #admin-panel {
       display: none;
-      max-width: 540px;
+      max-width: 560px;
       margin: 0 auto;
       flex-direction: column;
       gap: 12px;
-      padding-bottom: 30px;
+      padding-bottom: 36px;
     }
 
     body.admin-mode .hud-wrapper { display: none; }
@@ -71,6 +71,12 @@
       gap: 8px;
     }
 
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
     .t-btn {
       padding: 11px 10px;
       border: none;
@@ -81,12 +87,24 @@
       color: #fff;
       background: #2563eb;
     }
-    .t-btn:active { transform: scale(0.97); }
+    .t-btn:active { transform: scale(0.96); }
     .t-btn.green { background: #16a34a; }
     .t-btn.gold { background: linear-gradient(90deg, #f59e0b, #eab308); color: #000; }
     .t-btn.purple { background: #9333ea; }
     .t-btn.red { background: #dc2626; }
     .t-btn.gray { background: #475569; }
+    .t-btn.cmd { background: #1e293b; border: 1px solid #38bdf8; padding: 9px 4px; font-size: 11.5px; }
+
+    .admin-input {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #090d16;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+    }
 
     .admin-queue-list {
       display: flex;
@@ -177,12 +195,46 @@
       height: 100%;
     }
 
-    /* СЛЕВА ВВЕРХУ: Активные задания на стриме */
+    /* Кнопки-чипсы для мобильного экрана (скрыты на ПК) */
+    .mobile-chips-bar {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      z-index: 22;
+      gap: 8px;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .m-chip {
+      pointer-events: auto;
+      flex: 1;
+      background: rgba(11, 16, 28, 0.94);
+      backdrop-filter: blur(10px);
+      border: 1.5px solid #38bdf8;
+      color: #fff;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.75);
+      cursor: pointer;
+    }
+    .m-chip.gold { border-color: #f59e0b; color: #fbbf24; }
+    .m-chip.active-chip { background: #1e293b; transform: scale(0.98); }
+
+    /* Десктопные панели (слева Активные, справа Каталог) */
     .viewer-live-queue {
       position: absolute;
       top: 10px;
       left: 10px;
-      width: 310px;
+      width: 315px;
       background: rgba(11, 16, 28, 0.93);
       backdrop-filter: blur(10px);
       border: 1.5px solid rgba(56, 189, 248, 0.4);
@@ -195,7 +247,6 @@
       gap: 6px;
     }
 
-    /* СПРАВА ВВЕРХУ: Большой удобный каталог квестов */
     .viewer-catalog-panel {
       position: absolute;
       top: 10px;
@@ -213,35 +264,57 @@
       gap: 7px;
     }
 
-    @media (max-width: 700px) {
-      .floating-panels-stack {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 18;
-        pointer-events: none;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        padding: 8px;
-      }
-      .floating-panels-stack > div {
-        pointer-events: auto;
-        position: relative;
-        top: 0;
+    /* АДАПТАЦИЯ ПОД ТЕЛЕФОН (до 768px): чипсы сверху + выдвижная шторка снизу */
+    @media (max-width: 768px) {
+      .mobile-chips-bar { display: flex; }
+
+      .viewer-live-queue,
+      .viewer-catalog-panel {
+        position: fixed;
+        top: auto;
+        bottom: 0;
         left: 0;
         right: 0;
         width: 100%;
         max-width: none;
+        border-radius: 18px 18px 0 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        border-top: 2px solid #f59e0b;
+        padding: 14px 14px 22px;
+        z-index: 45;
+        transform: translateY(105%);
+        transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+        display: flex !important;
+      }
+
+      .viewer-live-queue { border-top-color: #38bdf8; }
+
+      .viewer-live-queue.sheet-open,
+      .viewer-catalog-panel.sheet-open {
+        transform: translateY(0);
+      }
+
+      .panel-scroll-list {
+        max-height: 46vh !important;
       }
     }
+
+    .sheet-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 40;
+    }
+    .sheet-backdrop.active { display: block; }
 
     .panel-hdr {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -250,18 +323,18 @@
 
     .price-filters {
       display: flex;
-      gap: 4px;
+      gap: 5px;
       overflow-x: auto;
-      padding-bottom: 2px;
+      padding-bottom: 3px;
     }
     .pf-btn {
       background: #1e293b;
       border: 1px solid #334155;
       color: #cbd5e1;
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 4px 7px;
-      border-radius: 6px;
+      padding: 5px 8px;
+      border-radius: 7px;
       cursor: pointer;
       white-space: nowrap;
     }
@@ -280,12 +353,10 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      max-height: 295px;
+      max-height: 310px;
       overflow-y: auto;
       padding-right: 3px;
     }
-
-    .panel-scroll-list.collapsed { display: none; }
 
     .v-q-item {
       display: flex;
@@ -293,9 +364,9 @@
       align-items: center;
       background: rgba(30, 41, 59, 0.9);
       border-left: 3.5px solid #ec4899;
-      padding: 7px 9px;
+      padding: 8px 10px;
       border-radius: 8px;
-      font-size: 12.5px;
+      font-size: 13px;
       font-weight: 600;
       gap: 6px;
       cursor: pointer;
@@ -315,9 +386,9 @@
       align-items: center;
       background: rgba(30, 41, 59, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 8px 10px;
-      border-radius: 8px;
-      font-size: 12.5px;
+      padding: 9px 10px;
+      border-radius: 9px;
+      font-size: 13px;
       font-weight: 600;
       gap: 8px;
       cursor: pointer;
@@ -367,8 +438,8 @@
     .quest-detail-modal {
       position: absolute;
       bottom: 14px;
-      left: 14px;
-      right: 68px;
+      left: 12px;
+      right: 66px;
       max-width: 430px;
       background: rgba(13, 19, 33, 0.96);
       backdrop-filter: blur(12px);
@@ -475,7 +546,6 @@
       cursor: not-allowed;
     }
 
-    /* Кликабельные иконки квестов прямо на карте */
     .viewer-quest-marker {
       background: #111827;
       border: 2px solid #f59e0b;
@@ -495,8 +565,8 @@
     /* ================= ОСНОВНОЙ РАДАР ДЛЯ PRISM (ЛЕВЫЙ ВЕРХНИЙ УГОЛ) ================= */
     .hud-wrapper {
       position: relative;
-      width: 365px;
-      height: 700px;
+      width: 380px;
+      height: 820px;
       padding: 10px 15px;
     }
 
@@ -681,15 +751,83 @@
     }
     .hp-bar { animation: hpPulse 3s infinite ease-in-out; }
 
+    /* БЛОК ПОД РАДАРОМ: ОПОВЕЩЕНИЯ + АВТОПИЛОТ КОМАНДЫ + ЖИВОЙ ЧАТ + СПИСОК МИССИЙ */
     .under-radar-panel {
       position: absolute;
       top: 358px;
       left: 16px;
-      width: 310px;
+      width: 315px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 7px;
       z-index: 30;
+    }
+
+    /* Крупный игровой HUD команды чата (АВТОПИЛОТ: ПРЫЖОК / ВПЕРЕД / ЛЕЖАТЬ) */
+    @keyframes cmdPop {
+      0% { transform: scale(0.8); opacity: 0; }
+      60% { transform: scale(1.06); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .autopilot-hud {
+      display: none;
+      background: linear-gradient(90deg, rgba(14, 116, 144, 0.95), rgba(30, 27, 75, 0.95));
+      border: 2px solid #00e5ff;
+      border-radius: 8px;
+      padding: 6px 12px;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 0 18px rgba(0, 229, 255, 0.65);
+      animation: cmdPop 0.25s ease-out;
+    }
+    .autopilot-hud.active { display: flex; }
+
+    .ap-cmd-icon {
+      font-size: 26px;
+      line-height: 1;
+    }
+    .ap-cmd-text {
+      font-family: 'Oswald', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px #000;
+    }
+    .ap-cmd-author {
+      font-family: 'Inter', sans-serif;
+      font-size: 10.5px;
+      color: #67e8f9;
+      font-weight: 700;
+    }
+
+    /* 3 строки живого чата YouTube */
+    .yt-chat-box {
+      display: none;
+      flex-direction: column;
+      gap: 3px;
+      background: rgba(10, 14, 20, 0.78);
+      border-left: 3px solid #ef4444;
+      border-radius: 5px;
+      padding: 5px 8px;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.65);
+    }
+    .yt-chat-box.visible { display: flex; }
+
+    .yt-msg-line {
+      font-size: 11.5px;
+      line-height: 1.25;
+      color: #f1f5f9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 2px #000;
+    }
+    .yt-author {
+      font-weight: 800;
+      color: #fbbf24;
+      margin-right: 4px;
     }
 
     .zone-banner {
@@ -887,9 +1025,32 @@
       <span style="font-size:11px; background:#16a34a; padding:3px 8px; border-radius:6px; font-weight:700;">ADMIN ACCESS</span>
     </div>
 
+    <!-- Подключение живого чата YouTube и Автопилота -->
+    <div class="admin-card">
+      <h3>📺 YouTube Чат и Автопилот (Голос + HUD)</h3>
+      <input type="text" class="admin-input" id="yt-api-key" placeholder="YouTube Data API v3 Key (AIzaSy...)" />
+      <input type="text" class="admin-input" id="yt-video-url" placeholder="Ссылка на стрим YouTube или Video ID" />
+      <div class="admin-grid">
+        <button class="t-btn green" id="yt-connect-btn">▶️ Подключить чат к радару</button>
+        <button class="t-btn red" id="yt-disconnect-btn">⏹ Отключить чат</button>
+      </div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Тест игровых команд (озвучка + HUD на радаре):</div>
+      <div class="cmd-grid">
+        <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
+        <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
+        <button class="t-btn cmd" data-cmd="НАЛЕВО" data-icon="⬅️">⬅️ Налево</button>
+        <button class="t-btn cmd" data-cmd="НАПРАВО" data-icon="➡️">➡️ Направо</button>
+        <button class="t-btn cmd" data-cmd="БЕЖАТЬ" data-icon="🏃">🏃 Бежать</button>
+        <button class="t-btn cmd" data-cmd="ПРЫЖОК" data-icon="🦘">🦘 Прыжок</button>
+        <button class="t-btn cmd" data-cmd="СИДЕТЬ" data-icon="🪑">🪑 Сидеть</button>
+        <button class="t-btn cmd" data-cmd="ЛЕЖАТЬ" data-icon="🛌">🛌 Лежать</button>
+      </div>
+    </div>
+
+    <!-- Живое управление всеми висящими и предложенными заданиями -->
     <div class="admin-card">
       <h3>
-        <span>📋 Висящие и предложенные задания (<span id="admin-q-count">0</span>)</span>
+        <span>📋 Висящие и предложенные (<span id="admin-q-count">0</span>)</span>
         <button class="t-btn red" id="t-clear-all" style="padding:5px 9px; font-size:11px;">🗑 Очистить все</button>
       </h3>
       <div class="admin-queue-list" id="admin-queue-list">
@@ -897,6 +1058,7 @@
       </div>
     </div>
 
+    <!-- Симуляция и быстрые действия -->
     <div class="admin-card">
       <h3>⚡ Быстрые действия и симулятор GPS</h3>
       <div class="admin-grid">
@@ -904,16 +1066,6 @@
         <button class="t-btn" id="t-teleport">🏍 Телепорт к цели (финиш)</button>
         <button class="t-btn gray" id="t-sound-new">🔊 Звук: Новая миссия</button>
         <button class="t-btn gray" id="t-sound-pass">🔊 Звук: Mission Passed</button>
-      </div>
-    </div>
-
-    <div class="admin-card">
-      <h3>🧪 Тест добавления в очередь</h3>
-      <div class="admin-grid">
-        <button class="t-btn purple" id="t-add-free">📍 Точка (АВТО-финиш)</button>
-        <button class="t-btn gold" id="t-add-vip1">👑 VIP 1000₽ (АВТО)</button>
-        <button class="t-btn gold" id="t-add-quest">🏍 Квест (ВРУЧНУЮ)</button>
-        <button class="t-btn purple" id="t-add-custom">💡 Предложение зрителя</button>
       </div>
     </div>
 
@@ -932,40 +1084,45 @@
 
     <div class="map-container-wrap">
       <div id="viewer-map"></div>
+      <div class="sheet-backdrop" id="sheet-backdrop"></div>
 
-      <div class="floating-panels-stack">
-        <!-- ЛЕВАЯ ПАНЕЛЬ: Активные задания на стриме -->
-        <div class="viewer-live-queue" id="viewer-live-queue">
-          <div class="panel-hdr" id="toggle-active-hdr">
-            <span style="color:#38bdf8;">📋 Активные на стриме (<span id="v-queue-count">0</span>)</span>
-            <span style="color:#94a3b8;">▼</span>
-          </div>
-          <div class="panel-scroll-list" id="viewer-queue-list"></div>
-        </div>
+      <!-- Мобильные кнопки-чипсы сверху (не перекрывают карту!) -->
+      <div class="mobile-chips-bar">
+        <button class="m-chip" id="chip-active">📋 Активные (<span id="m-active-cnt">0</span>)</button>
+        <button class="m-chip gold" id="chip-catalog">🏆 Квесты (<span id="m-catalog-cnt">0</span>)</button>
+      </div>
 
-        <!-- ПРАВАЯ ПАНЕЛЬ: Увеличенный каталог всех квестов -->
-        <div class="viewer-catalog-panel" id="viewer-catalog-panel">
-          <div class="panel-hdr" id="toggle-catalog-hdr">
-            <span style="color:#fbbf24;">🏆 Каталог квестов (<span id="catalog-count">0</span>)</span>
-            <span style="color:#94a3b8;">▼</span>
-          </div>
-          <div class="price-filters" id="price-filters">
-            <button class="pf-btn roulette" id="btn-roulette">🎲 Рулетка</button>
-            <button class="pf-btn active" data-range="all">Все</button>
-            <button class="pf-btn" data-range="100-200">100–200₽</button>
-            <button class="pf-btn" data-range="300-500">300–500₽</button>
-            <button class="pf-btn" data-range="600-1000">600–1000₽</button>
-            <button class="pf-btn" data-range="1200+">1200₽+</button>
-          </div>
-          <div class="panel-scroll-list" id="preset-quests-list"></div>
+      <!-- ЛЕВАЯ ПАНЕЛЬ (на мобилках — выдвижная шторка) -->
+      <div class="viewer-live-queue" id="viewer-live-queue">
+        <div class="panel-hdr" id="close-active-sheet">
+          <span style="color:#38bdf8;">📋 Активные на стриме (<span id="v-queue-count">0</span>)</span>
+          <span style="color:#94a3b8; font-size:14px;">✕</span>
         </div>
+        <div class="panel-scroll-list" id="viewer-queue-list"></div>
+      </div>
+
+      <!-- ПРАВАЯ ПАНЕЛЬ (на мобилках — выдвижная шторка) -->
+      <div class="viewer-catalog-panel" id="viewer-catalog-panel">
+        <div class="panel-hdr" id="close-catalog-sheet">
+          <span style="color:#fbbf24;">🏆 Каталог квестов (<span id="catalog-count">0</span>)</span>
+          <span style="color:#94a3b8; font-size:14px;">✕</span>
+        </div>
+        <div class="price-filters" id="price-filters">
+          <button class="pf-btn roulette" id="btn-roulette">🎲 Рулетка</button>
+          <button class="pf-btn active" data-range="all">Все</button>
+          <button class="pf-btn" data-range="100-200">100–200₽</button>
+          <button class="pf-btn" data-range="300-500">300–500₽</button>
+          <button class="pf-btn" data-range="600-1000">600–1000₽</button>
+          <button class="pf-btn" data-range="1200+">1200₽+</button>
+        </div>
+        <div class="panel-scroll-list" id="preset-quests-list"></div>
       </div>
 
       <!-- Всплывающая подробная карточка квеста поверх карты -->
       <div class="quest-detail-modal" id="quest-detail-modal">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
           <div style="font-size:13.5px; font-weight:800; color:#fbbf24;" id="qdm-title">КВЕСТ</div>
-          <span style="font-size:13px; color:#94a3b8; cursor:pointer; padding:0 4px;" id="qdm-close">✕</span>
+          <span style="font-size:14px; color:#94a3b8; cursor:pointer; padding:0 4px;" id="qdm-close">✕</span>
         </div>
         <div style="font-size:12.5px; color:#f1f5f9; line-height:1.35;" id="qdm-desc">Подробное описание задания</div>
         <div style="font-size:11px; color:#38bdf8;" id="qdm-loc-info">📍 Локация на карте</div>
@@ -981,16 +1138,14 @@
         <button class="tab-btn" data-tab="tab-custom">💡 Предложить своё задание</button>
       </div>
 
-      <!-- Вкладка 1: Поставить точку на карте -->
       <div class="tab-pane active" id="tab-point">
-        <div id="dist-info" style="font-size: 12px; color: #38bdf8;">Ткни в пустое место на карте или нажми на иконку квеста</div>
+        <div id="dist-info" style="font-size: 12px; color: #38bdf8;">Ткни в карту или выбери квест в кнопке «🏆 Квесты»</div>
         <input type="text" class="v-input" id="pin-title" maxlength="26" placeholder="Куда заехать? (напр: 7-Eleven / Пирс)" />
         <button class="primary-btn" id="send-pin-btn" disabled>Выбери точку на карте</button>
       </div>
 
-      <!-- Вкладка 2: Предложить своё задание с защитой от спама -->
       <div class="tab-pane" id="tab-custom">
-        <div id="custom-map-hint" style="font-size: 11.5px; color: #e879f9;">Необязательно: ткни точку на карте • Кулдаун: 5 мин (до 3 раз за стрим)</div>
+        <div id="custom-map-hint" style="font-size: 11.5px; color: #e879f9;">Необязательно: ткни точку на карте • Кулдаун: 5 мин (до 3 раз)</div>
         <div class="custom-row-inputs">
           <input type="number" class="v-input" id="custom-price" min="100" step="50" placeholder="Цена ₽ (500)" />
           <input type="text" class="v-input" id="custom-text" maxlength="40" placeholder="Текст задания (напр: Съесть дуриан)" />
@@ -1028,11 +1183,28 @@
     </svg>
 
     <div class="under-radar-panel">
+      <!-- Индикатор команды управления из чата (Автопилот) -->
+      <div class="autopilot-hud" id="autopilot-hud">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="ap-cmd-icon" id="ap-cmd-icon">🦘</span>
+          <div>
+            <div style="font-size:10px; color:#38bdf8; font-weight:800; letter-spacing:1px;">🎮 КОМАНДА ЧАТА</div>
+            <div class="ap-cmd-text" id="ap-cmd-text">ПРЫЖОК!</div>
+          </div>
+        </div>
+        <div class="ap-cmd-author" id="ap-cmd-author">@Viewer</div>
+      </div>
+
+      <!-- 3 последние строки чата YouTube -->
+      <div class="yt-chat-box" id="yt-chat-box"></div>
+
+      <!-- Всплывающий баннер локаций и миссий -->
       <div class="zone-banner" id="zone-banner">
         <div class="zone-banner-title" id="zone-banner-title">★ ЛОКАЦИЯ ОБНАРУЖЕНА</div>
         <div class="zone-banner-name" id="zone-name">PRATAMNAK HILL</div>
       </div>
 
+      <!-- Список активных заданий -->
       <div class="quest-list-box" id="quest-list-box">
         <div class="quest-list-header">📋 АКТИВНЫЕ ЗАДАНИЯ:</div>
         <div id="quest-items-container" style="display:flex; flex-direction:column; gap:5px;"></div>
@@ -1059,17 +1231,25 @@
     const FREE_COOLDOWN_MIN = 30;
     const FREE_MAX_PER_STREAM = 3;
 
-    // Антиспам для неоплаченных предложений зрителей
-    const PROPOSAL_COOLDOWN_SEC = 300;   // Кулдаун 5 минут на предложения без оплаты
-    const PROPOSAL_MAX_PER_STREAM = 3;   // Максимум 3 предложения на человека за стрим
-    const PROPOSAL_MAX_ACTIVE_QUEUE = 3; // Не больше 3 неоплаченных предложений на экране одновременно
-    const PROPOSAL_EXPIRE_MS = 10 * 60 * 1000; // Автоудаление неоплаченного предложения через 10 мин
+    const PROPOSAL_COOLDOWN_SEC = 300;
+    const PROPOSAL_MAX_PER_STREAM = 3;
+    const PROPOSAL_MAX_ACTIVE_QUEUE = 3;
+    const PROPOSAL_EXPIRE_MS = 10 * 60 * 1000;
 
-    // =========================================================================
-    // ЛОГИЧНО РАСПОЛОЖЕННЫЙ КАТАЛОГ КВЕСТОВ ПО ПАТТАЙЕ И ОСТРОВУ КО ЛАН
-    // =========================================================================
+    // Словарь игровых команд из чата для режима «Автопилот»
+    const CHAT_GAME_COMMANDS = [
+      { keys: ['прыжок', 'прыгай', 'jump'], label: 'ПРЫЖОК!', icon: '🦘', speech: 'Команда чата: Прыжок!' },
+      { keys: ['вперед', 'вперёд', 'прямо', 'go'], label: 'ВПЕРЁД!', icon: '⬆️', speech: 'Вперёд!' },
+      { keys: ['назад', 'back'], label: 'НАЗАД!', icon: '⬇️', speech: 'Назад!' },
+      { keys: ['налево', 'влево', 'left'], label: 'НАЛЕВО!', icon: '⬅️', speech: 'Налево!' },
+      { keys: ['направо', 'вправо', 'right'], label: 'НАПРАВО!', icon: '➡️', speech: 'Направо!' },
+      { keys: ['бежать', 'беги', 'спринт', 'run'], label: 'БЕЖАТЬ!', icon: '🏃', speech: 'Беги!' },
+      { keys: ['сидеть', 'сядь', 'присядь', 'sit'], label: 'СИДЕТЬ!', icon: '🪑', speech: 'Сидеть!' },
+      { keys: ['лежать', 'ляг', 'ложись', 'lie'], label: 'ЛЕЖАТЬ!', icon: '🛌', speech: 'Лежать!' },
+      { keys: ['стоп', 'стой', 'замри', 'stop'], label: 'СТОП! ЗАМРИ!', icon: '🛑', speech: 'Стоп! Замри!' }
+    ];
+
     const QUEST_CATALOG = [
-      // 100 – 200 ₽ (Экшен на месте)
       { id: 'q_kiss',     price: 100,   icon: '💋', name: 'ПОЦЕЛОВАТЬ ОКСАНУ', desc: 'Поцеловать Оксану в прямом эфире.', coords: null },
       { id: 'q_bug',      price: 100,   icon: '🕹', name: 'БАГ ТЕКСТУР (10 СЕК)', desc: 'Застрять в стене или столбе и шагать на месте 10 секунд.', coords: null },
       { id: 'q_selfie',   price: 100,   icon: '🤳', name: 'НЕЛЕПОЕ СЕЛФИ', desc: 'Сделать селфи с самым странным знаком или объектом рядом и показать в камеру.', coords: null },
@@ -1081,7 +1261,6 @@
       { id: 'q_voice',    price: 200,   icon: '🤖', name: 'СМЕНА ГОЛОСА (2 МИН)', desc: '2 минуты говорить голосом робота, с акцентом или другим тембром.', coords: null },
       { id: 'q_tail',     price: 200,   icon: '🕵️', name: 'СЛЕЖКА (50 МЕТРОВ)', desc: 'Незаметно пройти за прохожим 50 метров в стиле стелс-миссии.', coords: null },
 
-      // 300 – 500 ₽ (Локальные точки: 7-Eleven, набережная, развалы)
       { id: 'q_coconut',  price: 300,   icon: '🥥', name: 'ВЫПИТЬ КОКОС У МОРЯ', desc: 'Купить свежий кокос на набережной Донгтан/Бич Роуд и выпить в эфире.', coords: [100.8712, 12.9012] },
       { id: 'q_dogs',     price: 300,   icon: '🐕', name: 'ПОКОРМИТЬ СОБАК', desc: 'Купить сосиски/корм у 7-Eleven на Пратамнаке и покормить уличных собак.', coords: [100.8675, 12.9145] },
       { id: 'q_kick',     price: 300,   icon: '👢', name: 'ПИНОК ОТ ОКСАНЫ', desc: 'Получить постановочный пинок от Оксаны в кадре.', coords: null },
@@ -1095,12 +1274,11 @@
       { id: 'q_skin',     price: 500,   icon: '🕶', name: 'СМЕНА СКИНА (СОИ БУАКХАО)', desc: 'Купить дешёвые очки или кепку на развале Сои Буакхао и носить полчаса.', coords: [100.8855, 12.9302] },
       { id: 'q_bribe',    price: 500,   icon: '🍫', name: 'ВЗЯТКА МЕСТНЫМ', desc: 'Подарить шоколадку охраннику или курьеру: «Спасибо за крышу в районе».', coords: null },
 
-      // 600 – 1 000 ₽ (Рынки, TreeTown, центр, транспорт)
       { id: 'q_exchange', price: 600,   icon: '🪙', name: 'СЕКРЕТНЫЙ РАЗМЕН (TREETOWN)', desc: 'Разменять купюру на мелочь в лавке у TreeTown с видом секретной операции.', coords: [100.8868, 12.9318] },
       { id: 'q_english',  price: 600,   icon: '🇺🇸', name: 'СМЕНА ФРАКЦИИ (15 МИН)', desc: '15 минут разговаривать исключительно на английском.', coords: null },
       { id: 'q_cargo',    price: 600,   icon: '📦', name: 'СЕКРЕТНЫЙ ГРУЗ (100 М)', desc: 'Нести пакет на вытянутой руке 100 метров, никого не задев.', coords: null },
       { id: 'q_drop',     price: 600,   icon: '📸', name: 'СБРОС ЛУТА В ТГ', desc: 'Выложить всё из карманов, сфоткать в Telegram-чат, забрать и убежать.', coords: null },
-      { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (5 МИН)', desc: 'Чат 5 минут управляет стримером командами (право, лево, вперёд, назад).', coords: null },
+      { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (5 МИН)', desc: 'Чат 5 минут управляет стримером командами (право, лево, вперёд, назад, прыжок).', coords: null },
       { id: 'q_statue',   price: 700,   icon: '🗿', name: 'ЖИВАЯ СТАТУЯ (WALKING ST.)', desc: 'Замереть в пафосной позе на 60 секунд посреди оживлённой улицы.', coords: [100.8732, 12.9265] },
       { id: 'q_flowers',  price: 1000,  icon: '💐', name: 'КУПИТЬ ЦВЕТЫ ОКСАНЕ', desc: 'Найти цветочный ларёк у Централ Фестивал и подарить букет Оксане.', coords: [100.8832, 12.9348] },
       { id: 'q_green',    price: 1000,  icon: '🌿', name: 'ЗЕЛЁНАЯ КОМНАТА', desc: 'Зайти в тематический шоп на Сои Буакхао и сделать обзор.', coords: [100.8862, 12.9312] },
@@ -1110,7 +1288,6 @@
       { id: 'q_tuktuk',   price: 1000,  icon: '🛺', name: 'РЕЙС НА ТУК-ТУКЕ (SECOND RD)', desc: 'Пересесть на сонгтео (тук-тук) на Второй улице и проехать 2 остановки.', coords: [100.8760, 12.9275] },
       { id: 'q_informer', price: 1000,  icon: '🕴', name: 'ВСТРЕЧА С ИНФОРМАТОРОМ', desc: 'Найти человека в загаданном цвете одежды и попросить передать привет донатеру.', coords: null },
 
-      // 1 200 – 5 000 ₽ (Пляжи, паром на Ко Лан в двух точках, клубы, отели, заброшка)
       { id: 'q_lady200',  price: 1200,  icon: '💋', name: 'ЧАЕВЫЕ НА WALKING ST.', desc: 'Поговорить с девушкой на Walking Street и оставить 200 бат чаевых.', coords: [100.8730, 12.9262] },
       { id: 'q_taxi',     price: 1200,  icon: '🏍', name: 'ПОДВЕЗТИ ПОПУТЧИЦУ', desc: 'Подвезти девушку на байке по пути.', coords: null },
       { id: 'q_massage',  price: 2000,  icon: '💆', name: 'ТАЙСКИЙ МАССАЖ НОГ', desc: 'Зайти в салон на Сои Буакхао и сделать массаж ног в эфире.', coords: [100.8855, 12.9302] },
@@ -1129,8 +1306,6 @@
       { id: 'q_sunrise',  price: 3000,  icon: '☕', name: 'РАССВЕТ С КОФЕ (НА-ДЖОМТЬЕН)', desc: 'Встретить рассвет на набережной На-Джомтьен с горячим кофе.', coords: [100.8895, 12.8785] },
       { id: 'q_hotel',    price: 5000,  icon: '🏨', name: 'НОМЕР В ОТЕЛЕ НА СУТКИ', desc: 'Заехать в отель у Централ Фестивал и снять номер на сутки для стрима.', coords: [100.8835, 12.9340] },
       { id: 'q_abandoned',price: 5000,  icon: '🏚', name: 'ЗАБРОШКА У ПИРСА (WATERFRONT)', desc: 'Поехать к заброшенному небоскрёбу Waterfront у пирса Бали Хай.', coords: [100.8652, 12.9235] },
-
-      // 70 000 ₽ (Босс-квест)
       { id: 'q_beard',    price: 70000, icon: '🪒', name: 'СБРИТЬ БОРОДУ В ЭФИРЕ', desc: 'Легендарный челлендж: заехать в барбершоп в центре и сбрить бороду полностью!', coords: [100.8845, 12.9320] }
     ];
 
@@ -1151,7 +1326,7 @@
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
     // =========================================================================
-    // ЗВУКОВОЙ МОДУЛЬ
+    // ЗВУК И ГОЛОСОВОЙ СИНТЕЗАТОР КОМАНД ЧАТА
     // =========================================================================
     let audioCtx = null;
     let audioUnlocked = false;
@@ -1186,6 +1361,33 @@
       customPassAudio.play().catch(() => {});
     }
 
+    // Короткий звуковой сигнал + голосовая озвучка команды для стримера
+    function speakGameCommand(text) {
+      try {
+        unlockAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.16);
+
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utter = new SpeechSynthesisUtterance(text);
+          utter.lang = 'ru-RU';
+          utter.rate = 1.15;
+          utter.pitch = 1.05;
+          window.speechSynthesis.speak(utter);
+        }
+      } catch (e) {}
+    }
+
     async function sendCommand(topic, payloadObj) {
       return fetch(`https://ntfy.sh/${topic}`, {
         method: 'POST',
@@ -1214,14 +1416,13 @@
       return 'Свыше 25 км';
     }
 
-    // Проверка антиспама для предложений зрителей (5 мин кулдаун, макс 3 за стрим)
     function checkProposalSpamLimit() {
       const now = Date.now();
       let propHistory = JSON.parse(localStorage.getItem('proposal_history') || '[]');
       propHistory = propHistory.filter(ts => (now - ts) < 12 * 3600 * 1000);
 
       if (propHistory.length >= PROPOSAL_MAX_PER_STREAM) {
-        return { allowed: false, reason: `Лимит исчерпан: максимум ${PROPOSAL_MAX_PER_STREAM} предложения за стрим!` };
+        return { allowed: false, reason: `Лимит: макс. ${PROPOSAL_MAX_PER_STREAM} предложения за стрим` };
       }
 
       const lastTs = propHistory[propHistory.length - 1];
@@ -1229,7 +1430,7 @@
         const leftSec = Math.ceil((PROPOSAL_COOLDOWN_SEC * 1000 - (now - lastTs)) / 1000);
         const mins = Math.floor(leftSec / 60);
         const secs = String(leftSec % 60).padStart(2, '0');
-        return { allowed: false, reason: `Антиспам: подожди ${mins}:${secs} перед новым предложением` };
+        return { allowed: false, reason: `Кулдаун: подожди ${mins}:${secs}` };
       }
 
       return { allowed: true, history: propHistory };
@@ -1240,6 +1441,13 @@
       const hist = check.history || [];
       hist.push(Date.now());
       localStorage.setItem('proposal_history', JSON.stringify(hist));
+    }
+
+    function extractYouTubeVideoId(input) {
+      const trimmed = input.trim();
+      const regExp = /(?:youtube\.com\/(?:watch\?v=|live\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const match = trimmed.match(regExp);
+      return match ? match[1] : trimmed;
     }
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -1268,6 +1476,40 @@
 
       function logMsg(txt) { logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`; }
 
+      // Загружаем сохранённый ключ YouTube API
+      const ytKeyInput = document.getElementById('yt-api-key');
+      const ytUrlInput = document.getElementById('yt-video-url');
+      ytKeyInput.value = localStorage.getItem('yt_api_key') || '';
+      ytUrlInput.value = localStorage.getItem('yt_video_id') || '';
+
+      document.getElementById('yt-connect-btn').onclick = async () => {
+        const apiKey = ytKeyInput.value.trim();
+        const videoId = extractYouTubeVideoId(ytUrlInput.value);
+        if (!apiKey || !videoId) {
+          alert('Введи YouTube API Key и ссылку/ID трансляции!');
+          return;
+        }
+        localStorage.setItem('yt_api_key', apiKey);
+        localStorage.setItem('yt_video_id', videoId);
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'yt_start', apiKey, videoId });
+        logMsg(`Команда подключения YouTube чата (${videoId}) отправлена на радар!`);
+      };
+
+      document.getElementById('yt-disconnect-btn').onclick = async () => {
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'yt_stop' });
+        logMsg('Команда отключения чата отправлена.');
+      };
+
+      // Ручной тест игровых команд автопилота
+      document.querySelectorAll('[data-cmd]').forEach(btn => {
+        btn.onclick = async () => {
+          const cmd = btn.getAttribute('data-cmd');
+          const icon = btn.getAttribute('data-icon');
+          await sendCommand(NTFY_PIN_TOPIC, { action: 'game_cmd', label: `${cmd}!`, icon, speech: `Команда чата: ${cmd}`, author: 'Стример (Тест)' });
+          logMsg(`Отправлена команда управления: ${cmd}`);
+        };
+      });
+
       function renderAdminQueue() {
         adminCountEl.textContent = currentAdminQueue.length;
         if (currentAdminQueue.length === 0) {
@@ -1278,8 +1520,8 @@
         currentAdminQueue.forEach((task, idx) => {
           const dist = Math.round(getDistanceMeters(lastKnownStreamerPos[1], lastKnownStreamerPos[0], task.lat, task.lng));
           const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} км` : `${dist} м`;
-          const typeLabel = task.isProposal ? '💡 ПРЕДЛОЖЕНИЕ (сгорит через 10м)' : (task.vip ? '👑 VIP / КВЕСТ' : '📍 ТОЧКА ЧАТА');
-          const modeLabel = task.autoComplete === false ? 'Закрытие: ВРУЧНУЮ' : 'Закрытие: АВТО';
+          const typeLabel = task.isProposal ? '💡 ПРЕДЛОЖЕНИЕ' : (task.vip ? '👑 VIP / КВЕСТ' : '📍 ТОЧКА ЧАТА');
+          const modeLabel = task.autoComplete === false ? 'ВРУЧНУЮ' : 'АВТО';
 
           const row = document.createElement('div');
           row.className = `admin-q-row ${task.isProposal ? 'proposal' : (task.vip ? 'vip' : '')}`;
@@ -1291,7 +1533,7 @@
             <div style="font-size:14px; font-weight:700; color:#fff;">${task.icon || '🎯'} ${task.title}</div>
             <div class="admin-q-actions">
               <button class="t-btn green" data-complete="${task.id}" style="padding:8px; font-size:12px;">✅ Засчитать (+Respect)</button>
-              <button class="t-btn red" data-remove="${task.id}" style="padding:8px; font-size:12px;">❌ Удалить / Отклонить</button>
+              <button class="t-btn red" data-remove="${task.id}" style="padding:8px; font-size:12px;">❌ Удалить</button>
             </div>
           `;
           adminListEl.appendChild(row);
@@ -1299,16 +1541,14 @@
 
         adminListEl.querySelectorAll('[data-complete]').forEach(btn => {
           btn.onclick = async () => {
-            const id = btn.getAttribute('data-complete');
-            await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_id', id });
+            await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_id', id: btn.getAttribute('data-complete') });
             logMsg('Задание засчитано со звуком Mission Passed!');
           };
         });
 
         adminListEl.querySelectorAll('[data-remove]').forEach(btn => {
           btn.onclick = async () => {
-            const id = btn.getAttribute('data-remove');
-            await sendCommand(NTFY_PIN_TOPIC, { action: 'remove_id', id });
+            await sendCommand(NTFY_PIN_TOPIC, { action: 'remove_id', id: btn.getAttribute('data-remove') });
             logMsg('Задание удалено из списка.');
           };
         });
@@ -1337,9 +1577,7 @@
           const d = JSON.parse(p.message);
           if (Array.isArray(d.queue)) {
             currentAdminQueue = d.queue;
-            if (currentAdminQueue.length > 0) {
-              latestTargetCoords = [currentAdminQueue[0].lng, currentAdminQueue[0].lat];
-            }
+            if (currentAdminQueue.length > 0) latestTargetCoords = [currentAdminQueue[0].lng, currentAdminQueue[0].lat];
             renderAdminQueue();
           }
         } catch (err) {}
@@ -1347,34 +1585,6 @@
 
       document.getElementById('t-sound-new').onclick = () => { playNewMissionSound(); logMsg('Проигран new_mission.mp3'); };
       document.getElementById('t-sound-pass').onclick = () => { playMissionPassedSound(); logMsg('Проигран mission_passed.mp3'); };
-
-      document.getElementById('t-add-free').onclick = async () => {
-        const target = [lastKnownStreamerPos[0] + 0.0022, lastKnownStreamerPos[1] + 0.0020];
-        latestTargetCoords = target;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'ЗАЕХАТЬ В 7-ELEVEN', vip: false, autoComplete: true });
-        logMsg('Добавлена FREE точка (АВТО-финиш)');
-      };
-
-      document.getElementById('t-add-vip1').onclick = async () => {
-        const target = [100.8732, 12.9265];
-        latestTargetCoords = target;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: 'VIP 1000₽: WALKING STREET', vip: true, questIcon: '👑', autoComplete: true });
-        logMsg('Добавлена VIP точка (АВТО-финиш)');
-      };
-
-      document.getElementById('t-add-quest').onclick = async () => {
-        const q = QUEST_CATALOG.find(item => item.coords !== null);
-        latestTargetCoords = q.coords;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: q.coords[0], lat: q.coords[1], title: `${q.name} (${q.price}₽)`, vip: true, questIcon: q.icon, autoComplete: false });
-        logMsg('Добавлен КВЕСТ (ВРУЧНУЮ)');
-      };
-
-      document.getElementById('t-add-custom').onclick = async () => {
-        const target = [lastKnownStreamerPos[0] - 0.002, lastKnownStreamerPos[1] + 0.0018];
-        latestTargetCoords = target;
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'add', id: Date.now().toString(), lng: target[0], lat: target[1], title: '💡 1500₽: СЪЕСТЬ ДУРИАН', vip: true, isProposal: true, questIcon: '💡', autoComplete: false });
-        logMsg('Добавлено ПРЕДЛОЖЕНИЕ зрителя (ВРУЧНУЮ)');
-      };
 
       document.getElementById('t-complete-top').onclick = async () => {
         await sendCommand(NTFY_PIN_TOPIC, { action: 'complete_one' });
@@ -1393,7 +1603,7 @@
     }
 
     // =========================================================================
-    // РЕЖИМ 1: ИНТЕРАКТИВНАЯ КАРТА ЗРИТЕЛЯ (?pin=...)
+    // РЕЖИМ 1: ИНТЕРАКТИВНАЯ КАРТА ЗРИТЕЛЯ (?pin=...) С МОБИЛЬНОЙ ШТОРКОЙ
     // =========================================================================
     else if (pinMode) {
       document.body.classList.add('viewer-mode');
@@ -1433,13 +1643,38 @@
       streamerEl.style.cssText = 'width:20px;height:20px;background:#00c8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px #00c8ff;';
       const streamerMarker = new mapboxgl.Marker(streamerEl).setLngLat(streamerPos).addTo(vMap);
 
-      document.getElementById('toggle-active-hdr').addEventListener('click', () => {
-        document.getElementById('viewer-queue-list').classList.toggle('collapsed');
+      // Логика мобильных шторок (Bottom Sheets)
+      const activePanel = document.getElementById('viewer-live-queue');
+      const catalogPanel = document.getElementById('viewer-catalog-panel');
+      const backdrop = document.getElementById('sheet-backdrop');
+
+      function closeAllSheets() {
+        activePanel.classList.remove('sheet-open');
+        catalogPanel.classList.remove('sheet-open');
+        backdrop.classList.remove('active');
+      }
+
+      document.getElementById('chip-active').addEventListener('click', () => {
+        const isOpen = activePanel.classList.contains('sheet-open');
+        closeAllSheets();
+        if (!isOpen) {
+          activePanel.classList.add('sheet-open');
+          backdrop.classList.add('active');
+        }
       });
-      document.getElementById('toggle-catalog-hdr').addEventListener('click', () => {
-        document.getElementById('preset-quests-list').classList.toggle('collapsed');
-        document.getElementById('price-filters').classList.toggle('collapsed');
+
+      document.getElementById('chip-catalog').addEventListener('click', () => {
+        const isOpen = catalogPanel.classList.contains('sheet-open');
+        closeAllSheets();
+        if (!isOpen) {
+          catalogPanel.classList.add('sheet-open');
+          backdrop.classList.add('active');
+        }
       });
+
+      document.getElementById('close-active-sheet').addEventListener('click', closeAllSheets);
+      document.getElementById('close-catalog-sheet').addEventListener('click', closeAllSheets);
+      backdrop.addEventListener('click', closeAllSheets);
 
       const qdmModal = document.getElementById('quest-detail-modal');
       const qdmTitle = document.getElementById('qdm-title');
@@ -1448,6 +1683,7 @@
       const sendPresetBtn = document.getElementById('send-preset-btn');
 
       function openQuestDetail(q) {
+        closeAllSheets(); // На мобилках автоматически сворачиваем шторку, чтобы показать точку на карте!
         selectedPreset = q;
         document.querySelectorAll('.catalog-item').forEach(r => {
           r.classList.toggle('selected', r.getAttribute('data-qid') === q.id);
@@ -1495,7 +1731,6 @@
         selectedPreset = null;
       });
 
-      // Кнопка "🎲 Рулетка" — выбирает случайный квест от 300 до 1000 ₽
       document.getElementById('btn-roulette').addEventListener('click', () => {
         const pool = QUEST_CATALOG.filter(q => q.price >= 300 && q.price <= 1000);
         const randomQuest = pool[Math.floor(Math.random() * pool.length)];
@@ -1542,23 +1777,27 @@
       }
 
       function renderViewerQueue() {
-        const qBox = document.getElementById('viewer-live-queue');
         const qList = document.getElementById('viewer-queue-list');
         const qCount = document.getElementById('v-queue-count');
+        const mActiveCnt = document.getElementById('m-active-cnt');
 
         liveMarkers.forEach(m => m.remove());
         liveMarkers = [];
 
-        if (!liveQueue || liveQueue.length === 0) {
-          qBox.style.display = 'none';
+        const count = liveQueue ? liveQueue.length : 0;
+        qCount.textContent = count;
+        mActiveCnt.textContent = count;
+
+        if (count === 0) {
+          if (window.innerWidth > 768) activePanel.style.display = 'none';
+          qList.innerHTML = '<div style="font-size:12px; color:#94a3b8; padding:6px;">Активных заданий сейчас нет</div>';
           if (vMap.getSource('v-active-route')) {
             vMap.getSource('v-active-route').setData({ type: 'FeatureCollection', features: [] });
           }
           return;
         }
 
-        qBox.style.display = 'flex';
-        qCount.textContent = liveQueue.length;
+        if (window.innerWidth > 768) activePanel.style.display = 'flex';
         qList.innerHTML = '';
 
         liveQueue.forEach((task, idx) => {
@@ -1571,11 +1810,12 @@
           el.innerHTML = `<span>${task.icon || '🎯'}</span>`;
           el.addEventListener('click', (ev) => {
             ev.stopPropagation();
+            closeAllSheets();
             autoFollow = false;
             vMap.flyTo({ center: [task.lng, task.lat], zoom: 16 });
             qdmModal.style.display = 'flex';
             qdmTitle.textContent = `${task.icon || '🎯'} ${task.title}`;
-            qdmDesc.textContent = task.isProposal ? 'Предложенное задание зрителя (ожидает доната/одобрения стримера, сгорает через 10 мин).' : 'Активное задание в очереди стрима.';
+            qdmDesc.textContent = task.isProposal ? 'Предложенное задание зрителя (ожидает доната/одобрения стримера).' : 'Активное задание в очереди стрима.';
             qdmLocInfo.textContent = `📍 Осталось до точки: ${distStr}`;
             sendPresetBtn.disabled = true;
             sendPresetBtn.textContent = 'Уже в списке стрима';
@@ -1590,6 +1830,7 @@
             <span style="color:#38bdf8;white-space:nowrap;">${distStr}</span>
           `;
           row.addEventListener('click', () => {
+            closeAllSheets();
             autoFollow = false;
             vMap.flyTo({ center: [task.lng, task.lat], zoom: 16 });
             qdmModal.style.display = 'flex';
@@ -1625,6 +1866,7 @@
         });
 
         document.getElementById('catalog-count').textContent = filtered.length;
+        document.getElementById('m-catalog-cnt').textContent = filtered.length;
 
         filtered.forEach(q => {
           const row = document.createElement('div');
@@ -1699,7 +1941,6 @@
         });
       });
 
-      // Вкладка "💡 Предложить своё задание" с живым таймером антиспама
       const customPriceInput = document.getElementById('custom-price');
       const customTextInput = document.getElementById('custom-text');
       const sendCustomBtn = document.getElementById('send-custom-btn');
@@ -1917,7 +2158,7 @@
     }
 
     // =========================================================================
-    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO
+    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO + ЖИВОЙ ЧАТ И АВТОПИЛОТ
     // =========================================================================
     else {
       function updateClock() {
@@ -1934,6 +2175,109 @@
 
       let currentStreamerPos = [100.8685, 12.9185];
       let questQueue = [];
+
+      // Отрисовка команды управления «АВТОПИЛОТ» на радаре + озвучка
+      let apTimeout = null;
+      function triggerGameCommandHUD(label, icon, speechText, authorName) {
+        const hud = document.getElementById('autopilot-hud');
+        document.getElementById('ap-cmd-icon').textContent = icon || '🎮';
+        document.getElementById('ap-cmd-text').textContent = label;
+        document.getElementById('ap-cmd-author').textContent = authorName ? `@${authorName}` : '';
+
+        hud.classList.remove('active');
+        void hud.offsetWidth; // перезапуск анимации
+        hud.classList.add('active');
+
+        speakGameCommand(speechText || label);
+
+        clearTimeout(apTimeout);
+        apTimeout = setTimeout(() => {
+          hud.classList.remove('active');
+        }, 4500);
+      }
+
+      // Модуль YouTube Live Chat (3 строки последних сообщений + перехват команд)
+      let ytChatPollTimer = null;
+      let ytNextPageToken = null;
+      let ytRecentMessages = [];
+      let lastCommandTimestamp = 0;
+
+      function renderYouTubeChatBox() {
+        const box = document.getElementById('yt-chat-box');
+        if (ytRecentMessages.length === 0) {
+          box.classList.remove('visible');
+          return;
+        }
+        box.classList.add('visible');
+        box.innerHTML = ytRecentMessages.slice(-3).map(m => `
+          <div class="yt-msg-line"><span class="yt-author">${m.author}:</span>${m.text}</div>
+        `).join('');
+      }
+
+      function parseChatForGameCommands(author, text) {
+        const lower = text.toLowerCase().trim();
+        for (const cmd of CHAT_GAME_COMMANDS) {
+          if (cmd.keys.some(k => lower === k || lower.startsWith(k + ' ') || lower.startsWith('!' + k))) {
+            // Защита от одновременного крика: не чаще 1 озвучки раз в 2.5 секунды
+            if (Date.now() - lastCommandTimestamp > 2500) {
+              lastCommandTimestamp = Date.now();
+              triggerGameCommandHUD(cmd.label, cmd.icon, cmd.speech, author);
+            }
+            break;
+          }
+        }
+      }
+
+      async function startYouTubeChat(apiKey, videoId) {
+        if (ytChatPollTimer) clearTimeout(ytChatPollTimer);
+        ytNextPageToken = null;
+        try {
+          const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}&key=${apiKey}`);
+          const vData = await vRes.json();
+          const liveChatId = vData.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
+          if (!liveChatId) return;
+
+          showBanner('📺 YOUTUBE ЧАТ ПОДКЛЮЧЕН', '3 строки чата + команды Автопилота активны', 'normal');
+
+          async function pollMessages() {
+            try {
+              let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveChatId}&part=snippet,authorDetails&key=${apiKey}`;
+              if (ytNextPageToken) url += `&pageToken=${ytNextPageToken}`;
+
+              const cRes = await fetch(url);
+              const cData = await cRes.json();
+              if (cData.nextPageToken) ytNextPageToken = cData.nextPageToken;
+
+              if (Array.isArray(cData.items)) {
+                cData.items.forEach(item => {
+                  const author = item.authorDetails?.displayName || 'Зритель';
+                  const msgText = item.snippet?.displayMessage || '';
+                  if (!msgText) return;
+
+                  ytRecentMessages.push({ author, text: msgText });
+                  if (ytRecentMessages.length > 10) ytRecentMessages.shift();
+
+                  // Проверяем команды управления (прыжок, вперед, налево, лежать и т.д.)
+                  parseChatForGameCommands(author, msgText);
+                });
+                renderYouTubeChatBox();
+              }
+              const waitMs = Math.max(cData.pollingIntervalMillis || 4500, 3500);
+              ytChatPollTimer = setTimeout(pollMessages, waitMs);
+            } catch (err) {
+              ytChatPollTimer = setTimeout(pollMessages, 6000);
+            }
+          }
+          pollMessages();
+        } catch (e) {}
+      }
+
+      // Автозапуск чата, если параметры переданы прямо в URL радара
+      const initYtKey = urlParams.get('yt_key');
+      const initYtVid = urlParams.get('yt_video');
+      if (initYtKey && initYtVid) {
+        startYouTubeChat(initYtKey, extractYouTubeVideoId(initYtVid));
+      }
 
       function broadcastQueueState() {
         const cleanQueue = questQueue.map(q => ({
@@ -2066,7 +2410,6 @@
         const icon = data.questIcon || (isProposal ? '💡' : (isVip ? '👑' : '🎯'));
         const isAuto = data.autoComplete !== false;
 
-        // Ограничиваем общее число неоплаченных предложений в очереди (макс 3)
         if (isProposal) {
           const currentProposals = questQueue.filter(q => q.isProposal).length;
           if (currentProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) return;
@@ -2140,7 +2483,6 @@
         }
       }
 
-      // Автоматическая очистка неоплаченных предложений через 10 минут
       setInterval(() => {
         const now = Date.now();
         for (let i = questQueue.length - 1; i >= 0; i--) {
@@ -2281,6 +2623,14 @@
             if (idx !== -1) removeQuestByIndex(idx, false);
           } else if (data.action === 'clear_all') {
             while (questQueue.length > 0) removeQuestByIndex(0, false);
+          } else if (data.action === 'yt_start') {
+            startYouTubeChat(data.apiKey, data.videoId);
+          } else if (data.action === 'yt_stop') {
+            if (ytChatPollTimer) clearTimeout(ytChatPollTimer);
+            ytRecentMessages = [];
+            renderYouTubeChatBox();
+          } else if (data.action === 'game_cmd') {
+            triggerGameCommandHUD(data.label, data.icon, data.speech, data.author);
           } else if (data.action === 'add' || data.action === 'set') {
             addQuestToQueue({
               id: data.id,
