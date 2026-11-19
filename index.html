@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pattaya Moto GTA Radar & Quests</title>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    @import url('https://fonts.cdnfonts.com/css/pricedown');
+    @import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@600;700&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: transparent !important;
+      overflow: hidden;
+    }
+
+    /* ================= ИНТЕРФЕЙС ЗРИТЕЛЯ (?pin=...) ================= */
+    body.viewer-mode {
+      background: #0f172a !important;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #viewer-ui {
+      display: none;
+      width: 100%;
+      height: 100%;
+      flex-direction: column;
+    }
+
+    body.viewer-mode .hud-wrapper { display: none; }
+    body.viewer-mode #viewer-ui { display: flex; }
+
+    .viewer-header {
+      background: #1e293b;
+      padding: 10px 14px;
+      border-bottom: 2px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .badge-tier {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    .badge-free { background: #16a34a; color: #fff; }
+    .badge-vip { background: linear-gradient(90deg, #f59e0b, #eab308); color: #000; }
+
+    #viewer-map {
+      flex: 1;
+      width: 100%;
+    }
+
+    .viewer-controls {
+      background: #1e293b;
+      padding: 12px 14px;
+      border-top: 2px solid #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+
+    .quest-card {
+      background: #0f172a;
+      border: 1.5px solid #f59e0b;
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: none;
+    }
+
+    .viewer-controls input {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .viewer-controls button {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      background: #00b0ff;
+      color: #000;
+      transition: 0.2s;
+    }
+
+    .viewer-controls button:disabled {
+      background: #475569;
+      color: #94a3b8;
+      cursor: not-allowed;
+    }
+
+    .viewer-quest-marker {
+      background: #111827;
+      border: 2px solid #f59e0b;
+      color: #fff;
+      padding: 3px 7px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.8);
+      cursor: pointer;
+    }
+
+    /* ================= ОСНОВНОЙ РАДАР ДЛЯ PRISM (ЛЕВЫЙ ВЕРХНИЙ УГОЛ) ================= */
+    .hud-wrapper {
+      position: relative;
+      width: 360px;
+      height: 700px;
+      padding: 10px 15px;
+    }
+
+    /* Главный заголовок PATTAYA CITY и часы */
+    .header-info {
+      position: absolute;
+      top: 2px;
+      left: 14px;
+      z-index: 25;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-family: 'Pricedown Bl', 'Pricedown', 'Anton', sans-serif;
+    }
+
+    .city-name {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1;
+      background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 55%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter:
+        drop-shadow(-2px -2px 0 #000)
+        drop-shadow( 2px -2px 0 #000)
+        drop-shadow(-2px  2px 0 #000)
+        drop-shadow( 2px  2px 0 #000)
+        drop-shadow( 0px  3px 0 #000)
+        drop-shadow( 0px  5px 6px rgba(0, 0, 0, 0.85));
+    }
+
+    .clock {
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      background: linear-gradient(180deg, #fff176 0%, #ffd54f 60%, #ffb300 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter:
+        drop-shadow(-1.5px -1.5px 0 #000)
+        drop-shadow( 1.5px -1.5px 0 #000)
+        drop-shadow(-1.5px  1.5px 0 #000)
+        drop-shadow( 1.5px  1.5px 0 #000)
+        drop-shadow( 0px    3px 0 #000)
+        drop-shadow( 0px    4px 5px rgba(0, 0, 0, 0.85));
+    }
+
+    /* Аккуратный подзаголовок текущего района под Pattaya City */
+    .district-sub {
+      position: absolute;
+      top: 38px;
+      left: 16px;
+      z-index: 25;
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #38bdf8;
+      background: rgba(10, 15, 22, 0.82);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      padding: 1px 8px;
+      border-radius: 4px;
+      text-shadow: 0 1px 2px #000;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.75);
+    }
+
+    .radar-circle {
+      position: absolute;
+      top: 54px;
+      left: 20px;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      border: 5px solid #1c252c;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.9), inset 0 0 22px rgba(0, 0, 0, 0.85);
+      overflow: hidden;
+      background: #1a2634;
+      z-index: 10;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      filter: contrast(1.12) saturate(1.25);
+    }
+
+    .radar-vignette {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.75);
+      pointer-events: none;
+      z-index: 12;
+    }
+
+    .mapboxgl-ctrl-bottom-left,
+    .mapboxgl-ctrl-bottom-right {
+      display: none !important;
+    }
+
+    .player-arrow {
+      position: absolute;
+      top: 52%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 28px;
+      height: 28px;
+      z-index: 15;
+      pointer-events: none;
+      filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.95));
+    }
+
+    .north-badge {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 23px;
+      height: 23px;
+      background: #000;
+      color: #fff;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      font-family: 'Anton', sans-serif;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 15;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.85);
+    }
+
+    .speed-badge {
+      position: absolute;
+      top: 298px;
+      left: 256px;
+      z-index: 22;
+      background: rgba(15, 20, 26, 0.92);
+      border: 1.5px solid #00b0ff;
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #00e5ff;
+      text-shadow: 0 1px 2px #000;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.8);
+    }
+
+    .target-badge {
+      position: absolute;
+      top: 298px;
+      left: 16px;
+      z-index: 22;
+      background: rgba(35, 10, 35, 0.92);
+      border: 1.5px solid #ff00ff;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #ff80ff;
+      text-shadow: 0 1px 2px #000;
+      display: none;
+    }
+
+    .bars-svg {
+      position: absolute;
+      top: 54px;
+      left: 20px;
+      width: 280px;
+      height: 300px;
+      z-index: 18;
+      pointer-events: none;
+      overflow: visible;
+      filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.9));
+    }
+
+    @keyframes hpPulse {
+      0%, 100% { stroke: #39ff14; }
+      50% { stroke: #76ff03; }
+    }
+    .hp-bar { animation: hpPulse 3s infinite ease-in-out; }
+
+    /* ================= БЛОК ПОД РАДАРОМ: ОПОВЕЩЕНИЯ И СПИСОК МИССИЙ ================= */
+    .under-radar-panel {
+      position: absolute;
+      top: 358px;
+      left: 16px;
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 30;
+    }
+
+    .zone-banner {
+      background: rgba(12, 16, 22, 0.95);
+      border-left: 4px solid #ffcc00;
+      border-right: 2px solid rgba(255, 255, 255, 0.15);
+      padding: 0 12px;
+      border-radius: 6px;
+      color: #fff;
+      font-family: 'Oswald', sans-serif;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.9);
+      transform: translateY(15px);
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+    }
+
+    .zone-banner.active {
+      transform: translateY(0);
+      opacity: 1;
+      max-height: 95px;
+      padding-top: 7px;
+      padding-bottom: 7px;
+    }
+
+    .zone-banner.vip-style {
+      border-left-color: #ffd700;
+      background: linear-gradient(90deg, rgba(55, 35, 5, 0.96), rgba(15, 18, 25, 0.96));
+    }
+
+    .zone-banner.passed-style {
+      border-left-color: #39ff14;
+      background: linear-gradient(90deg, rgba(15, 45, 20, 0.97), rgba(12, 18, 22, 0.97));
+      text-align: center;
+    }
+
+    .zone-banner-title {
+      font-size: 11px;
+      letter-spacing: 1.2px;
+      color: #ffcc00;
+      text-transform: uppercase;
+    }
+
+    .zone-banner.vip-style .zone-banner-title { color: #ffd700; }
+    .zone-banner.passed-style .zone-banner-title {
+      font-family: 'Pricedown Bl', 'Pricedown', 'Anton', sans-serif;
+      font-size: 22px;
+      color: #ffd54f;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px #000;
+    }
+
+    .zone-banner-name {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .zone-banner.passed-style .zone-banner-name {
+      color: #39ff14;
+      font-size: 15px;
+    }
+
+    .quest-list-box {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .quest-list-header {
+      font-family: 'Oswald', sans-serif;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: #e2e8f0;
+      text-shadow: 0 1px 3px #000, 0 0 4px #000;
+      padding-left: 2px;
+    }
+
+    .quest-item {
+      background: rgba(15, 20, 28, 0.88);
+      border-left: 3.5px solid #ff00ff;
+      border-radius: 5px;
+      padding: 5px 9px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.75);
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .quest-item.is-vip {
+      border-left-color: #ffd700;
+      background: rgba(32, 24, 12, 0.92);
+    }
+
+    .quest-item.is-current {
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-left-width: 4px;
+    }
+
+    .quest-item-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .quest-item-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .quest-item-dist {
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(0, 0, 0, 0.55);
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .quest-item.is-vip .quest-item-dist { color: #ffd700; }
+
+    .gta-pin {
+      width: 24px;
+      height: 24px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      border: 2px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.8);
+    }
+    .gta-pin span {
+      transform: rotate(45deg);
+      font-size: 11px;
+      font-weight: 700;
+      color: #000;
+      font-family: sans-serif;
+    }
+
+    @keyframes pulsePin {
+      0% { transform: rotate(-45deg) scale(1); }
+      50% { transform: rotate(-45deg) scale(1.25); }
+      100% { transform: rotate(-45deg) scale(1); }
+    }
+    .viewer-target-pin {
+      width: 30px;
+      height: 30px;
+      border-radius: 50% 50% 50% 0;
+      border: 2.5px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px #ff00ff;
+      animation: pulsePin 1.2s infinite ease-in-out;
+    }
+    .viewer-target-pin span {
+      transform: rotate(45deg);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= ИНТЕРФЕЙС ДЛЯ ЗРИТЕЛЯ ================= -->
+  <div id="viewer-ui">
+    <div class="viewer-header">
+      <div>
+        <div style="font-weight: 700; font-size: 15px;">🏍 Навигатор и Квесты стрима</div>
+        <div id="viewer-sub" style="font-size: 11px; color: #94a3b8;">Выбери квест с ценой или ткни в карту</div>
+      </div>
+      <span id="tier-badge" class="badge-tier badge-free">FREE (до 1 км)</span>
+    </div>
+    <div id="viewer-map"></div>
+    <div class="viewer-controls">
+      <div class="quest-card" id="quest-card">
+        <div style="font-size: 12px; color: #f59e0b; font-weight: 700;" id="quest-card-price">КВЕСТ: 5 000 ₽</div>
+        <div style="font-size: 14px; font-weight: 700;" id="quest-card-title">Арендовать спортбайк</div>
+      </div>
+      <div id="dist-info" style="font-size: 12px; color: #38bdf8;">Нажми на карту или выбери жёлтый значок квеста...</div>
+      <input type="text" id="pin-title" maxlength="25" placeholder="Комментарий / задание (до 25 симв.)" />
+      <button id="send-pin-btn" disabled>Выбери точку на карте</button>
+    </div>
+  </div>
+
+  <!-- ================= ОСНОВНОЙ РАДАР ДЛЯ PRISM ================= -->
+  <div class="hud-wrapper" id="hud-root">
+    <div class="header-info">
+      <span class="city-name">Pattaya City</span>
+      <span class="clock" id="clock">04:20</span>
+    </div>
+    <div class="district-sub" id="district-sub">PRATAMNAK</div>
+
+    <div class="radar-circle">
+      <div id="map"></div>
+      <div class="radar-vignette"></div>
+      <div class="north-badge" id="north">N</div>
+      <svg class="player-arrow" viewBox="0 0 24 24">
+        <polygon points="12,2 21,21 12,16 3,21" fill="#00c8ff" stroke="#000000" stroke-width="2.2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <div class="target-badge" id="target-badge">🎯 0 М</div>
+    <div class="speed-badge" id="speed-badge">0 KM/H</div>
+
+    <svg class="bars-svg" viewBox="0 0 280 280">
+      <path d="M 38 238 A 146 146 0 0 0 138 286" fill="none" stroke="#000" stroke-width="11" stroke-linecap="round"/>
+      <path d="M 142 286 A 146 146 0 0 0 242 238" fill="none" stroke="#000" stroke-width="11" stroke-linecap="round"/>
+      <path class="hp-bar" d="M 38 238 A 146 146 0 0 0 138 286" fill="none" stroke="#39ff14" stroke-width="7" stroke-linecap="round"/>
+      <path id="speed-arc" d="M 142 286 A 146 146 0 0 0 242 238" fill="none" stroke="#00b0ff" stroke-width="7" stroke-linecap="round" stroke-dasharray="115" stroke-dashoffset="90" style="transition: stroke-dashoffset 0.6s ease;"/>
+    </svg>
+
+    <div class="under-radar-panel">
+      <div class="zone-banner" id="zone-banner">
+        <div class="zone-banner-title" id="zone-banner-title">★ ЛОКАЦИЯ ОБНАРУЖЕНА</div>
+        <div class="zone-banner-name" id="zone-name">PRATAMNAK HILL</div>
+      </div>
+
+      <div class="quest-list-box" id="quest-list-box">
+        <div class="quest-list-header">📋 АКТИВНЫЕ ЗАДАНИЯ:</div>
+        <div id="quest-items-container" style="display:flex; flex-direction:column; gap:5px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MAPBOX_TOKEN = 'pk.eyJ1Ijoic3RyaW1iYSIsImEiOiJjbXduMTh2ZG0wNXFpMzBwbGpnMDFmNnRjIn0.Y91BGdd5CU6QXz69RNGqQg';
+    const NTFY_GPS_TOPIC = 'strimba_pattaya_gps_9941';
+    const NTFY_PIN_TOPIC = 'strimba_pattaya_pins_9941';
+
+    const VIP_TIERS = {
+      'vip_1000': { meters: 5000,  label: '👑 VIP 1000₽ (до 5 км)',  allowQuests: false },
+      'vip_2000': { meters: 10000, label: '👑 VIP 2000₽ (до 10 км)', allowQuests: true },
+      'vip_3000': { meters: 15000, label: '👑 VIP 3000₽ (до 15 км)', allowQuests: true },
+      'vip_5000': { meters: 25000, label: '👑 VIP 5000₽ (до 25 км)', allowQuests: true }
+    };
+
+    const FREE_MAX_METERS = 1000;
+    const FREE_COOLDOWN_MIN = 30;
+    const FREE_MAX_PER_STREAM = 3;
+
+    const QUEST_LOCATIONS = [
+      { id: 'sportbike', name: 'АРЕНДОВАТЬ СПОРТБАЙК', price: '6 000 ₽', coords: [100.8785, 12.9245], icon: '🏍' },
+      { id: 'scorpion',  name: 'СЪЕСТЬ СКОРПИОНА НА РЫНКЕ', price: '1 500 ₽', coords: [100.8892, 12.9125], icon: '🦂' },
+      { id: 'pushups',   name: '30 ОТЖИМАНИЙ НА СМОТРОВОЙ', price: '1 000 ₽', coords: [100.8698, 12.9218], icon: '💪' },
+      { id: 'massage',   name: 'ТАЙСКИЙ МАССАЖ НОГ В ЭФИРЕ', price: '1 500 ₽', coords: [100.8855, 12.9302], icon: '💆' },
+      { id: 'coconut',   name: 'ВЫПИТЬ 2 КОКОСА ЗАЛПОМ', price: '800 ₽', coords: [100.8712, 12.9012], icon: '🥥' },
+      { id: 'truth',     name: 'ЭКСКУРСИЯ В ХРАМ ИСТИНЫ', price: '3 500 ₽', coords: [100.8888, 12.9725], icon: '🏛' },
+      { id: 'buddha_mt', name: 'ПОЕЗДКА К ГОРЕ ЗОЛОТОГО БУДДЫ', price: '5 000 ₽', coords: [100.9565, 12.7645], icon: '⛰' }
+    ];
+
+    const POI_LOCATIONS = [
+      { name: 'BIG BUDDHA HILL', coords: [100.8672, 12.9178], color: '#ffcc00', icon: 'ॐ' },
+      { name: 'PRATAMNAK NIGHT MARKET', coords: [100.8654, 12.9108], color: '#ff9500', icon: '🍴' },
+      { name: 'DONGTAN BEACH', coords: [100.8682, 12.9052], color: '#00b0ff', icon: '🏖' },
+      { name: 'COSY BEACH', coords: [100.8615, 12.9182], color: '#00b0ff', icon: '🌊' },
+      { name: 'JOMTIEN NIGHT MARKET', coords: [100.8798, 12.8935], color: '#ff9500', icon: '🍴' },
+      { name: 'NA JOMTIEN PIER', coords: [100.8965, 12.8680], color: '#ff3b30', icon: '⚓' },
+      { name: 'WALKING STREET', coords: [100.8732, 12.9265], color: '#ff3b30', icon: '★' },
+      { name: 'BALI HAI PIER', coords: [100.8665, 12.9228], color: '#00b0ff', icon: '⚓' },
+      { name: 'TREETOWN PATTAYA', coords: [100.8868, 12.9318], color: '#ff9500', icon: '🍴' },
+      { name: 'TERMINAL 21 PATTAYA', coords: [100.8895, 12.9465], color: '#ff3b30', icon: '♠' }
+    ];
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    let audioCtx = null;
+    function unlockAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+    document.addEventListener('touchstart', unlockAudio, { passive: true });
+    document.addEventListener('click', unlockAudio);
+
+    function playNewMissionSound() {
+      try {
+        unlockAudio();
+        const now = audioCtx.currentTime;
+        const notes = [587.33, 880.00, 1174.66];
+        notes.forEach((freq, idx) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.28, now + idx * 0.08 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.38);
+        });
+      } catch (e) {}
+    }
+
+    function playMissionPassedSound() {
+      try {
+        unlockAudio();
+        const now = audioCtx.currentTime;
+        const sequence = [
+          { freqs: [196.00, 392.00, 466.16], time: 0.00, dur: 0.35 },
+          { freqs: [233.08, 466.16, 587.33], time: 0.28, dur: 0.35 },
+          { freqs: [261.63, 523.25, 659.25], time: 0.56, dur: 0.35 },
+          { freqs: [293.66, 587.33, 739.99, 880.00], time: 0.85, dur: 1.45 }
+        ];
+        sequence.forEach(step => {
+          step.freqs.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = i === 0 ? 'sawtooth' : 'triangle';
+            osc.frequency.setValueAtTime(freq, now + step.time);
+            gain.gain.setValueAtTime(0.001, now + step.time);
+            gain.gain.exponentialRampToValueAtTime(i === 0 ? 0.22 : 0.16, now + step.time + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + step.time + step.dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + step.time);
+            osc.stop(now + step.time + step.dur + 0.05);
+          });
+        });
+      } catch (e) {}
+    }
+
+    function getDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function getRequiredDonationText(meters) {
+      if (meters <= 1000)  return 'Бесплатно (в пределах 1 км)';
+      if (meters <= 5000)  return '1 000 ₽ (тариф до 5 км)';
+      if (meters <= 10000) return '2 000 ₽ (тариф до 10 км)';
+      if (meters <= 15000) return '3 000 ₽ (тариф до 15 км)';
+      if (meters <= 25000) return '5 000 ₽ (тариф до 25 км — пригород/острова)';
+      return 'Свыше 25 км (обсуждается в чате)';
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const pinMode = urlParams.get('pin');
+    const clearMode = urlParams.get('clear');
+
+    if (clearMode) {
+      fetch(`https://ntfy.sh/${NTFY_PIN_TOPIC}`, {
+        method: 'POST',
+        body: JSON.stringify({ action: clearMode === 'all' ? 'clear_all' : 'clear_one' })
+      }).then(() => {
+        const msg = clearMode === 'all' ? '✅ Весь список заданий очищен!' : '✅ Текущая верхняя миссия снята!';
+        document.body.innerHTML = `<div style="background:#111;color:#4cd964;height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:20px;">${msg}</div>`;
+      });
+    }
+
+    // =========================================================================
+    // РЕЖИМ 1: СТРАНИЦА ДЛЯ ЗРИТЕЛЯ
+    // =========================================================================
+    else if (pinMode) {
+      document.body.classList.add('viewer-mode');
+
+      const vipConfig = VIP_TIERS[pinMode] || null;
+      const maxAllowedMeters = vipConfig ? vipConfig.meters : FREE_MAX_METERS;
+      const isVip = Boolean(vipConfig);
+      const tierLabel = vipConfig ? vipConfig.label : 'FREE (до 1 км)';
+
+      const tierBadge = document.getElementById('tier-badge');
+      tierBadge.textContent = tierLabel;
+      tierBadge.className = isVip ? 'badge-tier badge-vip' : 'badge-tier badge-free';
+
+      let streamerPos = [100.8685, 12.9185];
+      let selectedLngLat = null;
+      let selectedQuest = null;
+      let userMarker = null;
+
+      const distInfo = document.getElementById('dist-info');
+      const sendBtn = document.getElementById('send-pin-btn');
+      const questCard = document.getElementById('quest-card');
+      const titleInput = document.getElementById('pin-title');
+
+      const vMap = new mapboxgl.Map({
+        container: 'viewer-map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: streamerPos,
+        zoom: isVip ? 12.8 : 14.8
+      });
+
+      const streamerEl = document.createElement('div');
+      streamerEl.style.cssText = 'width:18px;height:18px;background:#00c8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 10px #00c8ff;';
+      const streamerMarker = new mapboxgl.Marker(streamerEl).setLngLat(streamerPos).addTo(vMap);
+
+      function createCircleGeoJSON(center, radiusInMeters) {
+        const points = 64;
+        const coords = [];
+        const distanceX = radiusInMeters / (111320 * Math.cos(center[1] * Math.PI / 180));
+        const distanceY = radiusInMeters / 110540;
+        for (let i = 0; i < points; i++) {
+          const theta = (i / points) * (2 * Math.PI);
+          coords.push([center[0] + distanceX * Math.cos(theta), center[1] + distanceY * Math.sin(theta)]);
+        }
+        coords.push(coords[0]);
+        return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
+      }
+
+      vMap.on('load', () => {
+        vMap.addSource('allowed-zone', {
+          type: 'geojson',
+          data: createCircleGeoJSON(streamerPos, maxAllowedMeters)
+        });
+        vMap.addLayer({
+          id: 'allowed-zone-fill',
+          type: 'fill',
+          source: 'allowed-zone',
+          paint: { 'fill-color': isVip ? '#eab308' : '#22c55e', 'fill-opacity': 0.14 }
+        });
+        vMap.addLayer({
+          id: 'allowed-zone-line',
+          type: 'line',
+          source: 'allowed-zone',
+          paint: { 'line-color': isVip ? '#eab308' : '#22c55e', 'line-width': 2 }
+        });
+
+        QUEST_LOCATIONS.forEach(q => {
+          const el = document.createElement('div');
+          el.className = 'viewer-quest-marker';
+          el.innerHTML = `${q.icon} ${q.price}`;
+          el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            selectedQuest = q;
+            selectedLngLat = q.coords;
+            if (userMarker) { userMarker.remove(); userMarker = null; }
+
+            questCard.style.display = 'block';
+            document.getElementById('quest-card-price').textContent = `СЮЖЕТНЫЙ КВЕСТ • ${q.price}`;
+            document.getElementById('quest-card-title').textContent = `${q.icon} ${q.name}`;
+            titleInput.value = q.name;
+
+            if (vipConfig && vipConfig.allowQuests) {
+              distInfo.style.color = '#4ade80';
+              distInfo.textContent = '✅ VIP-доступ активен! Можешь добавить этот квест в список.';
+              sendBtn.disabled = false;
+              sendBtn.textContent = `👑 Запустить квест (${q.price})`;
+            } else {
+              distInfo.style.color = '#fbbf24';
+              distInfo.textContent = `🔒 Для запуска квестов задонать ${q.price} — бот пришлёт VIP-ссылку!`;
+              sendBtn.disabled = true;
+              sendBtn.textContent = `Нужен донат ${q.price}`;
+            }
+          });
+          new mapboxgl.Marker(el).setLngLat(q.coords).addTo(vMap);
+        });
+      });
+
+      const gpsStream = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse`);
+      gpsStream.onmessage = (event) => {
+        try {
+          const packet = JSON.parse(event.data);
+          if (!packet.message) return;
+          const params = packet.message.trim().startsWith('{') ? JSON.parse(packet.message) : Object.fromEntries(new URLSearchParams(packet.message));
+          const lat = parseFloat(params.lat || params.latitude);
+          const lon = parseFloat(params.lon || params.lng || params.longitude);
+          if (!isNaN(lat) && !isNaN(lon)) {
+            streamerPos = [lon, lat];
+            streamerMarker.setLngLat(streamerPos);
+            if (vMap.getSource('allowed-zone')) {
+              vMap.getSource('allowed-zone').setData(createCircleGeoJSON(streamerPos, maxAllowedMeters));
+            }
+          }
+        } catch (e) {}
+      };
+
+      vMap.on('click', (e) => {
+        selectedQuest = null;
+        questCard.style.display = 'none';
+        selectedLngLat = [e.lngLat.lng, e.lngLat.lat];
+
+        if (!userMarker) {
+          userMarker = new mapboxgl.Marker({ color: isVip ? '#eab308' : '#ec4899' }).setLngLat(selectedLngLat).addTo(vMap);
+        } else {
+          userMarker.setLngLat(selectedLngLat);
+        }
+
+        const dist = Math.round(getDistanceMeters(streamerPos[1], streamerPos[0], selectedLngLat[1], selectedLngLat[0]));
+        const km = (dist / 1000).toFixed(1);
+
+        if (dist > maxAllowedMeters) {
+          distInfo.style.color = '#f87171';
+          distInfo.textContent = `❌ Дистанция ${km} км. Нужен тариф: ${getRequiredDonationText(dist)}`;
+          sendBtn.disabled = true;
+          sendBtn.textContent = 'Точка дальше вашего тарифа';
+        } else {
+          distInfo.style.color = '#4ade80';
+          distInfo.textContent = `✅ Дистанция по карте: ${dist} м (${km} км) • Тариф подходит!`;
+          sendBtn.disabled = false;
+          sendBtn.textContent = isVip ? '👑 Добавить VIP-метку в список' : '📍 Добавить бесплатную метку';
+        }
+      });
+
+      sendBtn.addEventListener('click', async () => {
+        if (!selectedLngLat) return;
+
+        if (!isVip) {
+          const now = Date.now();
+          let history = JSON.parse(localStorage.getItem('free_pin_history') || '[]');
+          history = history.filter(ts => (now - ts) < 12 * 3600 * 1000);
+
+          if (history.length >= FREE_MAX_PER_STREAM) {
+            alert(`Ты уже использовал все ${FREE_MAX_PER_STREAM} бесплатные метки за этот стрим! Дальше — только через донат.`);
+            return;
+          }
+
+          const lastTs = history[history.length - 1];
+          if (lastTs && (now - lastTs) < FREE_COOLDOWN_MIN * 60 * 1000) {
+            const leftMin = Math.ceil((FREE_COOLDOWN_MIN * 60 * 1000 - (now - lastTs)) / 60000);
+            alert(`Перезарядка бесплатной метки! Подожди ещё ${leftMin} мин.`);
+            return;
+          }
+
+          history.push(now);
+          localStorage.setItem('free_pin_history', JSON.stringify(history));
+        }
+
+        const rawTitle = titleInput.value.trim() || (selectedQuest ? selectedQuest.name : (isVip ? 'VIP ТОЧКА ДОНАТЕРА' : 'МЕТКА ИЗ ЧАТА'));
+        const cleanTitle = rawTitle.replace(/https?:\/\/\S+/gi, '').toUpperCase();
+
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Отправка на байк...';
+
+        await fetch(`https://ntfy.sh/${NTFY_PIN_TOPIC}`, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'add',
+            id: Date.now().toString(),
+            lng: selectedLngLat[0],
+            lat: selectedLngLat[1],
+            title: cleanTitle,
+            vip: isVip,
+            questIcon: selectedQuest ? selectedQuest.icon : null
+          })
+        });
+
+        sendBtn.textContent = '✅ Задание добавлено на экран стрима!';
+      });
+    }
+
+    // =========================================================================
+    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO
+    // =========================================================================
+    else {
+      function updateClock() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-GB', {
+          timeZone: 'Asia/Bangkok',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        document.getElementById('clock').textContent = timeStr;
+      }
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      let currentStreamerPos = [100.8685, 12.9185];
+      let questQueue = [];
+
+      const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: currentStreamerPos,
+        zoom: 16.4,
+        pitch: 60,
+        bearing: -15,
+        interactive: false
+      });
+
+      POI_LOCATIONS.forEach(poi => {
+        const el = document.createElement('div');
+        el.className = 'gta-pin';
+        el.style.backgroundColor = poi.color;
+        el.innerHTML = `<span>${poi.icon}</span>`;
+        new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat(poi.coords).addTo(map);
+      });
+
+      QUEST_LOCATIONS.forEach(q => {
+        const el = document.createElement('div');
+        el.className = 'gta-pin';
+        el.style.backgroundColor = '#ffd700';
+        el.innerHTML = `<span>${q.icon}</span>`;
+        new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat(q.coords).addTo(map);
+      });
+
+      let bannerTimeout = null;
+      function showBanner(subtitle, title, mode = 'normal') {
+        const banner = document.getElementById('zone-banner');
+        document.getElementById('zone-banner-title').textContent = subtitle;
+        document.getElementById('zone-name').textContent = title;
+
+        banner.classList.remove('vip-style', 'passed-style');
+        if (mode === 'vip') banner.classList.add('vip-style');
+        if (mode === 'passed') banner.classList.add('passed-style');
+
+        banner.classList.add('active');
+        clearTimeout(bannerTimeout);
+        bannerTimeout = setTimeout(() => banner.classList.remove('active'), 7500);
+      }
+
+      async function buildRealRoute(startLngLat, endLngLat, isVip) {
+        try {
+          const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${startLngLat[0]},${startLngLat[1]};${endLngLat[0]},${endLngLat[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+          const res = await fetch(url);
+          const json = await res.json();
+          if (!json.routes || !json.routes[0]) return;
+
+          const routeGeoJSON = { type: 'Feature', geometry: json.routes[0].geometry };
+          const lineColor = isVip ? '#ffd700' : '#ff00ff';
+
+          if (map.getSource('viewer-route')) {
+            map.getSource('viewer-route').setData(routeGeoJSON);
+            map.setPaintProperty('viewer-route-line', 'line-color', lineColor);
+          } else {
+            map.addSource('viewer-route', { type: 'geojson', data: routeGeoJSON });
+            map.addLayer({
+              id: 'viewer-route-line',
+              type: 'line',
+              source: 'viewer-route',
+              layout: { 'line-join': 'round', 'line-cap': 'round' },
+              paint: { 'line-color': lineColor, 'line-width': 5 }
+            });
+          }
+        } catch (e) {}
+      }
+
+      function clearRouteLine() {
+        if (map.getSource('viewer-route')) {
+          map.getSource('viewer-route').setData({ type: 'FeatureCollection', features: [] });
+        }
+        document.getElementById('target-badge').style.display = 'none';
+      }
+
+      function renderQuestList() {
+        const listBox = document.getElementById('quest-list-box');
+        const container = document.getElementById('quest-items-container');
+        const targetBadge = document.getElementById('target-badge');
+
+        if (questQueue.length === 0) {
+          listBox.style.display = 'none';
+          clearRouteLine();
+          return;
+        }
+
+        listBox.style.display = 'flex';
+        container.innerHTML = '';
+
+        questQueue.forEach((item, index) => {
+          const dist = Math.round(getDistanceMeters(currentStreamerPos[1], currentStreamerPos[0], item.lat, item.lng));
+          const distText = dist >= 1000 ? `${(dist / 1000).toFixed(1)} КМ` : `${dist} М`;
+
+          if (index === 0) {
+            targetBadge.style.display = 'block';
+            targetBadge.textContent = `${item.vip ? '👑' : '🎯'} ${distText}`;
+          }
+
+          const row = document.createElement('div');
+          row.className = `quest-item ${item.vip ? 'is-vip' : ''} ${index === 0 ? 'is-current' : ''}`;
+          row.innerHTML = `
+            <div class="quest-item-left">
+              <span>${item.icon}</span>
+              <span class="quest-item-title">${item.title}</span>
+            </div>
+            <span class="quest-item-dist">${distText}</span>
+          `;
+          container.appendChild(row);
+        });
+      }
+
+      function addQuestToQueue(data) {
+        const isVip = Boolean(data.vip);
+        const icon = data.questIcon || (isVip ? '👑' : '🎯');
+
+        const el = document.createElement('div');
+        el.className = 'viewer-target-pin';
+        el.style.backgroundColor = isVip ? '#eab308' : '#ff00ff';
+        el.innerHTML = `<span>${icon}</span>`;
+        const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat([data.lng, data.lat])
+          .addTo(map);
+
+        const task = {
+          id: data.id || Date.now().toString(),
+          lng: data.lng,
+          lat: data.lat,
+          title: data.title,
+          vip: isVip,
+          icon: icon,
+          marker: marker
+        };
+
+        if (isVip) {
+          const firstNonVip = questQueue.findIndex(q => !q.vip);
+          if (firstNonVip === -1) questQueue.push(task);
+          else questQueue.splice(firstNonVip, 0, task);
+        } else {
+          questQueue.push(task);
+        }
+
+        const dist = Math.round(getDistanceMeters(currentStreamerPos[1], currentStreamerPos[0], task.lat, task.lng));
+        const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} КМ` : `${dist} М`;
+
+        playNewMissionSound();
+        showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 НОВОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
+
+        renderQuestList();
+        const activeTop = questQueue[0];
+        buildRealRoute(currentStreamerPos, [activeTop.lng, activeTop.lat], activeTop.vip);
+      }
+
+      function removeQuestByIndex(idx, isCompleted = false) {
+        if (idx < 0 || idx >= questQueue.length) return;
+        const removed = questQueue.splice(idx, 1)[0];
+        if (removed.marker) removed.marker.remove();
+
+        if (isCompleted) {
+          playMissionPassedSound();
+          showBanner('MISSION PASSED! + RESPECT', `${removed.title}`, 'passed');
+        }
+
+        renderQuestList();
+
+        if (questQueue.length > 0) {
+          const nextTask = questQueue[0];
+          buildRealRoute(currentStreamerPos, [nextTask.lng, nextTask.lat], nextTask.vip);
+        } else {
+          clearRouteLine();
+        }
+      }
+
+      let lastBannerZone = '';
+      function checkProgress(lng, lat) {
+        // Обновляем подзаголовок района под Pattaya City
+        const distSubEl = document.getElementById('district-sub');
+        if (lat < 12.8750) distSubEl.textContent = 'NA JOMTIEN';
+        else if (lat < 12.9035) distSubEl.textContent = 'JOMTIEN BEACH';
+        else if (lat >= 12.9035 && lat <= 12.9225 && lng < 100.8730) distSubEl.textContent = 'PRATAMNAK HILL';
+        else if (lat > 12.9500) distSubEl.textContent = 'NAKLUA';
+        else if (lng > 100.9000) distSubEl.textContent = 'EAST PATTAYA';
+        else distSubEl.textContent = 'CENTRAL PATTAYA';
+
+        if (questQueue.length > 0) {
+          for (let i = 0; i < questQueue.length; i++) {
+            const dist = getDistanceMeters(lat, lng, questQueue[i].lat, questQueue[i].lng);
+            if (dist <= 45) {
+              removeQuestByIndex(i, true);
+              return;
+            }
+          }
+          renderQuestList();
+        }
+
+        for (const poi of POI_LOCATIONS) {
+          const dist = getDistanceMeters(lat, lng, poi.coords[1], poi.coords[0]);
+          if (dist <= 150 && lastBannerZone !== poi.name) {
+            lastBannerZone = poi.name;
+            showBanner('★ ЛОКАЦИЯ ОБНАРУЖЕНА', poi.name, 'normal');
+            break;
+          }
+        }
+      }
+
+      function moveRadar(lng, lat, bearing, speed) {
+        currentStreamerPos = [lng, lat];
+        const cameraOptions = { center: [lng, lat], duration: 1000 };
+        if (bearing !== null && bearing !== undefined && !isNaN(bearing)) cameraOptions.bearing = bearing;
+        map.easeTo(cameraOptions);
+
+        checkProgress(lng, lat);
+
+        if (speed !== null && speed !== undefined && !isNaN(speed)) {
+          const kmh = Math.round(speed * 3.6);
+          document.getElementById('speed-badge').textContent = `${kmh} KM/H`;
+          const offset = 115 - (115 * Math.min(kmh / 80, 1));
+          document.getElementById('speed-arc').style.strokeDashoffset = offset;
+        }
+      }
+
+      map.on('style.load', () => {
+        map.setLight({ anchor: 'viewport', color: '#fff5e6', intensity: 0.65, position: [1.5, 180, 45] });
+        const layers = map.getStyle().layers;
+        layers.forEach((layer) => {
+          const id = layer.id;
+          if (layer.type === 'background') map.setPaintProperty(id, 'background-color', '#78866b');
+          if (id.includes('water') && layer.type === 'fill') map.setPaintProperty(id, 'fill-color', '#1a6fa8');
+          if ((id.includes('landuse') || id.includes('park') || id.includes('grass')) && layer.type === 'fill') map.setPaintProperty(id, 'fill-color', '#6a8d56');
+          if ((id.includes('sand') || id.includes('beach')) && layer.type === 'fill') map.setPaintProperty(id, 'fill-color', '#e2c992');
+          if (id.includes('road') && layer.type === 'line') {
+            map.setPaintProperty(id, 'line-color', (id.includes('case') || id.includes('border')) ? '#1e2226' : '#434950');
+          }
+        });
+
+        const labelLayerId = layers.find((l) => l.type === 'symbol' && l.layout['text-field'])?.id;
+        if (map.getLayer('building')) map.setPaintProperty('building', 'fill-opacity', 0);
+
+        map.addLayer({
+          id: 'add-3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': ['interpolate', ['linear'], ['get', 'height'], 0, '#78828c', 25, '#96a0aa', 60, '#b4bec8'],
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.96,
+            'fill-extrusion-vertical-gradient': true
+          }
+        }, labelLayerId);
+      });
+
+      map.on('rotate', () => {
+        const bearing = map.getBearing();
+        const angle = (-bearing - 90) * (Math.PI / 180);
+        const radius = 124;
+        const northEl = document.getElementById('north');
+        northEl.style.left = `${140 + radius * Math.cos(angle) - 11.5}px`;
+        northEl.style.top = `${140 + radius * Math.sin(angle) - 11.5}px`;
+        northEl.style.right = 'auto';
+        northEl.style.transform = 'none';
+      });
+
+      const gpsEvents = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse`);
+      gpsEvents.onmessage = (event) => {
+        try {
+          const packet = JSON.parse(event.data);
+          if (!packet.message) return;
+          const params = packet.message.trim().startsWith('{') ? JSON.parse(packet.message) : Object.fromEntries(new URLSearchParams(packet.message));
+          const lat = parseFloat(params.lat || params.latitude);
+          const lon = parseFloat(params.lon || params.lng || params.longitude);
+          const bearing = parseFloat(params.bearing || params.heading || params.course);
+          const speed = parseFloat(params.speed);
+          if (!isNaN(lat) && !isNaN(lon)) moveRadar(lon, lat, bearing, speed);
+        } catch (e) {}
+      };
+
+      const pinEvents = new EventSource(`https://ntfy.sh/${NTFY_PIN_TOPIC}/sse`);
+      pinEvents.onmessage = (event) => {
+        try {
+          const packet = JSON.parse(event.data);
+          if (!packet.message) return;
+          const data = JSON.parse(packet.message);
+          if (data.action === 'clear_one') {
+            removeQuestByIndex(0, false);
+          } else if (data.action === 'clear_all') {
+            while (questQueue.length > 0) removeQuestByIndex(0, false);
+          } else if (data.action === 'add' || data.action === 'set') {
+            addQuestToQueue({
+              id: data.id,
+              lng: parseFloat(data.lng),
+              lat: parseFloat(data.lat),
+              title: data.title,
+              vip: Boolean(data.vip),
+              questIcon: data.questIcon
+            });
+          }
+        } catch (e) {}
+      };
+    }
+  </script>
+</body>
+</html>
