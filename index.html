@@ -200,7 +200,7 @@
       position: absolute;
       top: 10px;
       right: 10px;
-      width: 350px;
+      width: 355px;
       background: rgba(11, 16, 28, 0.94);
       backdrop-filter: blur(10px);
       border: 1.5px solid rgba(245, 158, 11, 0.5);
@@ -248,7 +248,6 @@
       cursor: pointer;
     }
 
-    /* Фильтр категорий цен в каталоге */
     .price-filters {
       display: flex;
       gap: 4px;
@@ -270,6 +269,11 @@
       background: #f59e0b;
       color: #000;
       border-color: #f59e0b;
+    }
+    .pf-btn.roulette {
+      background: linear-gradient(90deg, #ec4899, #8b5cf6);
+      color: #fff;
+      border: none;
     }
 
     .panel-scroll-list {
@@ -365,7 +369,7 @@
       bottom: 14px;
       left: 14px;
       right: 68px;
-      max-width: 420px;
+      max-width: 430px;
       background: rgba(13, 19, 33, 0.96);
       backdrop-filter: blur(12px);
       border: 2px solid #f59e0b;
@@ -883,7 +887,6 @@
       <span style="font-size:11px; background:#16a34a; padding:3px 8px; border-radius:6px; font-weight:700;">ADMIN ACCESS</span>
     </div>
 
-    <!-- Живое управление всеми висящими и предложенными заданиями -->
     <div class="admin-card">
       <h3>
         <span>📋 Висящие и предложенные задания (<span id="admin-q-count">0</span>)</span>
@@ -894,7 +897,6 @@
       </div>
     </div>
 
-    <!-- Симуляция и быстрые действия -->
     <div class="admin-card">
       <h3>⚡ Быстрые действия и симулятор GPS</h3>
       <div class="admin-grid">
@@ -905,7 +907,6 @@
       </div>
     </div>
 
-    <!-- Добавление тестовых заданий -->
     <div class="admin-card">
       <h3>🧪 Тест добавления в очередь</h3>
       <div class="admin-grid">
@@ -932,7 +933,6 @@
     <div class="map-container-wrap">
       <div id="viewer-map"></div>
 
-      <!-- Плавающие панели сверху -->
       <div class="floating-panels-stack">
         <!-- ЛЕВАЯ ПАНЕЛЬ: Активные задания на стриме -->
         <div class="viewer-live-queue" id="viewer-live-queue">
@@ -950,6 +950,7 @@
             <span style="color:#94a3b8;">▼</span>
           </div>
           <div class="price-filters" id="price-filters">
+            <button class="pf-btn roulette" id="btn-roulette">🎲 Рулетка</button>
             <button class="pf-btn active" data-range="all">Все</button>
             <button class="pf-btn" data-range="100-200">100–200₽</button>
             <button class="pf-btn" data-range="300-500">300–500₽</button>
@@ -987,11 +988,11 @@
         <button class="primary-btn" id="send-pin-btn" disabled>Выбери точку на карте</button>
       </div>
 
-      <!-- Вкладка 2: Предложить своё задание с ценой -->
+      <!-- Вкладка 2: Предложить своё задание с защитой от спама -->
       <div class="tab-pane" id="tab-custom">
-        <div id="custom-map-hint" style="font-size: 11.5px; color: #e879f9;">Необязательно: ткни точку на карте (иначе привяжется к стримеру)</div>
+        <div id="custom-map-hint" style="font-size: 11.5px; color: #e879f9;">Необязательно: ткни точку на карте • Кулдаун: 5 мин (до 3 раз за стрим)</div>
         <div class="custom-row-inputs">
-          <input type="number" class="v-input" id="custom-price" min="50" step="50" placeholder="Цена ₽ (500)" />
+          <input type="number" class="v-input" id="custom-price" min="100" step="50" placeholder="Цена ₽ (500)" />
           <input type="text" class="v-input" id="custom-text" maxlength="40" placeholder="Текст задания (напр: Съесть дуриан)" />
         </div>
         <button class="primary-btn proposal-btn" id="send-custom-btn" disabled>💡 Отправить задание на радар стримеру</button>
@@ -1045,7 +1046,6 @@
     const NTFY_PIN_TOPIC = 'strimba_pattaya_pins_9941';
     const NTFY_SYNC_TOPIC = 'strimba_pattaya_sync_9941';
 
-    // Секретный ключ для пульта управления стримера (?admin=strimba_boss_99)
     const ADMIN_SECRET_KEY = 'strimba_boss_99';
 
     const VIP_TIERS = {
@@ -1059,11 +1059,17 @@
     const FREE_COOLDOWN_MIN = 30;
     const FREE_MAX_PER_STREAM = 3;
 
+    // Антиспам для неоплаченных предложений зрителей
+    const PROPOSAL_COOLDOWN_SEC = 300;   // Кулдаун 5 минут на предложения без оплаты
+    const PROPOSAL_MAX_PER_STREAM = 3;   // Максимум 3 предложения на человека за стрим
+    const PROPOSAL_MAX_ACTIVE_QUEUE = 3; // Не больше 3 неоплаченных предложений на экране одновременно
+    const PROPOSAL_EXPIRE_MS = 10 * 60 * 1000; // Автоудаление неоплаченного предложения через 10 мин
+
     // =========================================================================
-    // КАТАЛОГ КВЕСТОВ ПО ВОЗРАСТАНИЮ ЦЕНЫ И СЛОЖНОСТИ
+    // ЛОГИЧНО РАСПОЛОЖЕННЫЙ КАТАЛОГ КВЕСТОВ ПО ПАТТАЙЕ И ОСТРОВУ КО ЛАН
     // =========================================================================
     const QUEST_CATALOG = [
-      // 100 – 200 ₽
+      // 100 – 200 ₽ (Экшен на месте)
       { id: 'q_kiss',     price: 100,   icon: '💋', name: 'ПОЦЕЛОВАТЬ ОКСАНУ', desc: 'Поцеловать Оксану в прямом эфире.', coords: null },
       { id: 'q_bug',      price: 100,   icon: '🕹', name: 'БАГ ТЕКСТУР (10 СЕК)', desc: 'Застрять в стене или столбе и шагать на месте 10 секунд.', coords: null },
       { id: 'q_selfie',   price: 100,   icon: '🤳', name: 'НЕЛЕПОЕ СЕЛФИ', desc: 'Сделать селфи с самым странным знаком или объектом рядом и показать в камеру.', coords: null },
@@ -1075,9 +1081,9 @@
       { id: 'q_voice',    price: 200,   icon: '🤖', name: 'СМЕНА ГОЛОСА (2 МИН)', desc: '2 минуты говорить голосом робота, с акцентом или другим тембром.', coords: null },
       { id: 'q_tail',     price: 200,   icon: '🕵️', name: 'СЛЕЖКА (50 МЕТРОВ)', desc: 'Незаметно пройти за прохожим 50 метров в стиле стелс-миссии.', coords: null },
 
-      // 300 – 500 ₽
-      { id: 'q_coconut',  price: 300,   icon: '🥥', name: 'ВЫПИТЬ КОКОС', desc: 'Купить свежий кокос на набережной и выпить в эфире.', coords: [100.8712, 12.9012] },
-      { id: 'q_dogs',     price: 300,   icon: '🐕', name: 'ПОКОРМИТЬ СОБАК', desc: 'Купить сосиски/корм в 7-Eleven и покормить уличных собак.', coords: [100.8675, 12.9145] },
+      // 300 – 500 ₽ (Локальные точки: 7-Eleven, набережная, развалы)
+      { id: 'q_coconut',  price: 300,   icon: '🥥', name: 'ВЫПИТЬ КОКОС У МОРЯ', desc: 'Купить свежий кокос на набережной Донгтан/Бич Роуд и выпить в эфире.', coords: [100.8712, 12.9012] },
+      { id: 'q_dogs',     price: 300,   icon: '🐕', name: 'ПОКОРМИТЬ СОБАК', desc: 'Купить сосиски/корм у 7-Eleven на Пратамнаке и покормить уличных собак.', coords: [100.8675, 12.9145] },
       { id: 'q_kick',     price: 300,   icon: '👢', name: 'ПИНОК ОТ ОКСАНЫ', desc: 'Получить постановочный пинок от Оксаны в кадре.', coords: null },
       { id: 'q_fakeway',  price: 300,   icon: '🗺', name: 'ПРОВЕРКА СВЯЗЕЙ', desc: 'Спросить у прохожего дорогу до вымышленного места.', coords: null },
       { id: 'q_backwalk', price: 300,   icon: '⏪', name: 'ХОДЬБА ЗАДОМ (2 МИН)', desc: 'Идти спиной вперёд 2 минуты по тротуару.', coords: null },
@@ -1085,46 +1091,47 @@
       { id: 'q_escape',   price: 400,   icon: '🚨', name: 'УХОД ОТ ПОГОНИ', desc: 'Резко свернуть с маршрута и спрятаться за углом/колонной на 20 сек.', coords: null },
       { id: 'q_tape',     price: 500,   icon: '🤐', name: 'ОБЕТ МОЛЧАНИЯ (10 МИН)', desc: 'Заклеить рот скотчем на 10 минут стрима.', coords: null },
       { id: 'q_cartel',   price: 500,   icon: '🗣️', name: 'КОМПЛИМЕНТ ОТ КАРТЕЛЯ', desc: 'Подойти к прохожему и сделать комплимент или задать вопрос от донатера.', coords: null },
-      { id: 'q_711',      price: 500,   icon: '🏪', name: 'ЗАКУПКА ПРОВИАНТА 7/11', desc: 'Зайти в 7-Eleven, купить самый странный продукт и озвучить как герой GTA.', coords: [100.8662, 12.9122] },
-      { id: 'q_skin',     price: 500,   icon: '🕶', name: 'СМЕНА СКИНА (30 МИН)', desc: 'Купить дешёвые очки или кепку на развале и носить полчаса.', coords: [100.8855, 12.9302] },
+      { id: 'q_711',      price: 500,   icon: '🏪', name: 'ЗАКУПКА ПРОВИАНТА 7/11', desc: 'Зайти в 7-Eleven на Пратамнаке, купить самый странный продукт и озвучить как герой GTA.', coords: [100.8662, 12.9122] },
+      { id: 'q_skin',     price: 500,   icon: '🕶', name: 'СМЕНА СКИНА (СОИ БУАКХАО)', desc: 'Купить дешёвые очки или кепку на развале Сои Буакхао и носить полчаса.', coords: [100.8855, 12.9302] },
       { id: 'q_bribe',    price: 500,   icon: '🍫', name: 'ВЗЯТКА МЕСТНЫМ', desc: 'Подарить шоколадку охраннику или курьеру: «Спасибо за крышу в районе».', coords: null },
 
-      // 600 – 1 000 ₽
-      { id: 'q_exchange', price: 600,   icon: '🪙', name: 'СЕКРЕТНЫЙ РАЗМЕН', desc: 'Разменять купюру на мелочь в лавке с видом секретной операции.', coords: [100.8868, 12.9318] },
+      // 600 – 1 000 ₽ (Рынки, TreeTown, центр, транспорт)
+      { id: 'q_exchange', price: 600,   icon: '🪙', name: 'СЕКРЕТНЫЙ РАЗМЕН (TREETOWN)', desc: 'Разменять купюру на мелочь в лавке у TreeTown с видом секретной операции.', coords: [100.8868, 12.9318] },
       { id: 'q_english',  price: 600,   icon: '🇺🇸', name: 'СМЕНА ФРАКЦИИ (15 МИН)', desc: '15 минут разговаривать исключительно на английском.', coords: null },
       { id: 'q_cargo',    price: 600,   icon: '📦', name: 'СЕКРЕТНЫЙ ГРУЗ (100 М)', desc: 'Нести пакет на вытянутой руке 100 метров, никого не задев.', coords: null },
       { id: 'q_drop',     price: 600,   icon: '📸', name: 'СБРОС ЛУТА В ТГ', desc: 'Выложить всё из карманов, сфоткать в Telegram-чат, забрать и убежать.', coords: null },
       { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (5 МИН)', desc: 'Чат 5 минут управляет стримером командами (право, лево, вперёд, назад).', coords: null },
-      { id: 'q_statue',   price: 700,   icon: '🗿', name: 'ЖИВАЯ СТАТУЯ (60 СЕК)', desc: 'Замереть в пафосной позе на 60 секунд посреди оживлённой улицы.', coords: [100.8732, 12.9265] },
-      { id: 'q_flowers',  price: 1000,  icon: '💐', name: 'КУПИТЬ ЦВЕТЫ ОКСАНЕ', desc: 'Найти цветочный ларёк и подарить букет Оксане.', coords: [100.8832, 12.9348] },
-      { id: 'q_green',    price: 1000,  icon: '🌿', name: 'ЗЕЛЁНАЯ КОМНАТА', desc: 'Зайти в тематический шоп на районе и сделать обзор.', coords: [100.8862, 12.9312] },
-      { id: 'q_market',   price: 1000,  icon: '🍢', name: 'ПОЕСТЬ НА НОЧНОМ РЫНКЕ', desc: 'Заехать на ночной рынок Пратамнака или Джомтьена и поужинать.', coords: [100.8654, 12.9108] },
-      { id: 'q_meetgirl', price: 1000,  icon: '💃', name: 'ПОЗНАКОМИТЬСЯ С ДЕВУШКОЙ', desc: 'Подойти и красиво познакомиться на улице или набережной.', coords: [100.8815, 12.9330] },
+      { id: 'q_statue',   price: 700,   icon: '🗿', name: 'ЖИВАЯ СТАТУЯ (WALKING ST.)', desc: 'Замереть в пафосной позе на 60 секунд посреди оживлённой улицы.', coords: [100.8732, 12.9265] },
+      { id: 'q_flowers',  price: 1000,  icon: '💐', name: 'КУПИТЬ ЦВЕТЫ ОКСАНЕ', desc: 'Найти цветочный ларёк у Централ Фестивал и подарить букет Оксане.', coords: [100.8832, 12.9348] },
+      { id: 'q_green',    price: 1000,  icon: '🌿', name: 'ЗЕЛЁНАЯ КОМНАТА', desc: 'Зайти в тематический шоп на Сои Буакхао и сделать обзор.', coords: [100.8862, 12.9312] },
+      { id: 'q_market',   price: 1000,  icon: '🍢', name: 'ПОЕСТЬ НА НОЧНОМ РЫНКЕ', desc: 'Заехать на ночной рынок Пратамнака и поужинать в эфире.', coords: [100.8654, 12.9108] },
+      { id: 'q_meetgirl', price: 1000,  icon: '💃', name: 'ПОЗНАКОМИТЬСЯ НА BEACH RD', desc: 'Подойти и красиво познакомиться с девушкой на набережной.', coords: [100.8815, 12.9330] },
       { id: 'q_dance',    price: 1000,  icon: '🕺', name: 'УЛИЧНЫЙ ТАНЕЦ', desc: 'Станцевать на улице под музыку на глазах у прохожих.', coords: [100.8735, 12.9268] },
-      { id: 'q_tuktuk',   price: 1000,  icon: '🛺', name: 'РЕЙС НА ТУК-ТУКЕ', desc: 'Пересесть на сонгтео (тук-тук) и проехать 2 остановки по маршруту.', coords: [100.8760, 12.9275] },
+      { id: 'q_tuktuk',   price: 1000,  icon: '🛺', name: 'РЕЙС НА ТУК-ТУКЕ (SECOND RD)', desc: 'Пересесть на сонгтео (тук-тук) на Второй улице и проехать 2 остановки.', coords: [100.8760, 12.9275] },
       { id: 'q_informer', price: 1000,  icon: '🕴', name: 'ВСТРЕЧА С ИНФОРМАТОРОМ', desc: 'Найти человека в загаданном цвете одежды и попросить передать привет донатеру.', coords: null },
 
-      // 1 200 – 5 000 ₽
+      // 1 200 – 5 000 ₽ (Пляжи, паром на Ко Лан в двух точках, клубы, отели, заброшка)
       { id: 'q_lady200',  price: 1200,  icon: '💋', name: 'ЧАЕВЫЕ НА WALKING ST.', desc: 'Поговорить с девушкой на Walking Street и оставить 200 бат чаевых.', coords: [100.8730, 12.9262] },
       { id: 'q_taxi',     price: 1200,  icon: '🏍', name: 'ПОДВЕЗТИ ПОПУТЧИЦУ', desc: 'Подвезти девушку на байке по пути.', coords: null },
       { id: 'q_massage',  price: 2000,  icon: '💆', name: 'ТАЙСКИЙ МАССАЖ НОГ', desc: 'Зайти в салон на Сои Буакхао и сделать массаж ног в эфире.', coords: [100.8855, 12.9302] },
       { id: 'q_rps',      price: 2000,  icon: '✊', name: 'УЛИЧНАЯ РАЗБОРКА (К-Н-Б)', desc: 'Сыграть в «Камень-ножницы-бумага» с прохожим на интерес.', coords: null },
-      { id: 'q_pullups',  price: 2000,  icon: '🤸', name: 'ПОДТЯГИВАНИЯ НА ПЛЯЖЕ', desc: 'Доехать до уличных турников на пляже Донгтан и сделать подход.', coords: [100.8678, 12.9065] },
-      { id: 'q_sunset',   price: 2000,  icon: '🌅', name: 'ВСТРЕТИТЬ ЗАКАТ НА ГОРЕ', desc: 'Подняться на смотровую площадку Пратамнака к закату.', coords: [100.8698, 12.9218] },
+      { id: 'q_pullups',  price: 2000,  icon: '🤸', name: 'ТУРНИКИ НА ПЛЯЖЕ ДОНГТАН', desc: 'Доехать до уличных турников на пляже Донгтан и сделать подход подтягиваний.', coords: [100.8678, 12.9065] },
+      { id: 'q_sunset',   price: 2000,  icon: '🌅', name: 'ЗАКАТ НА СМОТРОВОЙ ГОРЕ', desc: 'Подняться на смотровую площадку Пратамнака (Viewpoint) к закату.', coords: [100.8698, 12.9218] },
       { id: 'q_flattire', price: 2000,  icon: '🛞', name: '«ПРОБИЛО КОЛЕСО» (50 М)', desc: 'Катить байк руками 50 метров и громко жаловаться на прокол.', coords: null },
-      { id: 'q_nasty',    price: 3000,  icon: '🦂', name: 'СЪЕСТЬ ЭКЗОТИКУ / ОСТРОЕ', desc: 'Съесть скорпиона, жука или адски острый сом-там на рынке.', coords: [100.8798, 12.8935] },
-      { id: 'q_shot',     price: 3000,  icon: '🥃', name: 'ШОТ В БАРЕ', desc: 'Заехать в бар на Сои Буакхао или Walking Street и выпить шот.', coords: [100.8850, 12.9295] },
-      { id: 'q_ferry',    price: 3000,  icon: '⛴', name: 'ПАРОМ НА КО ЛАН', desc: 'Доехать до пирса Бали Хай и отправиться на пароме на остров.', coords: [100.8665, 12.9228] },
-      { id: 'q_club',     price: 3000,  icon: '🪩', name: 'КЛУБ / НОЧНОЕ ШОУ', desc: 'Заглянуть в ночной клуб или гоу-гоу бар в центре.', coords: [100.8728, 12.9260] },
-      { id: 'q_sea',      price: 3000,  icon: '🌊', name: 'ЗАЙТИ В МОРЕ', desc: 'Доехать до пляжа и зайти в Сиамский залив.', coords: [100.8712, 12.9012] },
-      { id: 'q_pool',     price: 3000,  icon: '🏊', name: 'БАССЕЙН В ОДЕЖДЕ', desc: 'Прыгнуть и искупаться в бассейне прямо в одежде.', coords: null },
-      { id: 'q_crab',     price: 3000,  icon: '🦀', name: 'ПОХОДКА «КРАБИКА» У МОРЯ', desc: 'Пройти походкой краба вдоль кромки воды на пляже Джомтьен.', coords: [100.8745, 12.8975] },
-      { id: 'q_sunrise',  price: 3000,  icon: '☕', name: 'РАССВЕТ С КОФЕ', desc: 'Встретить рассвет на набережной с горячим кофе.', coords: [100.8810, 12.9360] },
-      { id: 'q_hotel',    price: 5000,  icon: '🏨', name: 'НОМЕР В ОТЕЛЕ НА СУТКИ', desc: 'Заехать в отель и снять номер на сутки для стрима.', coords: [100.8835, 12.9340] },
-      { id: 'q_abandoned',price: 5000,  icon: '🏚', name: 'ВЫЛАЗКА НА ЗАБРОШКУ', desc: 'Поехать исследовать заброшенное здание в Паттайе.', coords: [100.8640, 12.9235] },
+      { id: 'q_nasty',    price: 3000,  icon: '🦂', name: 'ЭКЗОТИКА НА ТЕППРАЗИТЕ', desc: 'Заехать на ночной рынок Теппразит и съесть скорпиона, жука или адский сом-там.', coords: [100.8915, 12.9085] },
+      { id: 'q_shot',     price: 3000,  icon: '🥃', name: 'ШОТ В БАРЕ (СОИ БУАКХАО)', desc: 'Заехать в бар на Сои Буакхао и выпить шот.', coords: [100.8850, 12.9295] },
+      { id: 'q_ferry_bh', price: 3000,  icon: '⛴', name: 'ПАРОМ НА КО ЛАН (ПИРС БАЛИ ХАЙ)', desc: 'Приехать на пирс Бали Хай (Bali Hai Pier) и сесть на паром до острова Ко Лан.', coords: [100.8665, 12.9228] },
+      { id: 'q_ferry_kl', price: 3000,  icon: '🏝', name: 'ВЫСАДКА НА КО ЛАНЕ (NA BAAN)', desc: 'Прибыть на пирс На-Баан острова Ко Лан и начать исследование острова!', coords: [100.7858, 12.9225] },
+      { id: 'q_club',     price: 3000,  icon: '🪩', name: 'КЛУБ / НОЧНОЕ ШОУ', desc: 'Заглянуть в ночной клуб или гоу-гоу бар на Walking Street.', coords: [100.8728, 12.9260] },
+      { id: 'q_sea',      price: 3000,  icon: '🌊', name: 'ЗАЙТИ В МОРЕ (BEACH RD)', desc: 'Доехать до Центрального пляжа и зайти в Сиамский залив.', coords: [100.8805, 12.9345] },
+      { id: 'q_pool',     price: 3000,  icon: '🏊', name: 'БАССЕЙН В ОДЕЖДЕ (ПРАТАМНАК)', desc: 'Прыгнуть и искупаться в бассейне отеля на Пратамнаке прямо в одежде.', coords: [100.8638, 12.9142] },
+      { id: 'q_crab',     price: 3000,  icon: '🦀', name: 'ПОХОДКА «КРАБИКА» (ДЖОМТЬЕН)', desc: 'Пройти походкой краба вдоль кромки воды на пляже Джомтьен.', coords: [100.8745, 12.8975] },
+      { id: 'q_sunrise',  price: 3000,  icon: '☕', name: 'РАССВЕТ С КОФЕ (НА-ДЖОМТЬЕН)', desc: 'Встретить рассвет на набережной На-Джомтьен с горячим кофе.', coords: [100.8895, 12.8785] },
+      { id: 'q_hotel',    price: 5000,  icon: '🏨', name: 'НОМЕР В ОТЕЛЕ НА СУТКИ', desc: 'Заехать в отель у Централ Фестивал и снять номер на сутки для стрима.', coords: [100.8835, 12.9340] },
+      { id: 'q_abandoned',price: 5000,  icon: '🏚', name: 'ЗАБРОШКА У ПИРСА (WATERFRONT)', desc: 'Поехать к заброшенному небоскрёбу Waterfront у пирса Бали Хай.', coords: [100.8652, 12.9235] },
 
-      // 70 000 ₽
-      { id: 'q_beard',    price: 70000, icon: '🪒', name: 'СБРИТЬ БОРОДУ В ЭФИРЕ', desc: 'Легендарный челлендж: заехать в барбершоп и сбрить бороду полностью!', coords: [100.8845, 12.9320] }
+      // 70 000 ₽ (Босс-квест)
+      { id: 'q_beard',    price: 70000, icon: '🪒', name: 'СБРИТЬ БОРОДУ В ЭФИРЕ', desc: 'Легендарный челлендж: заехать в барбершоп в центре и сбрить бороду полностью!', coords: [100.8845, 12.9320] }
     ];
 
     const POI_LOCATIONS = [
@@ -1136,6 +1143,7 @@
       { name: 'NA JOMTIEN PIER', coords: [100.8965, 12.8680], color: '#ff3b30', icon: '⚓' },
       { name: 'WALKING STREET', coords: [100.8732, 12.9265], color: '#ff3b30', icon: '★' },
       { name: 'BALI HAI PIER', coords: [100.8665, 12.9228], color: '#00b0ff', icon: '⚓' },
+      { name: 'KOH LARN (NA BAAN PIER)', coords: [100.7858, 12.9225], color: '#00b0ff', icon: '🏝' },
       { name: 'TREETOWN PATTAYA', coords: [100.8868, 12.9318], color: '#ff9500', icon: '🍴' },
       { name: 'TERMINAL 21 PATTAYA', coords: [100.8895, 12.9465], color: '#ff3b30', icon: '♠' }
     ];
@@ -1206,6 +1214,34 @@
       return 'Свыше 25 км';
     }
 
+    // Проверка антиспама для предложений зрителей (5 мин кулдаун, макс 3 за стрим)
+    function checkProposalSpamLimit() {
+      const now = Date.now();
+      let propHistory = JSON.parse(localStorage.getItem('proposal_history') || '[]');
+      propHistory = propHistory.filter(ts => (now - ts) < 12 * 3600 * 1000);
+
+      if (propHistory.length >= PROPOSAL_MAX_PER_STREAM) {
+        return { allowed: false, reason: `Лимит исчерпан: максимум ${PROPOSAL_MAX_PER_STREAM} предложения за стрим!` };
+      }
+
+      const lastTs = propHistory[propHistory.length - 1];
+      if (lastTs && (now - lastTs) < PROPOSAL_COOLDOWN_SEC * 1000) {
+        const leftSec = Math.ceil((PROPOSAL_COOLDOWN_SEC * 1000 - (now - lastTs)) / 1000);
+        const mins = Math.floor(leftSec / 60);
+        const secs = String(leftSec % 60).padStart(2, '0');
+        return { allowed: false, reason: `Антиспам: подожди ${mins}:${secs} перед новым предложением` };
+      }
+
+      return { allowed: true, history: propHistory };
+    }
+
+    function recordProposalSent() {
+      const check = checkProposalSpamLimit();
+      const hist = check.history || [];
+      hist.push(Date.now());
+      localStorage.setItem('proposal_history', JSON.stringify(hist));
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const pinMode = urlParams.get('pin');
     const adminKey = urlParams.get('admin');
@@ -1242,7 +1278,7 @@
         currentAdminQueue.forEach((task, idx) => {
           const dist = Math.round(getDistanceMeters(lastKnownStreamerPos[1], lastKnownStreamerPos[0], task.lat, task.lng));
           const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} км` : `${dist} м`;
-          const typeLabel = task.isProposal ? '💡 ПРЕДЛОЖЕНИЕ' : (task.vip ? '👑 VIP / КВЕСТ' : '📍 ТОЧКА ЧАТА');
+          const typeLabel = task.isProposal ? '💡 ПРЕДЛОЖЕНИЕ (сгорит через 10м)' : (task.vip ? '👑 VIP / КВЕСТ' : '📍 ТОЧКА ЧАТА');
           const modeLabel = task.autoComplete === false ? 'Закрытие: ВРУЧНУЮ' : 'Закрытие: АВТО';
 
           const row = document.createElement('div');
@@ -1383,7 +1419,7 @@
         container: 'viewer-map',
         style: 'mapbox://styles/mapbox/streets-v12',
         center: streamerPos,
-        zoom: isVip ? 12.8 : 14.8
+        zoom: isVip ? 12.8 : 14.2
       });
 
       vMap.on('dragstart', () => { autoFollow = false; });
@@ -1411,7 +1447,6 @@
       const qdmLocInfo = document.getElementById('qdm-loc-info');
       const sendPresetBtn = document.getElementById('send-preset-btn');
 
-      // Функция открытия подробного описания любого квеста с перелётом камеры
       function openQuestDetail(q) {
         selectedPreset = q;
         document.querySelectorAll('.catalog-item').forEach(r => {
@@ -1420,7 +1455,7 @@
 
         autoFollow = false;
         const targetCoords = q.coords ? q.coords : streamerPos;
-        vMap.flyTo({ center: targetCoords, zoom: 16.0, duration: 900 });
+        vMap.flyTo({ center: targetCoords, zoom: 15.8, duration: 900 });
 
         qdmModal.style.display = 'flex';
         qdmTitle.textContent = `${q.icon} ${q.name} • ${q.price.toLocaleString('ru-RU')} ₽`;
@@ -1435,9 +1470,22 @@
           sendPresetBtn.className = 'primary-btn vip-btn';
           sendPresetBtn.textContent = `👑 Запустить квест (${q.price.toLocaleString('ru-RU')} ₽)`;
         } else {
-          sendPresetBtn.disabled = false;
-          sendPresetBtn.className = 'primary-btn proposal-btn';
-          sendPresetBtn.textContent = `💡 Предложить квест (${q.price.toLocaleString('ru-RU')} ₽) на радар`;
+          const spamCheck = checkProposalSpamLimit();
+          const activeProposals = liveQueue.filter(item => item.isProposal).length;
+
+          if (!spamCheck.allowed) {
+            sendPresetBtn.disabled = true;
+            sendPresetBtn.className = 'primary-btn';
+            sendPresetBtn.textContent = spamCheck.reason;
+          } else if (activeProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) {
+            sendPresetBtn.disabled = true;
+            sendPresetBtn.className = 'primary-btn';
+            sendPresetBtn.textContent = 'Очередь предложений заполнена (макс. 3)';
+          } else {
+            sendPresetBtn.disabled = false;
+            sendPresetBtn.className = 'primary-btn proposal-btn';
+            sendPresetBtn.textContent = `💡 Предложить квест (${q.price.toLocaleString('ru-RU')} ₽) на радар`;
+          }
         }
       }
 
@@ -1445,6 +1493,13 @@
         qdmModal.style.display = 'none';
         document.querySelectorAll('.catalog-item').forEach(r => r.classList.remove('selected'));
         selectedPreset = null;
+      });
+
+      // Кнопка "🎲 Рулетка" — выбирает случайный квест от 300 до 1000 ₽
+      document.getElementById('btn-roulette').addEventListener('click', () => {
+        const pool = QUEST_CATALOG.filter(q => q.price >= 300 && q.price <= 1000);
+        const randomQuest = pool[Math.floor(Math.random() * pool.length)];
+        if (randomQuest) openQuestDetail(randomQuest);
       });
 
       function createCircleGeoJSON(center, radiusInMeters) {
@@ -1520,7 +1575,7 @@
             vMap.flyTo({ center: [task.lng, task.lat], zoom: 16 });
             qdmModal.style.display = 'flex';
             qdmTitle.textContent = `${task.icon || '🎯'} ${task.title}`;
-            qdmDesc.textContent = task.isProposal ? 'Предложенное задание зрителя (ожидает доната/одобрения стримера).' : 'Активное задание в очереди стрима.';
+            qdmDesc.textContent = task.isProposal ? 'Предложенное задание зрителя (ожидает доната/одобрения стримера, сгорает через 10 мин).' : 'Активное задание в очереди стрима.';
             qdmLocInfo.textContent = `📍 Осталось до точки: ${distStr}`;
             sendPresetBtn.disabled = true;
             sendPresetBtn.textContent = 'Уже в списке стрима';
@@ -1539,7 +1594,7 @@
             vMap.flyTo({ center: [task.lng, task.lat], zoom: 16 });
             qdmModal.style.display = 'flex';
             qdmTitle.textContent = `${task.icon || '🎯'} ${task.title}`;
-            qdmDesc.textContent = task.isProposal ? 'Предложенное задание зрителя.' : 'Активное задание на стриме.';
+            qdmDesc.textContent = task.isProposal ? 'Предложенное задание зрителя (ожидает доната).' : 'Активное задание на стриме.';
             qdmLocInfo.textContent = `📍 Расстояние от байка: ${distStr}`;
             sendPresetBtn.disabled = true;
             sendPresetBtn.textContent = 'Уже в очереди';
@@ -1551,7 +1606,6 @@
         drawViewerRoute(streamerPos, [first.lng, first.lat], first.vip);
       }
 
-      // Отрисовка каталога квестов с фильтрацией
       const presetListEl = document.getElementById('preset-quests-list');
       function getPriceBadgeClass(price) {
         if (price <= 200) return 'tier-low';
@@ -1587,9 +1641,9 @@
       }
       renderCatalog();
 
-      document.querySelectorAll('.pf-btn').forEach(btn => {
+      document.querySelectorAll('.pf-btn[data-range]').forEach(btn => {
         btn.addEventListener('click', () => {
-          document.querySelectorAll('.pf-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.pf-btn[data-range]').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           currentPriceFilter = btn.getAttribute('data-range');
           renderCatalog();
@@ -1599,6 +1653,21 @@
       sendPresetBtn.addEventListener('click', async () => {
         if (!selectedPreset) return;
         const canLaunchDirect = vipConfig && vipConfig.maxQuestPrice >= selectedPreset.price;
+
+        if (!canLaunchDirect) {
+          const spamCheck = checkProposalSpamLimit();
+          if (!spamCheck.allowed) {
+            alert(spamCheck.reason);
+            return;
+          }
+          const activeProposals = liveQueue.filter(item => item.isProposal).length;
+          if (activeProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) {
+            alert('На экране уже висят 3 предложенных задания. Дождись, пока стример разберёт их!');
+            return;
+          }
+          recordProposalSent();
+        }
+
         const targetCoords = selectedPreset.coords ? selectedPreset.coords : streamerPos;
 
         sendPresetBtn.disabled = true;
@@ -1617,10 +1686,10 @@
         });
 
         sendPresetBtn.textContent = '✅ Отправлено на экран стрима!';
+        validateCustomForm();
         setTimeout(() => { qdmModal.style.display = 'none'; }, 1500);
       });
 
-      // Переключение нижних вкладок
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1630,27 +1699,53 @@
         });
       });
 
-      // Вкладка "💡 Предложить своё задание"
+      // Вкладка "💡 Предложить своё задание" с живым таймером антиспама
       const customPriceInput = document.getElementById('custom-price');
       const customTextInput = document.getElementById('custom-text');
       const sendCustomBtn = document.getElementById('send-custom-btn');
       const customHint = document.getElementById('custom-map-hint');
 
       function validateCustomForm() {
+        if (!isVip) {
+          const spamCheck = checkProposalSpamLimit();
+          if (!spamCheck.allowed) {
+            sendCustomBtn.disabled = true;
+            sendCustomBtn.textContent = spamCheck.reason;
+            return;
+          }
+          const activeProposals = liveQueue.filter(item => item.isProposal).length;
+          if (activeProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) {
+            sendCustomBtn.disabled = true;
+            sendCustomBtn.textContent = 'На радаре уже 3 предложения (ожидайте)';
+            return;
+          }
+        }
+
         const priceVal = parseInt(customPriceInput.value);
         const textVal = customTextInput.value.trim();
-        if (!isNaN(priceVal) && priceVal >= 50 && textVal.length >= 2) {
+        if (!isNaN(priceVal) && priceVal >= 100 && textVal.length >= 2) {
           sendCustomBtn.disabled = false;
           sendCustomBtn.textContent = `💡 Отправить задание (${priceVal} ₽) на радар`;
         } else {
           sendCustomBtn.disabled = true;
-          sendCustomBtn.textContent = 'Укажи цену и текст задания';
+          sendCustomBtn.textContent = 'Укажи цену (от 100 ₽) и текст задания';
         }
       }
+
+      setInterval(validateCustomForm, 1000);
       customPriceInput.addEventListener('input', validateCustomForm);
       customTextInput.addEventListener('input', validateCustomForm);
 
       sendCustomBtn.addEventListener('click', async () => {
+        if (!isVip) {
+          const spamCheck = checkProposalSpamLimit();
+          if (!spamCheck.allowed) {
+            alert(spamCheck.reason);
+            return;
+          }
+          recordProposalSent();
+        }
+
         const priceVal = parseInt(customPriceInput.value);
         const cleanText = customTextInput.value.trim().replace(/https?:\/\/\S+/gi, '').toUpperCase();
         const coordsToUse = selectedLngLat ? selectedLngLat : streamerPos;
@@ -1672,7 +1767,7 @@
 
         customTextInput.value = '';
         sendCustomBtn.textContent = '✅ Предложение отправлено на радар!';
-        setTimeout(() => { validateCustomForm(); }, 2500);
+        setTimeout(() => { validateCustomForm(); }, 2000);
       });
 
       vMap.on('load', () => {
@@ -1693,13 +1788,12 @@
           paint: { 'line-color': isVip ? '#eab308' : '#22c55e', 'line-width': 2 }
         });
 
-        // Кликабельные иконки квестов прямо на карте (без постановки лишней метки под ними!)
         QUEST_CATALOG.filter(q => q.coords !== null).forEach(q => {
           const el = document.createElement('div');
           el.className = 'viewer-quest-marker';
           el.innerHTML = `${q.icon} ${q.price}₽`;
           el.addEventListener('click', (ev) => {
-            ev.stopPropagation(); // Блокируем клик по карте, чтобы не ставилась розовая метка
+            ev.stopPropagation();
             openQuestDetail(q);
           });
           new mapboxgl.Marker(el).setLngLat(q.coords).addTo(vMap);
@@ -1735,6 +1829,7 @@
           if (Array.isArray(payload.queue)) {
             liveQueue = payload.queue;
             renderViewerQueue();
+            validateCustomForm();
           }
         } catch (e) {}
       };
@@ -1744,7 +1839,6 @@
       const titleInput = document.getElementById('pin-title');
 
       vMap.on('click', (e) => {
-        // Если кликнули по DOM-маркеру квеста, игнорируем клик по самой карте
         if (e.originalEvent && e.originalEvent.target && e.originalEvent.target.closest('.mapboxgl-marker')) {
           return;
         }
@@ -1972,6 +2066,12 @@
         const icon = data.questIcon || (isProposal ? '💡' : (isVip ? '👑' : '🎯'));
         const isAuto = data.autoComplete !== false;
 
+        // Ограничиваем общее число неоплаченных предложений в очереди (макс 3)
+        if (isProposal) {
+          const currentProposals = questQueue.filter(q => q.isProposal).length;
+          if (currentProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) return;
+        }
+
         const el = document.createElement('div');
         el.className = 'viewer-target-pin';
         el.style.backgroundColor = isProposal ? '#a855f7' : (isVip ? '#eab308' : '#ff00ff');
@@ -1982,6 +2082,7 @@
 
         const task = {
           id: String(data.id || Date.now()),
+          createdAt: Date.now(),
           lng: data.lng,
           lat: data.lat,
           title: data.title,
@@ -2039,10 +2140,21 @@
         }
       }
 
+      // Автоматическая очистка неоплаченных предложений через 10 минут
+      setInterval(() => {
+        const now = Date.now();
+        for (let i = questQueue.length - 1; i >= 0; i--) {
+          if (questQueue[i].isProposal && (now - questQueue[i].createdAt) > PROPOSAL_EXPIRE_MS) {
+            removeQuestByIndex(i, false);
+          }
+        }
+      }, 15000);
+
       let lastBannerZone = '';
       function checkProgress(lng, lat) {
         const distSubEl = document.getElementById('district-sub');
-        if (lat < 12.8750) distSubEl.textContent = 'NA JOMTIEN';
+        if (lng < 100.8100) distSubEl.textContent = 'KOH LARN ISLAND';
+        else if (lat < 12.8750) distSubEl.textContent = 'NA JOMTIEN';
         else if (lat < 12.9035) distSubEl.textContent = 'JOMTIEN BEACH';
         else if (lat >= 12.9035 && lat <= 12.9225 && lng < 100.8730) distSubEl.textContent = 'PRATAMNAK HILL';
         else if (lat > 12.9500) distSubEl.textContent = 'NAKLUA';
