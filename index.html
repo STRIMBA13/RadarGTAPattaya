@@ -195,7 +195,6 @@
       height: 100%;
     }
 
-    /* Кнопки-чипсы для мобильного экрана (скрыты на ПК) */
     .mobile-chips-bar {
       display: none;
       position: absolute;
@@ -227,9 +226,7 @@
       cursor: pointer;
     }
     .m-chip.gold { border-color: #f59e0b; color: #fbbf24; }
-    .m-chip.active-chip { background: #1e293b; transform: scale(0.98); }
 
-    /* Десктопные панели (слева Активные, справа Каталог) */
     .viewer-live-queue {
       position: absolute;
       top: 10px;
@@ -264,7 +261,6 @@
       gap: 7px;
     }
 
-    /* АДАПТАЦИЯ ПОД ТЕЛЕФОН (до 768px): чипсы сверху + выдвижная шторка снизу */
     @media (max-width: 768px) {
       .mobile-chips-bar { display: flex; }
 
@@ -434,7 +430,6 @@
       cursor: pointer;
     }
 
-    /* Всплывающее подробное окно квеста поверх карты */
     .quest-detail-modal {
       position: absolute;
       bottom: 14px;
@@ -453,7 +448,6 @@
       gap: 7px;
     }
 
-    /* Нижняя компактная панель действий */
     .viewer-drawer {
       background: #111827;
       border-top: 2px solid rgba(236, 72, 153, 0.45);
@@ -751,7 +745,6 @@
     }
     .hp-bar { animation: hpPulse 3s infinite ease-in-out; }
 
-    /* БЛОК ПОД РАДАРОМ: ОПОВЕЩЕНИЯ + АВТОПИЛОТ КОМАНДЫ + ЖИВОЙ ЧАТ + СПИСОК МИССИЙ */
     .under-radar-panel {
       position: absolute;
       top: 358px;
@@ -763,7 +756,22 @@
       z-index: 30;
     }
 
-    /* Крупный игровой HUD команды чата (АВТОПИЛОТ: ПРЫЖОК / ВПЕРЕД / ЛЕЖАТЬ) */
+    /* Статус активного режима АВТОПИЛОТ с таймером */
+    .autopilot-status-bar {
+      display: none;
+      background: linear-gradient(90deg, rgba(234, 179, 8, 0.95), rgba(217, 119, 6, 0.95));
+      color: #000;
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 3px 12px rgba(234, 179, 8, 0.5);
+    }
+    .autopilot-status-bar.active { display: flex; }
+
     @keyframes cmdPop {
       0% { transform: scale(0.8); opacity: 0; }
       60% { transform: scale(1.06); opacity: 1; }
@@ -771,7 +779,7 @@
     }
     .autopilot-hud {
       display: none;
-      background: linear-gradient(90deg, rgba(14, 116, 144, 0.95), rgba(30, 27, 75, 0.95));
+      background: linear-gradient(90deg, rgba(14, 116, 144, 0.96), rgba(30, 27, 75, 0.96));
       border: 2px solid #00e5ff;
       border-radius: 8px;
       padding: 6px 12px;
@@ -782,10 +790,7 @@
     }
     .autopilot-hud.active { display: flex; }
 
-    .ap-cmd-icon {
-      font-size: 26px;
-      line-height: 1;
-    }
+    .ap-cmd-icon { font-size: 26px; line-height: 1; }
     .ap-cmd-text {
       font-family: 'Oswald', sans-serif;
       font-size: 20px;
@@ -801,7 +806,6 @@
       font-weight: 700;
     }
 
-    /* 3 строки живого чата YouTube */
     .yt-chat-box {
       display: none;
       flex-direction: column;
@@ -1025,16 +1029,19 @@
       <span style="font-size:11px; background:#16a34a; padding:3px 8px; border-radius:6px; font-weight:700;">ADMIN ACCESS</span>
     </div>
 
-    <!-- Подключение живого чата YouTube и Автопилота -->
+    <!-- Режим АВТОПИЛОТ (включается ТОЛЬКО при оплате задания — экономия API 95%) -->
     <div class="admin-card">
-      <h3>📺 YouTube Чат и Автопилот (Голос + HUD)</h3>
+      <h3>🎮 Режим «Автопилот» (Экономия API)</h3>
+      <div style="font-size:11.5px; color:#cbd5e1; line-height:1.35;">
+        Чат YouTube опрашивается <b>только когда активен Автопилот</b> (5 мин), чтобы не тратить лимит API за 10-часовой стрим.
+      </div>
       <input type="text" class="admin-input" id="yt-api-key" placeholder="YouTube Data API v3 Key (AIzaSy...)" />
       <input type="text" class="admin-input" id="yt-video-url" placeholder="Ссылка на стрим YouTube или Video ID" />
       <div class="admin-grid">
-        <button class="t-btn green" id="yt-connect-btn">▶️ Подключить чат к радару</button>
-        <button class="t-btn red" id="yt-disconnect-btn">⏹ Отключить чат</button>
+        <button class="t-btn gold" id="ap-start-btn">▶️ Включить Автопилот (5 мин)</button>
+        <button class="t-btn red" id="ap-stop-btn">⏹ Стоп Автопилот</button>
       </div>
-      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Тест игровых команд (озвучка + HUD на радаре):</div>
+      <div style="font-size:11px; color:#94a3b8; margin-top:2px;">Ручной тест команд (работает только при включённом Автопилоте):</div>
       <div class="cmd-grid">
         <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
         <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
@@ -1069,7 +1076,7 @@
       </div>
     </div>
 
-    <div class="test-log" id="test-log">Пульт подключён. Ожидаю команды...</div>
+    <div class="test-log" id="test-log">Пульт подключён. Автопилот в режиме ожидания...</div>
   </div>
 
   <!-- ================= ИНТЕРФЕЙС ЗРИТЕЛЯ (?pin=...) ================= -->
@@ -1086,13 +1093,11 @@
       <div id="viewer-map"></div>
       <div class="sheet-backdrop" id="sheet-backdrop"></div>
 
-      <!-- Мобильные кнопки-чипсы сверху (не перекрывают карту!) -->
       <div class="mobile-chips-bar">
         <button class="m-chip" id="chip-active">📋 Активные (<span id="m-active-cnt">0</span>)</button>
         <button class="m-chip gold" id="chip-catalog">🏆 Квесты (<span id="m-catalog-cnt">0</span>)</button>
       </div>
 
-      <!-- ЛЕВАЯ ПАНЕЛЬ (на мобилках — выдвижная шторка) -->
       <div class="viewer-live-queue" id="viewer-live-queue">
         <div class="panel-hdr" id="close-active-sheet">
           <span style="color:#38bdf8;">📋 Активные на стриме (<span id="v-queue-count">0</span>)</span>
@@ -1101,7 +1106,6 @@
         <div class="panel-scroll-list" id="viewer-queue-list"></div>
       </div>
 
-      <!-- ПРАВАЯ ПАНЕЛЬ (на мобилках — выдвижная шторка) -->
       <div class="viewer-catalog-panel" id="viewer-catalog-panel">
         <div class="panel-hdr" id="close-catalog-sheet">
           <span style="color:#fbbf24;">🏆 Каталог квестов (<span id="catalog-count">0</span>)</span>
@@ -1118,7 +1122,6 @@
         <div class="panel-scroll-list" id="preset-quests-list"></div>
       </div>
 
-      <!-- Всплывающая подробная карточка квеста поверх карты -->
       <div class="quest-detail-modal" id="quest-detail-modal">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
           <div style="font-size:13.5px; font-weight:800; color:#fbbf24;" id="qdm-title">КВЕСТ</div>
@@ -1183,7 +1186,13 @@
     </svg>
 
     <div class="under-radar-panel">
-      <!-- Индикатор команды управления из чата (Автопилот) -->
+      <!-- Полоса статуса активного Автопилота с таймером -->
+      <div class="autopilot-status-bar" id="autopilot-status-bar">
+        <span>🎮 АВТОПИЛОТ АКТИВЕН (ПИШИТЕ КОМАНДЫ!)</span>
+        <span id="ap-timer-text">05:00</span>
+      </div>
+
+      <!-- Всплывающая команда из чата -->
       <div class="autopilot-hud" id="autopilot-hud">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="ap-cmd-icon" id="ap-cmd-icon">🦘</span>
@@ -1195,10 +1204,10 @@
         <div class="ap-cmd-author" id="ap-cmd-author">@Viewer</div>
       </div>
 
-      <!-- 3 последние строки чата YouTube -->
+      <!-- 3 последние строки чата (показываются во время Автопилота) -->
       <div class="yt-chat-box" id="yt-chat-box"></div>
 
-      <!-- Всплывающий баннер локаций и миссий -->
+      <!-- Баннер локаций и миссий -->
       <div class="zone-banner" id="zone-banner">
         <div class="zone-banner-title" id="zone-banner-title">★ ЛОКАЦИЯ ОБНАРУЖЕНА</div>
         <div class="zone-banner-name" id="zone-name">PRATAMNAK HILL</div>
@@ -1236,7 +1245,6 @@
     const PROPOSAL_MAX_ACTIVE_QUEUE = 3;
     const PROPOSAL_EXPIRE_MS = 10 * 60 * 1000;
 
-    // Словарь игровых команд из чата для режима «Автопилот»
     const CHAT_GAME_COMMANDS = [
       { keys: ['прыжок', 'прыгай', 'jump'], label: 'ПРЫЖОК!', icon: '🦘', speech: 'Команда чата: Прыжок!' },
       { keys: ['вперед', 'вперёд', 'прямо', 'go'], label: 'ВПЕРЁД!', icon: '⬆️', speech: 'Вперёд!' },
@@ -1278,7 +1286,7 @@
       { id: 'q_english',  price: 600,   icon: '🇺🇸', name: 'СМЕНА ФРАКЦИИ (15 МИН)', desc: '15 минут разговаривать исключительно на английском.', coords: null },
       { id: 'q_cargo',    price: 600,   icon: '📦', name: 'СЕКРЕТНЫЙ ГРУЗ (100 М)', desc: 'Нести пакет на вытянутой руке 100 метров, никого не задев.', coords: null },
       { id: 'q_drop',     price: 600,   icon: '📸', name: 'СБРОС ЛУТА В ТГ', desc: 'Выложить всё из карманов, сфоткать в Telegram-чат, забрать и убежать.', coords: null },
-      { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (5 МИН)', desc: 'Чат 5 минут управляет стримером командами (право, лево, вперёд, назад, прыжок).', coords: null },
+      { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (5 МИН)', desc: 'Чат 5 минут управляет стримером командами (вперёд, назад, налево, направо, прыжок).', coords: null },
       { id: 'q_statue',   price: 700,   icon: '🗿', name: 'ЖИВАЯ СТАТУЯ (WALKING ST.)', desc: 'Замереть в пафосной позе на 60 секунд посреди оживлённой улицы.', coords: [100.8732, 12.9265] },
       { id: 'q_flowers',  price: 1000,  icon: '💐', name: 'КУПИТЬ ЦВЕТЫ ОКСАНЕ', desc: 'Найти цветочный ларёк у Централ Фестивал и подарить букет Оксане.', coords: [100.8832, 12.9348] },
       { id: 'q_green',    price: 1000,  icon: '🌿', name: 'ЗЕЛЁНАЯ КОМНАТА', desc: 'Зайти в тематический шоп на Сои Буакхао и сделать обзор.', coords: [100.8862, 12.9312] },
@@ -1325,9 +1333,6 @@
 
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    // =========================================================================
-    // ЗВУК И ГОЛОСОВОЙ СИНТЕЗАТОР КОМАНД ЧАТА
-    // =========================================================================
     let audioCtx = null;
     let audioUnlocked = false;
     const customNewAudio = new Audio('new_mission.mp3');
@@ -1361,7 +1366,6 @@
       customPassAudio.play().catch(() => {});
     }
 
-    // Короткий звуковой сигнал + голосовая озвучка команды для стримера
     function speakGameCommand(text) {
       try {
         unlockAudio();
@@ -1476,37 +1480,34 @@
 
       function logMsg(txt) { logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`; }
 
-      // Загружаем сохранённый ключ YouTube API
       const ytKeyInput = document.getElementById('yt-api-key');
       const ytUrlInput = document.getElementById('yt-video-url');
       ytKeyInput.value = localStorage.getItem('yt_api_key') || '';
       ytUrlInput.value = localStorage.getItem('yt_video_id') || '';
 
-      document.getElementById('yt-connect-btn').onclick = async () => {
+      document.getElementById('ap-start-btn').onclick = async () => {
         const apiKey = ytKeyInput.value.trim();
         const videoId = extractYouTubeVideoId(ytUrlInput.value);
-        if (!apiKey || !videoId) {
-          alert('Введи YouTube API Key и ссылку/ID трансляции!');
-          return;
-        }
-        localStorage.setItem('yt_api_key', apiKey);
-        localStorage.setItem('yt_video_id', videoId);
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'yt_start', apiKey, videoId });
-        logMsg(`Команда подключения YouTube чата (${videoId}) отправлена на радар!`);
+        if (apiKey) localStorage.setItem('yt_api_key', apiKey);
+        if (videoId) localStorage.setItem('yt_video_id', videoId);
+
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_start', apiKey, videoId, durationSec: 300 });
+        logMsg(apiKey && videoId
+          ? '🎮 Автопилот + опрос YouTube чата ВКЛЮЧЕНЫ на 5 минут!'
+          : '🎮 Автопилот ВКЛЮЧЕН на 5 минут (ручной режим без YouTube API).');
       };
 
-      document.getElementById('yt-disconnect-btn').onclick = async () => {
-        await sendCommand(NTFY_PIN_TOPIC, { action: 'yt_stop' });
-        logMsg('Команда отключения чата отправлена.');
+      document.getElementById('ap-stop-btn').onclick = async () => {
+        await sendCommand(NTFY_PIN_TOPIC, { action: 'ap_stop' });
+        logMsg('⏹ Автопилот ОСТАНОВЛЕН, расход API прекращён.');
       };
 
-      // Ручной тест игровых команд автопилота
       document.querySelectorAll('[data-cmd]').forEach(btn => {
         btn.onclick = async () => {
           const cmd = btn.getAttribute('data-cmd');
           const icon = btn.getAttribute('data-icon');
-          await sendCommand(NTFY_PIN_TOPIC, { action: 'game_cmd', label: `${cmd}!`, icon, speech: `Команда чата: ${cmd}`, author: 'Стример (Тест)' });
-          logMsg(`Отправлена команда управления: ${cmd}`);
+          await sendCommand(NTFY_PIN_TOPIC, { action: 'game_cmd', label: `${cmd}!`, icon, speech: `Команда чата: ${cmd}`, author: 'Стример' });
+          logMsg(`Отправлена команда: ${cmd}`);
         };
       });
 
@@ -1643,7 +1644,6 @@
       streamerEl.style.cssText = 'width:20px;height:20px;background:#00c8ff;border:3px solid #fff;border-radius:50%;box-shadow:0 0 12px #00c8ff;';
       const streamerMarker = new mapboxgl.Marker(streamerEl).setLngLat(streamerPos).addTo(vMap);
 
-      // Логика мобильных шторок (Bottom Sheets)
       const activePanel = document.getElementById('viewer-live-queue');
       const catalogPanel = document.getElementById('viewer-catalog-panel');
       const backdrop = document.getElementById('sheet-backdrop');
@@ -1683,7 +1683,7 @@
       const sendPresetBtn = document.getElementById('send-preset-btn');
 
       function openQuestDetail(q) {
-        closeAllSheets(); // На мобилках автоматически сворачиваем шторку, чтобы показать точку на карте!
+        closeAllSheets();
         selectedPreset = q;
         document.querySelectorAll('.catalog-item').forEach(r => {
           r.classList.toggle('selected', r.getAttribute('data-qid') === q.id);
@@ -1918,6 +1918,7 @@
         await sendCommand(NTFY_PIN_TOPIC, {
           action: 'add',
           id: Date.now().toString(),
+          questId: selectedPreset.id,
           lng: targetCoords[0],
           lat: targetCoords[1],
           title: `${selectedPreset.name} (${selectedPreset.price}₽)`,
@@ -2158,7 +2159,7 @@
     }
 
     // =========================================================================
-    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO + ЖИВОЙ ЧАТ И АВТОПИЛОТ
+    // РЕЖИМ 2: ОСНОВНОЙ РАДАР В PRISM LIVE STUDIO (ЭКОНОМНЫЙ АВТОПИЛОТ)
     // =========================================================================
     else {
       function updateClock() {
@@ -2176,35 +2177,40 @@
       let currentStreamerPos = [100.8685, 12.9185];
       let questQueue = [];
 
-      // Отрисовка команды управления «АВТОПИЛОТ» на радаре + озвучка
-      let apTimeout = null;
+      // Состояние режима «АВТОПИЛОТ» (по умолчанию ВЫКЛЮЧЕН — 0 расхода API!)
+      let autopilotActive = false;
+      let autopilotEndTime = 0;
+      let autopilotTimerInterval = null;
+      let ytChatPollTimer = null;
+      let ytNextPageToken = null;
+      let ytRecentMessages = [];
+      let lastCommandTimestamp = 0;
+
+      let apHudTimeout = null;
       function triggerGameCommandHUD(label, icon, speechText, authorName) {
+        // Команды срабатывают ТОЛЬКО когда режим Автопилот включён!
+        if (!autopilotActive) return;
+
         const hud = document.getElementById('autopilot-hud');
         document.getElementById('ap-cmd-icon').textContent = icon || '🎮';
         document.getElementById('ap-cmd-text').textContent = label;
         document.getElementById('ap-cmd-author').textContent = authorName ? `@${authorName}` : '';
 
         hud.classList.remove('active');
-        void hud.offsetWidth; // перезапуск анимации
+        void hud.offsetWidth;
         hud.classList.add('active');
 
         speakGameCommand(speechText || label);
 
-        clearTimeout(apTimeout);
-        apTimeout = setTimeout(() => {
+        clearTimeout(apHudTimeout);
+        apHudTimeout = setTimeout(() => {
           hud.classList.remove('active');
         }, 4500);
       }
 
-      // Модуль YouTube Live Chat (3 строки последних сообщений + перехват команд)
-      let ytChatPollTimer = null;
-      let ytNextPageToken = null;
-      let ytRecentMessages = [];
-      let lastCommandTimestamp = 0;
-
       function renderYouTubeChatBox() {
         const box = document.getElementById('yt-chat-box');
-        if (ytRecentMessages.length === 0) {
+        if (!autopilotActive || ytRecentMessages.length === 0) {
           box.classList.remove('visible');
           return;
         }
@@ -2215,10 +2221,10 @@
       }
 
       function parseChatForGameCommands(author, text) {
+        if (!autopilotActive) return;
         const lower = text.toLowerCase().trim();
         for (const cmd of CHAT_GAME_COMMANDS) {
           if (cmd.keys.some(k => lower === k || lower.startsWith(k + ' ') || lower.startsWith('!' + k))) {
-            // Защита от одновременного крика: не чаще 1 озвучки раз в 2.5 секунды
             if (Date.now() - lastCommandTimestamp > 2500) {
               lastCommandTimestamp = Date.now();
               triggerGameCommandHUD(cmd.label, cmd.icon, cmd.speech, author);
@@ -2228,20 +2234,58 @@
         }
       }
 
-      async function startYouTubeChat(apiKey, videoId) {
+      function stopAutopilotMode(completedNormally = false) {
+        autopilotActive = false;
+        if (autopilotTimerInterval) clearInterval(autopilotTimerInterval);
         if (ytChatPollTimer) clearTimeout(ytChatPollTimer);
+        ytRecentMessages = [];
+
+        document.getElementById('autopilot-status-bar').classList.remove('active');
+        document.getElementById('autopilot-hud').classList.remove('active');
+        document.getElementById('yt-chat-box').classList.remove('visible');
+
+        if (completedNormally) {
+          playMissionPassedSound();
+          showBanner('MISSION PASSED! + RESPECT', 'АВТОПИЛОТ ЗАВЕРШЁН (5 МИН)', 'passed');
+        }
+      }
+
+      async function startAutopilotMode(apiKey, videoId, durationSec = 300) {
+        stopAutopilotMode(false);
+        autopilotActive = true;
+        autopilotEndTime = Date.now() + durationSec * 1000;
+
+        const statusBar = document.getElementById('autopilot-status-bar');
+        const timerText = document.getElementById('ap-timer-text');
+        statusBar.classList.add('active');
+
+        autopilotTimerInterval = setInterval(() => {
+          const leftMs = autopilotEndTime - Date.now();
+          if (leftMs <= 0) {
+            stopAutopilotMode(true);
+            return;
+          }
+          const m = Math.floor(leftMs / 60000);
+          const s = String(Math.floor((leftMs % 60000) / 1000)).padStart(2, '0');
+          timerText.textContent = `${String(m).padStart(2, '0')}:${s}`;
+        }, 1000);
+
+        // Если переданы API Key и Video ID — запускаем чтение чата строго на эти 5 минут
+        const useKey = apiKey || localStorage.getItem('yt_api_key');
+        const useVid = videoId || localStorage.getItem('yt_video_id');
+        if (!useKey || !useVid) return;
+
         ytNextPageToken = null;
         try {
-          const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}&key=${apiKey}`);
+          const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${useVid}&key=${useKey}`);
           const vData = await vRes.json();
           const liveChatId = vData.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
           if (!liveChatId) return;
 
-          showBanner('📺 YOUTUBE ЧАТ ПОДКЛЮЧЕН', '3 строки чата + команды Автопилота активны', 'normal');
-
           async function pollMessages() {
+            if (!autopilotActive) return;
             try {
-              let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveChatId}&part=snippet,authorDetails&key=${apiKey}`;
+              let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveChatId}&part=snippet,authorDetails&key=${useKey}`;
               if (ytNextPageToken) url += `&pageToken=${ytNextPageToken}`;
 
               const cRes = await fetch(url);
@@ -2255,28 +2299,21 @@
                   if (!msgText) return;
 
                   ytRecentMessages.push({ author, text: msgText });
-                  if (ytRecentMessages.length > 10) ytRecentMessages.shift();
-
-                  // Проверяем команды управления (прыжок, вперед, налево, лежать и т.д.)
+                  if (ytRecentMessages.length > 6) ytRecentMessages.shift();
                   parseChatForGameCommands(author, msgText);
                 });
                 renderYouTubeChatBox();
               }
-              const waitMs = Math.max(cData.pollingIntervalMillis || 4500, 3500);
-              ytChatPollTimer = setTimeout(pollMessages, waitMs);
+              if (autopilotActive) {
+                const waitMs = Math.max(cData.pollingIntervalMillis || 4500, 4000);
+                ytChatPollTimer = setTimeout(pollMessages, waitMs);
+              }
             } catch (err) {
-              ytChatPollTimer = setTimeout(pollMessages, 6000);
+              if (autopilotActive) ytChatPollTimer = setTimeout(pollMessages, 6000);
             }
           }
           pollMessages();
         } catch (e) {}
-      }
-
-      // Автозапуск чата, если параметры переданы прямо в URL радара
-      const initYtKey = urlParams.get('yt_key');
-      const initYtVid = urlParams.get('yt_video');
-      if (initYtKey && initYtVid) {
-        startYouTubeChat(initYtKey, extractYouTubeVideoId(initYtVid));
       }
 
       function broadcastQueueState() {
@@ -2413,6 +2450,11 @@
         if (isProposal) {
           const currentProposals = questQueue.filter(q => q.isProposal).length;
           if (currentProposals >= PROPOSAL_MAX_ACTIVE_QUEUE) return;
+        }
+
+        // Если квест АВТОПИЛОТ запущен напрямую (оплачен VIP) — автоматически активируем режим управления на 5 минут!
+        if (data.questId === 'q_autopilot' && isVip && !isProposal) {
+          startAutopilotMode(null, null, 300);
         }
 
         const el = document.createElement('div');
@@ -2623,17 +2665,18 @@
             if (idx !== -1) removeQuestByIndex(idx, false);
           } else if (data.action === 'clear_all') {
             while (questQueue.length > 0) removeQuestByIndex(0, false);
-          } else if (data.action === 'yt_start') {
-            startYouTubeChat(data.apiKey, data.videoId);
-          } else if (data.action === 'yt_stop') {
-            if (ytChatPollTimer) clearTimeout(ytChatPollTimer);
-            ytRecentMessages = [];
-            renderYouTubeChatBox();
+          } else if (data.action === 'ap_start') {
+            if (data.apiKey) localStorage.setItem('yt_api_key', data.apiKey);
+            if (data.videoId) localStorage.setItem('yt_video_id', data.videoId);
+            startAutopilotMode(data.apiKey, data.videoId, data.durationSec || 300);
+          } else if (data.action === 'ap_stop') {
+            stopAutopilotMode(false);
           } else if (data.action === 'game_cmd') {
             triggerGameCommandHUD(data.label, data.icon, data.speech, data.author);
           } else if (data.action === 'add' || data.action === 'set') {
             addQuestToQueue({
               id: data.id,
+              questId: data.questId,
               lng: parseFloat(data.lng),
               lat: parseFloat(data.lat),
               title: data.title,
