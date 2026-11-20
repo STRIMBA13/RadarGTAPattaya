@@ -1450,6 +1450,21 @@
       <span id="mqtt-status-badge" style="font-size:11px; background:#b45309; padding:3px 8px; border-radius:6px; font-weight:700;">🟡 MQTT ПОДКЛЮЧЕНИЕ...</span>
     </div>
 
+    <!-- ПРЯМОЙ GPS-МАЯЧОК С ТЕЛЕФОНА В MQTT (БЕЗ NTFY И БЕЗ ЛИМИТОВ 429) -->
+    <div class="admin-card" style="border-color:#00e5ff; background:linear-gradient(180deg, #0b1e2d 0%, #131b2e 100%);">
+      <h3>
+        <span>📡 Прямой GPS-маячок с телефона (MQTT)</span>
+        <span id="gps-beacon-badge" style="font-size:11px; background:#334155; padding:2px 7px; border-radius:5px; color:#cbd5e1;">ВЫКЛ</span>
+      </h3>
+      <div id="gps-beacon-info" style="font-size:12px; color:#bae6fd; line-height:1.35;">
+        Нажмите «▶️ Включить передачу GPS», разрешите геолокацию в браузере и не сворачивайте вкладку (для iPhone поставьте автоблокировку экрана «Никогда»).
+      </div>
+      <div class="admin-grid">
+        <button class="t-btn green" id="gps-beacon-start">▶️ Включить передачу GPS</button>
+        <button class="t-btn red" id="gps-beacon-stop">⏹ Остановить GPS</button>
+      </div>
+    </div>
+
     <!-- БЛОК СЮЖЕТНОЙ КАМПАНИИ И ВИРТУАЛЬНОГО БАГ-ТЕСТА -->
     <div class="admin-card story-card">
       <h3>
@@ -1770,7 +1785,7 @@
 
   <script>
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoic3RyaW1iYSIsImEiOiJjbXduMTh2ZG0wNXFpMzBwbGpnMDFmNnRjIn0.Y91BGdd5CU6QXz69RNGqQg';
-    const NTFY_GPS_TOPIC = 'strimba_pattaya_live_7788';
+    const NTFY_GPS_TOPIC = 'strimba_pattaya_gps_9941';
     const DEFAULT_YT_API_KEY = 'AIzaSyC7q3hLywYksTHZ4QCRlLWcirmrTSGIanE';
 
     const MQTT_BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
@@ -2305,6 +2320,92 @@
         logEl.style.color = isError ? '#f87171' : '#4ade80';
         logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`;
       }
+
+      // --- ПРЯМОЙ GPS-МАЯЧОК ИЗ БРАУЗЕРА ТЕЛЕФОНА В MQTT ---
+      let geoWatchId = null;
+      let wakeLockSentinel = null;
+      let lastBeaconSentTs = 0;
+
+      async function requestScreenWakeLock() {
+        try {
+          if ('wakeLock' in navigator) {
+            wakeLockSentinel = await navigator.wakeLock.request('screen');
+          }
+        } catch (e) {}
+      }
+
+      function stopPhoneGpsBeacon() {
+        if (geoWatchId !== null && 'geolocation' in navigator) {
+          navigator.geolocation.clearWatch(geoWatchId);
+          geoWatchId = null;
+        }
+        if (wakeLockSentinel) {
+          try { wakeLockSentinel.release(); } catch (e) {}
+          wakeLockSentinel = null;
+        }
+        const badge = document.getElementById('gps-beacon-badge');
+        if (badge) {
+          badge.textContent = 'ВЫКЛ';
+          badge.style.background = '#334155';
+          badge.style.color = '#cbd5e1';
+        }
+      }
+
+      document.getElementById('gps-beacon-start').onclick = () => {
+        if (!('geolocation' in navigator)) {
+          logMsg('❌ Этот браузер не поддерживает геолокацию!', true);
+          return;
+        }
+        stopPhoneGpsBeacon();
+        requestScreenWakeLock();
+
+        const badge = document.getElementById('gps-beacon-badge');
+        const info = document.getElementById('gps-beacon-info');
+        badge.textContent = 'ПОИСК СПУТНИКОВ...';
+        badge.style.background = '#b45309';
+        badge.style.color = '#fff';
+
+        geoWatchId = navigator.geolocation.watchPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+            const speed = pos.coords.speed !== null ? pos.coords.speed : 0;
+            const bearing = pos.coords.heading !== null ? pos.coords.heading : 0;
+            const acc = Math.round(pos.coords.accuracy || 0);
+
+            lastKnownStreamerPos = [lon, lat];
+            const now = Date.now();
+            if (now - lastBeaconSentTs >= 1800) {
+              lastBeaconSentTs = now;
+              publishMqtt(MQTT_GPS_TOPIC, { lat, lon, speed, bearing }, true);
+            }
+
+            badge.textContent = `🟢 LIVE (${acc}м)`;
+            badge.style.background = '#16a34a';
+            const kmh = Math.round((speed || 0) * 3.6);
+            info.innerHTML = `Координаты: <strong>${lat.toFixed(6)}, ${lon.toFixed(6)}</strong> • Скорость: <strong>${kmh} км/ч</strong> • Точность: ±${acc} м`;
+            if (currentAdminQueue.length > 0) renderAdminQueue();
+          },
+          (err) => {
+            badge.textContent = '🔴 ОШИБКА GPS';
+            badge.style.background = '#dc2626';
+            info.textContent = `Ошибка геолокации (${err.code}): ${err.message}. Проверьте разрешение «При использовании» в Настройках Safari.`;
+            logMsg(`Ошибка GPS: ${err.message}`, true);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 2000,
+            timeout: 15000
+          }
+        );
+        logMsg('📡 Прямой GPS-маячок запущен! Координаты летят прямо в MQTT на радар.');
+      };
+
+      document.getElementById('gps-beacon-stop').onclick = () => {
+        stopPhoneGpsBeacon();
+        document.getElementById('gps-beacon-info').textContent = 'Передача GPS остановлена.';
+        logMsg('⏹ Прямой GPS-маячок остановлен.');
+      };
 
       function updateAdminStoryUI(stageIdx, active) {
         const badge = document.getElementById('admin-story-badge');
@@ -4126,24 +4227,12 @@
       }
       connectNtfyGpsStream();
 
-      // Watchdog: если поток ntfy завис без ошибок > 35 сек — принудительно переподключаем + подтягиваем последнюю точку
+      // Мягкий Watchdog без лишних HTTP-запросов (чтобы не ловить 429)
       setInterval(() => {
-        if (Date.now() - lastGpsPacketTs > 35000) {
+        if (Date.now() - lastGpsPacketTs > 60000) {
           connectNtfyGpsStream();
-          fetch(`https://ntfy.sh/${NTFY_GPS_TOPIC}/json?poll=1&since=2m`)
-            .then(r => r.text())
-            .then(txt => {
-              const lines = txt.trim().split('\n').filter(Boolean);
-              if (lines.length > 0) {
-                const lastObj = JSON.parse(lines[lines.length - 1]);
-                if (lastObj && lastObj.message) {
-                  handleRawGpsMessage(lastObj.message, lastObj.time || null);
-                }
-              }
-            })
-            .catch(() => {});
         }
-      }, 15000);
+      }, 30000);
 
       // Автоматическое подключение к чату, если videoId уже сохранён в памяти
       const savedVid = localStorage.getItem('yt_video_id');
@@ -4153,12 +4242,24 @@
 
       let initialSyncDone = false;
       mqttClient.on('connect', () => {
-        mqttClient.subscribe([MQTT_CMD_TOPIC, MQTT_SYNC_TOPIC]);
+        mqttClient.subscribe([MQTT_CMD_TOPIC, MQTT_SYNC_TOPIC, MQTT_GPS_TOPIC]);
       });
 
       mqttClient.on('message', (topic, message) => {
         try {
           const data = JSON.parse(message.toString());
+
+          if (topic === MQTT_GPS_TOPIC) {
+            const lat = parseFloat(data.lat);
+            const lon = parseFloat(data.lon);
+            const bearing = parseFloat(data.bearing);
+            const speed = parseFloat(data.speed);
+            if (!isNaN(lat) && !isNaN(lon)) {
+              lastGpsPacketTs = Date.now();
+              moveRadar(lon, lat, isNaN(bearing) ? null : bearing, isNaN(speed) ? 0 : speed, false);
+            }
+            return;
+          }
 
           if (topic === MQTT_SYNC_TOPIC && !initialSyncDone) {
             initialSyncDone = true;
