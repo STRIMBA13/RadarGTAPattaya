@@ -66,6 +66,12 @@
       align-items: center;
     }
 
+    .admin-card.story-card {
+      border-color: #a855f7;
+      background: linear-gradient(180deg, #191330 0%, #131b2e 100%);
+    }
+    .admin-card.story-card h3 { color: #e879f9; }
+
     .admin-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -98,12 +104,13 @@
     .t-btn.green { background: #16a34a; }
     .t-btn.gold { background: linear-gradient(90deg, #f59e0b, #eab308); color: #000; }
     .t-btn.purple { background: #9333ea; }
+    .t-btn.pink { background: linear-gradient(90deg, #ec4899, #8b5cf6); }
     .t-btn.red { background: #dc2626; }
     .t-btn.gray { background: #475569; }
     .t-btn.cmd { background: #1e293b; border: 1px solid #38bdf8; padding: 9px 4px; font-size: 11.5px; }
     .t-btn.star-btn { background: #1e293b; border: 1px solid #f59e0b; color: #fbbf24; padding: 9px 4px; font-size: 12px; }
 
-    .admin-input {
+    .admin-input, .admin-select {
       width: 100%;
       padding: 9px 11px;
       border-radius: 8px;
@@ -112,6 +119,16 @@
       color: #fff;
       font-size: 13px;
       outline: none;
+    }
+
+    .story-status-box {
+      background: rgba(9, 13, 22, 0.85);
+      border: 1px solid #4c1d95;
+      border-radius: 9px;
+      padding: 9px 11px;
+      font-size: 12.5px;
+      color: #f3e8ff;
+      line-height: 1.4;
     }
 
     .admin-queue-list {
@@ -570,6 +587,168 @@
       width: 100vw;
       height: 100vh;
       pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* КРАСНО-СИНИЕ МИГАЛКИ ПО КРАЯМ ЭКРАНА ВО ВРЕМЯ ПОГОНИ */
+    @keyframes sirenEdgeFlash {
+      0%, 100% {
+        box-shadow:
+          inset 26px 0 55px rgba(255, 20, 40, 0.78),
+          inset -26px 0 55px rgba(15, 110, 255, 0.78),
+          inset 0 18px 40px rgba(255, 20, 40, 0.45),
+          inset 0 -18px 40px rgba(15, 110, 255, 0.45);
+      }
+      50% {
+        box-shadow:
+          inset 26px 0 55px rgba(15, 110, 255, 0.78),
+          inset -26px 0 55px rgba(255, 20, 40, 0.78),
+          inset 0 18px 40px rgba(15, 110, 255, 0.45),
+          inset 0 -18px 40px rgba(255, 20, 40, 0.45);
+      }
+    }
+    .police-edge-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 40;
+      animation: sirenEdgeFlash 0.65s infinite ease-in-out;
+    }
+    .police-edge-overlay.active { display: block; }
+
+    /* КИНОШНЫЕ ЧЁРНЫЕ ПОЛОСЫ (LETTERBOX) ДЛЯ КАТ-СЦЕН */
+    .letterbox-bar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 0;
+      background: #000;
+      z-index: 42;
+      transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+    .letterbox-bar.top { top: 0; border-bottom: 1px solid rgba(255,255,255,0.12); }
+    .letterbox-bar.bottom { bottom: 0; border-top: 1px solid rgba(255,255,255,0.12); }
+    body.cutscene-active .letterbox-bar { height: 68px; }
+
+    /* КОМИКСНАЯ / ИГРОВАЯ РАМКА ДИАЛОГА С ПОРТРЕТОМ И СУБТИТРАМИ В НИЖНЕЙ ТРЕТИ (9:16 SHORTS) */
+    .dialogue-box {
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      bottom: 88px;
+      max-width: 640px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, rgba(11, 15, 25, 0.96) 0%, rgba(24, 16, 40, 0.96) 100%);
+      border: 2.5px solid #ec4899;
+      border-radius: 14px;
+      padding: 11px 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 48;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.92), 0 0 22px rgba(236, 72, 153, 0.45);
+      transform: translateY(35px) scale(0.95);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .dialogue-box.active {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    .dialogue-box.speaker-handler { border-color: #00e5ff; box-shadow: 0 12px 32px rgba(0,0,0,0.92), 0 0 20px rgba(0, 229, 255, 0.45); }
+    .dialogue-box.speaker-informant { border-color: #f59e0b; box-shadow: 0 12px 32px rgba(0,0,0,0.92), 0 0 20px rgba(245, 158, 11, 0.45); }
+    .dialogue-box.speaker-boss { border-color: #ef4444; box-shadow: 0 12px 32px rgba(0,0,0,0.92), 0 0 24px rgba(239, 68, 68, 0.55); }
+
+    .dialogue-avatar-wrap {
+      position: relative;
+      width: 74px;
+      height: 74px;
+      flex-shrink: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      background: #0f172a;
+    }
+    .dialogue-avatar-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    @keyframes eqBounce {
+      0%, 100% { height: 4px; }
+      50% { height: 16px; }
+    }
+    .voice-eq-bar {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      background: rgba(0, 0, 0, 0.78);
+      padding: 3px 5px;
+      border-radius: 5px;
+    }
+    .voice-eq-bar span {
+      width: 3px;
+      height: 6px;
+      background: #39ff14;
+      border-radius: 2px;
+      animation: eqBounce 0.45s infinite ease-in-out;
+    }
+    .voice-eq-bar span:nth-child(2) { animation-delay: 0.12s; background: #00e5ff; }
+    .voice-eq-bar span:nth-child(3) { animation-delay: 0.24s; background: #ffd54f; }
+    .voice-eq-bar span:nth-child(4) { animation-delay: 0.08s; background: #ec4899; }
+
+    .dialogue-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .dialogue-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+    .dialogue-speaker-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #ffd54f;
+      text-shadow: 0 1px 3px #000;
+    }
+    .dialogue-badge {
+      font-family: 'Oswald', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+    }
+    .dialogue-subtitle-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 14.5px;
+      font-weight: 800;
+      line-height: 1.28;
+      color: #ffffff;
+      text-shadow:
+        -1.5px -1.5px 0 #000,
+         1.5px -1.5px 0 #000,
+        -1.5px  1.5px 0 #000,
+         1.5px  1.5px 0 #000,
+         0px    3px   6px rgba(0, 0, 0, 0.95);
     }
 
     /* ПРАВЫЙ ВЕРХНИЙ УГОЛ: Звёзды розыска + Таймер побега + Кэш $ + Respect */
@@ -685,14 +864,14 @@
     .center-gta-splash {
       display: none;
       position: absolute;
-      top: 46%;
+      top: 44%;
       left: 50%;
       transform: translate(-50%, -50%);
-      z-index: 50;
+      z-index: 52;
       text-align: center;
       padding: 18px 34px;
       border-radius: 14px;
-      background: rgba(0, 0, 0, 0.68);
+      background: rgba(0, 0, 0, 0.72);
       backdrop-filter: blur(4px);
       animation: splashPop 3.6s forwards;
     }
@@ -700,7 +879,7 @@
 
     .splash-main-title {
       font-family: 'Pricedown Bl', 'Pricedown', 'Anton', sans-serif;
-      font-size: 54px;
+      font-size: 52px;
       font-weight: 900;
       letter-spacing: 2px;
       line-height: 1.05;
@@ -919,6 +1098,41 @@
       z-index: 30;
     }
 
+    /* ПЛАШКА АКТИВНОЙ ГЛАВЫ СЮЖЕТА ПОД РАДАРОМ */
+    .story-mission-hud {
+      display: none;
+      background: linear-gradient(90deg, rgba(88, 28, 135, 0.95), rgba(30, 27, 75, 0.95));
+      border-left: 4px solid #e879f9;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: 'Oswald', sans-serif;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.85);
+      flex-direction: column;
+      gap: 2px;
+    }
+    .story-mission-hud.active { display: flex; }
+    .story-hud-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #f0abfc;
+      letter-spacing: 0.8px;
+    }
+    .story-hud-title {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.4px;
+    }
+    .story-hud-hint {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: #cbd5e1;
+    }
+
     .autopilot-status-bar {
       display: none;
       background: linear-gradient(90deg, rgba(234, 179, 8, 0.95), rgba(217, 119, 6, 0.95));
@@ -968,27 +1182,41 @@
       font-weight: 700;
     }
 
+    /* БЛОК ПОСЛЕДНИХ 3 СООБЩЕНИЙ YOUTUBE-ЧАТА */
     .yt-chat-box {
       display: none;
       flex-direction: column;
       gap: 3px;
-      background: rgba(10, 14, 20, 0.78);
-      border-left: 3px solid #ef4444;
-      border-radius: 5px;
-      padding: 5px 8px;
+      background: rgba(10, 14, 20, 0.84);
+      border-left: 3.5px solid #ef4444;
+      border-radius: 6px;
+      padding: 6px 9px;
       font-family: 'Inter', sans-serif;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.65);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.75);
     }
     .yt-chat-box.visible { display: flex; }
 
+    .yt-chat-hdr {
+      font-family: 'Oswald', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      color: #f87171;
+      text-transform: uppercase;
+    }
+
     .yt-msg-line {
-      font-size: 11.5px;
-      line-height: 1.25;
+      font-size: 12px;
+      line-height: 1.28;
       color: #f1f5f9;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       text-shadow: 0 1px 2px #000;
+    }
+    .yt-msg-line.is-cmd {
+      color: #67e8f9;
+      font-weight: 700;
     }
     .yt-author {
       font-weight: 800;
@@ -1141,6 +1369,7 @@
     .quest-item.is-vip .quest-item-dist { color: #ffd700; }
     .quest-item.is-proposal .quest-item-dist { color: #e879f9; }
 
+    /* ИКОНКИ МИССИЙ НА КАРТЕ В СТИЛЕ GTA (S, I, B, !, M, ★) */
     .gta-pin {
       width: 24px;
       height: 24px;
@@ -1150,14 +1379,36 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.8);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.85);
     }
     .gta-pin span {
       transform: rotate(45deg);
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 800;
       color: #000;
-      font-family: sans-serif;
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .gta-story-blip {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2.5px solid #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Pricedown Bl', 'Pricedown', 'Anton', sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      color: #000;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.8), 0 3px 6px #000;
+      transition: transform 0.2s;
+    }
+    .gta-story-blip.active-blip {
+      transform: scale(1.22);
+      border-color: #fff;
+      box-shadow: 0 0 18px #e879f9, 0 0 6px #000;
+      z-index: 25;
     }
 
     @keyframes pulsePin {
@@ -1191,12 +1442,66 @@
       <span id="mqtt-status-badge" style="font-size:11px; background:#b45309; padding:3px 8px; border-radius:6px; font-weight:700;">🟡 MQTT ПОДКЛЮЧЕНИЕ...</span>
     </div>
 
-    <!-- УПРАВЛЕНИЕ ЗВЁЗДАМИ РОЗЫСКА, КЭШЕМ И РЕПУТАЦИЕЙ -->
-    <div class="admin-card">
-      <h3>🚨 Звёзды розыска (15–45 мин), Кэш и Репа</h3>
-      <div style="font-size:11.5px; color:#cbd5e1;">
-        1★ = 15 мин • 2★ = 20 мин • 3★ = 25 мин • 4★ = 35 мин • 5★ = 45 мин
+    <!-- БЛОК СЮЖЕТНОЙ КАМПАНИИ И ВИРТУАЛЬНОГО БАГ-ТЕСТА -->
+    <div class="admin-card story-card">
+      <h3>
+        <span>🎬 Сюжетная кампания: Глава 1 (Паттайя)</span>
+        <span id="admin-story-badge" style="font-size:11px; background:#581c87; padding:2px 7px; border-radius:5px; color:#f3e8ff;">ОЖИДАНИЕ</span>
+      </h3>
+      <div class="story-status-box" id="admin-story-info">
+        Нажмите «▶️ Старт Главы 1» или выберите этап ниже для виртуального баг-теста.
       </div>
+      <div class="admin-grid">
+        <button class="t-btn pink" id="story-start-btn">▶️ Старт / Сброс Главы 1</button>
+        <button class="t-btn green" id="story-next-btn">⏭ Засчитать этап / Дальше</button>
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr auto; gap:8px;">
+        <select class="admin-select" id="story-stage-select">
+          <option value="0">Этап 1: Зелёный банкомат (Звонок m1_call)</option>
+          <option value="1">Этап 2: Кофейня — Айс-латте (m1_cutscene)</option>
+          <option value="2">Этап 3: Ночной рынок Пратамнак (m2_cutscene + 3 мин вирус)</option>
+          <option value="3">Этап 4: Руины / Письканосный храм — Тайник (m3_cutscene)</option>
+          <option value="4">Этап 5: Пирс Бали Хай под буквами PATTAYA (m4_cutscene + ОБЛАВА)</option>
+          <option value="5">Этап 6: Подъезд к Джомтьену (Звонок m5_call + Погоня)</option>
+          <option value="6">Этап 7: Пляж Джомтьен — Маскировка Pay'n'Spray (m5_cutscene)</option>
+          <option value="7">Этап 8: Финал — Вышка Пратамнака (m6_cutscene + Куш)</option>
+        </select>
+        <button class="t-btn purple" id="story-jump-btn">🚀 Прыгнуть</button>
+      </div>
+      <div class="admin-grid">
+        <button class="t-btn gray" id="story-test-call-btn">📞 Тест звонка (_call)</button>
+        <button class="t-btn gray" id="story-test-cutscene-btn">🎞 Тест кат-сцены (_cutscene)</button>
+        <button class="t-btn gray" id="story-tp-btn">📍 Телепорт GPS на точку</button>
+        <button class="t-btn red" id="story-stop-btn">⏹ Выключить сюжет</button>
+      </div>
+    </div>
+
+    <!-- YOUTUBE-ЧАТ И АВТОПИЛОТ (3 СООБЩЕНИЯ НА ЭКРАНЕ + КОМАНДЫ) -->
+    <div class="admin-card">
+      <h3>💬 YouTube-чат (3 сообщения на экран) и Автопилот</h3>
+      <input type="text" class="admin-input" id="yt-api-key" placeholder="YouTube Data API v3 Key (AIzaSy...)" />
+      <input type="text" class="admin-input" id="yt-video-url" placeholder="Ссылка на стрим YouTube или Video ID" />
+      <div class="admin-grid">
+        <button class="t-btn green" id="yt-connect-btn">📡 Подключить чат стрима</button>
+        <button class="t-btn gray" id="yt-disconnect-btn">🔇 Отключить чат</button>
+        <button class="t-btn gold" id="ap-start-btn">🎮 Автопилот (3 мин)</button>
+        <button class="t-btn red" id="ap-stop-btn">⏹ Стоп Автопилот</button>
+      </div>
+      <div class="cmd-grid">
+        <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
+        <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
+        <button class="t-btn cmd" data-cmd="НАЛЕВО" data-icon="⬅️">⬅️ Налево</button>
+        <button class="t-btn cmd" data-cmd="НАПРАВО" data-icon="➡️">➡️ Направо</button>
+        <button class="t-btn cmd" data-cmd="БЕЖАТЬ" data-icon="🏃">🏃 Бежать</button>
+        <button class="t-btn cmd" data-cmd="ПРЫЖОК" data-icon="🦘">🦘 Прыжок</button>
+        <button class="t-btn cmd" data-cmd="СИДЕТЬ" data-icon="🪑">🪑 Сидеть</button>
+        <button class="t-btn cmd" data-cmd="СТОП" data-icon="🛑">🛑 Стоп</button>
+      </div>
+    </div>
+
+    <!-- УПРАВЛЕНИЕ ЗВЁЗДАМИ РОЗЫСКА, МИГАЛКАМИ, КЭШЕМ И РЕПУТАЦИЕЙ -->
+    <div class="admin-card">
+      <h3>🚨 Звёзды розыска, мигалки, Кэш и Репа</h3>
       <div class="stars-grid">
         <button class="t-btn star-btn" data-set-stars="1">1★ (15м)</button>
         <button class="t-btn star-btn" data-set-stars="2">2★ (20м)</button>
@@ -1212,41 +1517,20 @@
       </div>
     </div>
 
-    <!-- Режим АВТОПИЛОТ -->
-    <div class="admin-card">
-      <h3>🎮 Режим «Автопилот» (Экономия API)</h3>
-      <input type="text" class="admin-input" id="yt-api-key" placeholder="YouTube Data API v3 Key (AIzaSy...)" />
-      <input type="text" class="admin-input" id="yt-video-url" placeholder="Ссылка на стрим YouTube или Video ID" />
-      <div class="admin-grid">
-        <button class="t-btn gold" id="ap-start-btn">▶️ Включить Автопилот (5 мин)</button>
-        <button class="t-btn red" id="ap-stop-btn">⏹ Стоп Автопилот</button>
-      </div>
-      <div class="cmd-grid">
-        <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
-        <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
-        <button class="t-btn cmd" data-cmd="НАЛЕВО" data-icon="⬅️">⬅️ Налево</button>
-        <button class="t-btn cmd" data-cmd="НАПРАВО" data-icon="➡️">➡️ Направо</button>
-        <button class="t-btn cmd" data-cmd="БЕЖАТЬ" data-icon="🏃">🏃 Бежать</button>
-        <button class="t-btn cmd" data-cmd="ПРЫЖОК" data-icon="🦘">🦘 Прыжок</button>
-        <button class="t-btn cmd" data-cmd="СИДЕТЬ" data-icon="🪑">🪑 Сидеть</button>
-        <button class="t-btn cmd" data-cmd="ЛЕЖАТЬ" data-icon="🛌">🛌 Лежать</button>
-      </div>
-    </div>
-
     <!-- Живое управление всеми висящими и предложенными заданиями -->
     <div class="admin-card">
       <h3>
-        <span>📋 Висящие и предложенные (<span id="admin-q-count">0</span>)</span>
+        <span>📋 Побочные задания зрителей (<span id="admin-q-count">0</span>)</span>
         <button class="t-btn red" id="t-clear-all" style="padding:5px 9px; font-size:11px;">🗑 Очистить все</button>
       </h3>
       <div class="admin-queue-list" id="admin-queue-list">
-        <div style="font-size:12px; color:#94a3b8;">Сейчас активных заданий нет...</div>
+        <div style="font-size:12px; color:#94a3b8;">Сейчас активных побочных заданий нет...</div>
       </div>
     </div>
 
     <!-- Тестовое добавление разных типов заданий -->
     <div class="admin-card">
-      <h3>🧪 Тест добавления миссий в очередь</h3>
+      <h3>🧪 Тест добавления побочных миссий</h3>
       <div class="admin-grid">
         <button class="t-btn purple" id="t-add-free">📍 FREE точка (АВТО)</button>
         <button class="t-btn gold" id="t-add-vip1">👑 VIP 1000₽ (АВТО)</button>
@@ -1257,14 +1541,14 @@
 
     <!-- Проверка звука НА РАДАРЕ и симуляция GPS -->
     <div class="admin-card">
-      <h3>🔊 Звук на радаре, GPS и сброс лимитов</h3>
+      <h3>🔊 Проверка звуков и GPS на радаре</h3>
       <div class="admin-grid">
-        <button class="t-btn gray" id="t-sound-siren-radar">🚨 Звук на радаре: Сирена</button>
-        <button class="t-btn gray" id="t-sound-busted-radar">💀 Звук на радаре: Busted</button>
-        <button class="t-btn gray" id="t-sound-new-radar">🔊 Звук на радаре: Новая</button>
-        <button class="t-btn gray" id="t-sound-pass-radar">🔊 Звук на радаре: Passed</button>
+        <button class="t-btn gray" id="t-sound-siren-radar">🚨 Тест: Сирена + Бит + Мигалки</button>
+        <button class="t-btn gray" id="t-sound-busted-radar">💀 Тест: Busted</button>
+        <button class="t-btn gray" id="t-sound-new-radar">🔊 Тест: Новая миссия</button>
+        <button class="t-btn gray" id="t-sound-pass-radar">🔊 Тест: Mission Passed</button>
         <button class="t-btn green" id="t-complete-top">🏆 Засчитать верхнюю</button>
-        <button class="t-btn" id="t-teleport">🏍 Телепорт к цели (финиш)</button>
+        <button class="t-btn" id="t-teleport">🏍 Телепорт к цели</button>
         <button class="t-btn gray" id="t-reset-limits">🔄 Сбросить мои лимиты</button>
         <button class="t-btn gray" id="t-reset-speed">🛑 Сброс скорости на 0</button>
       </div>
@@ -1354,6 +1638,30 @@
 
   <!-- ================= ПОЛНОЭКРАННЫЙ ИГРОВОЙ HUD ДЛЯ PRISM ================= -->
   <div class="hud-wrapper" id="hud-root">
+    <!-- КРАСНО-СИНИЕ МИГАЛКИ ПО КРАЯМ ЭКРАНА -->
+    <div class="police-edge-overlay" id="police-edge-overlay"></div>
+
+    <!-- ЧЁРНЫЕ ПОЛОСЫ КАТ-СЦЕН (LETTERBOX) -->
+    <div class="letterbox-bar top"></div>
+    <div class="letterbox-bar bottom"></div>
+
+    <!-- КОМИКСНАЯ РАМКА ДИАЛОГА С ПОРТРЕТОМ И СУБТИТРАМИ ВНИЗУ (9:16 SHORTS) -->
+    <div class="dialogue-box" id="dialogue-box">
+      <div class="dialogue-avatar-wrap">
+        <img id="dialogue-avatar-img" src="avatar_handler.jpg" alt="Character" />
+        <div class="voice-eq-bar">
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+      <div class="dialogue-content">
+        <div class="dialogue-header-row">
+          <span class="dialogue-speaker-name" id="dialogue-speaker-name">СВЯЗНОЙ</span>
+          <span class="dialogue-badge" id="dialogue-badge">📞 ВХОДЯЩИЙ ВЫЗОВ</span>
+        </div>
+        <div class="dialogue-subtitle-text" id="dialogue-subtitle-text">Алло, Стримба? Не клади трубку...</div>
+      </div>
+    </div>
+
     <!-- ПРАВЫЙ ВЕРХНИЙ УГОЛ: ЗВЁЗДЫ + ТАЙМЕР ПОБЕГА + КЭШ + RESPECT -->
     <div class="top-right-gta-hud">
       <div class="wanted-stars-row" id="wanted-stars-row">
@@ -1406,9 +1714,19 @@
     </svg>
 
     <div class="under-radar-panel">
+      <!-- ПЛАШКА АКТИВНОЙ СЮЖЕТНОЙ МИССИИ -->
+      <div class="story-mission-hud" id="story-mission-hud">
+        <div class="story-hud-top">
+          <span id="story-hud-chapter">🎬 СЮЖЕТ • ГЛАВА 1</span>
+          <span id="story-hud-dist">0 М</span>
+        </div>
+        <div class="story-hud-title" id="story-hud-title">ЗЕЛЁНЫЙ БАНКОМАТ</div>
+        <div class="story-hud-hint" id="story-hud-hint">Подойдите к банкомату-будке</div>
+      </div>
+
       <div class="autopilot-status-bar" id="autopilot-status-bar">
         <span>🎮 АВТОПИЛОТ АКТИВЕН (ПИШИТЕ КОМАНДЫ!)</span>
-        <span id="ap-timer-text">05:00</span>
+        <span id="ap-timer-text">03:00</span>
       </div>
 
       <div class="autopilot-hud" id="autopilot-hud">
@@ -1422,7 +1740,11 @@
         <div class="ap-cmd-author" id="ap-cmd-author">@Viewer</div>
       </div>
 
-      <div class="yt-chat-box" id="yt-chat-box"></div>
+      <!-- БЛОК 3 ПОСЛЕДНИХ СООБЩЕНИЙ ИЗ YOUTUBE-ЧАТА -->
+      <div class="yt-chat-box" id="yt-chat-box">
+        <div class="yt-chat-hdr">💬 LIVE ЧАТ (КОМАНДЫ АКТИВНЫ)</div>
+        <div id="yt-chat-lines"></div>
+      </div>
 
       <div class="zone-banner" id="zone-banner">
         <div class="zone-banner-title" id="zone-banner-title">★ ЛОКАЦИЯ ОБНАРУЖЕНА</div>
@@ -1430,7 +1752,7 @@
       </div>
 
       <div class="quest-list-box" id="quest-list-box">
-        <div class="quest-list-header">📋 АКТИВНЫЕ ЗАДАНИЯ:</div>
+        <div class="quest-list-header">📋 ПОБОЧНЫЕ ЗАДАНИЯ:</div>
         <div id="quest-items-container" style="display:flex; flex-direction:column; gap:5px;"></div>
       </div>
     </div>
@@ -1439,6 +1761,7 @@
   <script>
     const MAPBOX_TOKEN = 'pk.eyJ1Ijoic3RyaW1iYSIsImEiOiJjbXduMTh2ZG0wNXFpMzBwbGpnMDFmNnRjIn0.Y91BGdd5CU6QXz69RNGqQg';
     const NTFY_GPS_TOPIC = 'strimba_pattaya_gps_9941';
+    const DEFAULT_YT_API_KEY = 'AIzaSyC7q3hLywYksTHZ4QCRlLWcirmrTSGIanE';
 
     const MQTT_BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
     const MQTT_CMD_TOPIC  = 'strimba/pattaya/gta9941/cmd';
@@ -1447,7 +1770,180 @@
 
     const ADMIN_SECRET_KEY = 'strimba_boss_99';
 
-    // Длительность скрытия от полиции в зависимости от уровня звёзд (15 – 45 мин)
+    // =========================================================================
+    // СЮЖЕТНАЯ КАМПАНИЯ: 8 ЭТАПОВ ПО ТОЧНЫМ КООРДИНАТАМ ИЗ МАРШРУТА
+    // =========================================================================
+    const STORY_STAGES = [
+      {
+        id: 0,
+        blipLetter: 'S',
+        blipColor: '#00e5ff',
+        chapter: 'ГЛАВА 1 • СТАРТ',
+        title: 'ЗЕЛЁНЫЙ БАНКОМАТ (ТАКСОФОН)',
+        hint: 'Подойдите к светящемуся банкомату на Пратамнаке',
+        coords: [100.8664895, 12.9155464],
+        radius: 15,
+        autoComplete: true,
+        rewardCash: 0,
+        rewardRep: 5,
+        speaker: 'handler',
+        speakerName: 'СВЯЗНОЙ',
+        avatar: 'avatar_handler.jpg',
+        callAudio: 'm1_call.mp3',
+        callText: 'Алло, Стримба? Не клади трубку, это не служба безопасности банка и не предложение за 100 бат у моря в сраку. В Паттайе началась жара, а у тебя в онлайне три калеки и седая. Пора поднимать авторитет на районе и счётчик просмотров! Скинул на радар место, где можно зарядиться. Возьми себе капучинку с пенкой, иначе уснёшь прямо на лежачем полицейском. Погнали!',
+        cutsceneAudio: null,
+        cutsceneText: null
+      },
+      {
+        id: 1,
+        blipLetter: 'S',
+        blipColor: '#00e5ff',
+        chapter: 'ГЛАВА 1 • МИССИЯ 1',
+        title: 'ЗАРЯД БОДРОСТИ: КОФЕЙНЯ',
+        hint: 'Доедьте до кофейни (15м) -> купите кофе -> жмите «Дальше»',
+        coords: [100.8580154, 12.9089882],
+        radius: 15,
+        autoComplete: false,
+        rewardCash: 500,
+        rewardRep: 15,
+        speaker: 'handler',
+        speakerName: 'СВЯЗНОЙ',
+        avatar: 'avatar_handler.jpg',
+        callAudio: null,
+        callText: null,
+        cutsceneAudio: 'm1_cutscene.mp3',
+        cutsceneText: 'О, доехал. Надеюсь, не по встречке и все собачки целы? Заходи, бери свой эликсир бессмертия. Только не вздумай брать энергетик, у нас тут строго зож-криминал в попу не бам-бам. Как сделаешь первый глоток — жми кнопку, дам нормальное дело.'
+      },
+      {
+        id: 2,
+        blipLetter: 'I',
+        blipColor: '#f59e0b',
+        chapter: 'ГЛАВА 1 • МИССИЯ 2',
+        title: 'НОЧНОЙ РЫНОК ПРАТАМНАК',
+        hint: 'На рынке: 3 мин вирус чата + съесть уличный деликатес',
+        coords: [100.8632598, 12.9096700],
+        radius: 15,
+        autoComplete: false,
+        triggerAutopilotSec: 180,
+        rewardCash: 1000,
+        rewardRep: 20,
+        speaker: 'informant',
+        speakerName: 'ИНФОРМАТОР',
+        avatar: 'avatar_informant.jpg',
+        callAudio: 'm2_call.mp3',
+        callText: 'Кофе зашёл? Отлично. А то я думал, ты больше не выйдешь в эфир. Короче, слушай быстро: дуй в логово самых опасных людей района — на ночной рынок Пратамнака. Там среди запаха дуриана и вспотевших пиписек фембойчиков ждёт наш человек. Слейся с толпой туристов, делай вид, что удивляешься ценам и пытаешься понять, откуда дуло у девочек с кадыком. Давай, не тупи, пока нас не спалили!',
+        cutsceneAudio: 'm2_cutscene.mp3',
+        cutsceneText: 'Тссс... Не смотри на меня, смотри на показатели. Внимание, в твоём GPS-трекере сработал тайский вирус — сейчас управление твоим телом на 3 минуты перехватят зрители из чата! А как отпустит — найди и съешь самый подозрительный уличный деликатес. Если твоё кольцо выдержит напор спайси поноса — ты в деле.'
+      },
+      {
+        id: 3,
+        blipLetter: 'B',
+        blipColor: '#ef4444',
+        chapter: 'ГЛАВА 1 • МИССИЯ 3',
+        title: 'ТАЙНИК В РУИНАХ ПРАТАМНАКА',
+        hint: 'Включите фонарик и найдите свёрток у руин храма',
+        coords: [100.8773819, 12.9055468],
+        radius: 15,
+        autoComplete: false,
+        rewardCash: 1500,
+        rewardRep: 25,
+        speaker: 'boss',
+        speakerName: 'БОСС',
+        avatar: 'avatar_boss.jpg',
+        callAudio: 'm3_call.mp3',
+        callText: 'Слышал, ты пережил уличную еду на рынке и даже не пустил жидкого? Уважаю, дорогой, уважаю. Есть серьёзное дело перед большой сделкой. Наш связной спрятал секретный свёрток с паролем от вай-фая на Бичке в самых древних руинах Пратамнака. Там даже тайские собаки боятся гулять. Я скинул координаты. Включай фонарик, забирай груз и не свети лицом, понял? А то шмели покусают!',
+        cutsceneAudio: 'm3_cutscene.mp3',
+        cutsceneText: 'Так, ты на месте, дорогой. Давай, иди вдоль стеночки письканосного храма и ищи тайник. Только смотри не нагибайся, чтобы вместо флешки не поймать варана или змею в задницу — страховка у нас в бюджет не заложена, понял? Как достанешь свёрток — жми подтверждение, едем забирать наш куш.'
+      },
+      {
+        id: 4,
+        blipLetter: '!',
+        blipColor: '#ff1744',
+        chapter: 'ГЛАВА 1 • МИССИЯ 4 (ОБЛАВА!)',
+        title: 'ПИРС БАЛИ ХАЙ: ПОД БУКВАМИ PATTAYA',
+        hint: 'Припаркуйтесь под буквами PATTAYA — ждите курьера...',
+        coords: [100.8648568, 12.9261178],
+        radius: 25,
+        autoComplete: true,
+        ambushAfterCutscene: true,
+        rewardCash: 0,
+        rewardRep: 10,
+        speaker: 'boss',
+        speakerName: 'БОСС',
+        avatar: 'avatar_boss.jpg',
+        callAudio: 'm4_call.mp3',
+        callText: 'Груз у тебя, респект на высоте, брат. Пора снимать сливки. Подъезжай к пирсу Бали Хай, прямо под огромные буквы Паттайя. Там наш курьер передаст тебе кейс с бабками. Припаркуйся красиво, дорогой, чтобы на камерах выглядело как в трейлере шестой части ГТА.',
+        cutsceneAudio: 'm4_cutscene.mp3',
+        cutsceneText: 'Вах, твою мать, Стримба, это облава! Нас сдали эти конкуренты с петушиных стримов! Туристическая полиция уже выехала на своих мопедах! Бросай всё, заводи коня и уходи вверх по серпантину в сторону Джомтьена! Жми на газ, дорогой, я тебя прикрою... морально прикрою!'
+      },
+      {
+        id: 5,
+        blipLetter: 'M',
+        blipColor: '#22c55e',
+        chapter: 'ГЛАВА 1 • ПОГОНЯ (УХОД НА ДЖОМТЬЕН)',
+        title: 'УЙДИТЕ ОТ ПОГОНИ НА ПЛЯЖ ДЖОМТЬЕН',
+        hint: 'Жмите газ в сторону Джомтьена! Мигалки висят до смены скина',
+        coords: [100.8737066, 12.8913856],
+        radius: 160,
+        autoComplete: true,
+        rewardCash: 0,
+        rewardRep: 10,
+        speaker: 'handler',
+        speakerName: 'СВЯЗНОЙ',
+        avatar: 'avatar_handler.jpg',
+        callAudio: 'm5_call.mp3',
+        callText: 'Фух, отлегло. Ты оторвался от погони быстрее, чем падает моя пипирка при виде стримеров с Бички. Но твоё лицо теперь в ориентировке каждого мототаксиста в городе. Двигай на пляж Джомтьен. Нужно срочно сменить прикрытие, чтобы тебя не узнала ни одна камера. Только не крась губы, как другие стримеры, а то я тебя сам сдам!',
+        cutsceneAudio: null,
+        cutsceneText: null
+      },
+      {
+        id: 6,
+        blipLetter: 'M',
+        blipColor: '#22c55e',
+        chapter: 'ГЛАВА 1 • МИССИЯ 5 (PAY’N’SPRAY)',
+        title: 'МАСКИРОВКА НА ПЛЯЖЕ ДЖОМТЬЕН',
+        hint: 'Купите очки/панамку или умойтесь в море -> жмите «Дальше»',
+        coords: [100.8737066, 12.8913856],
+        radius: 25,
+        autoComplete: false,
+        payNSprayFinish: true,
+        rewardCash: 2000,
+        rewardRep: 25,
+        speaker: 'handler',
+        speakerName: 'СВЯЗНОЙ',
+        avatar: 'avatar_handler.jpg',
+        callAudio: null,
+        callText: null,
+        cutsceneAudio: 'm5_cutscene.mp3',
+        cutsceneText: 'Так, включаем режим невидимки. Я не хочу, чтобы нас загребли в первый же день. Найди на набережной уличный лоток и купи самые нелепые очки или панамку. Либо подойди к морю и умойся святой водой Сиамского залива, чтобы сбить жар погони. Как сменишь скин или умоешь лицо в обоссанной фембойчиками с перепоя воде — дай знать.'
+      },
+      {
+        id: 7,
+        blipLetter: '★',
+        blipColor: '#ffd54f',
+        chapter: 'ГЛАВА 1 • ФИНАЛ',
+        title: 'ВЫШКА ПРАТАМНАКА: КОРОЛЬ РАЙОНА',
+        hint: 'Поднимитесь на вершину к Вышке по альтернативному кругу',
+        coords: [100.8666499, 12.9210631],
+        radius: 22,
+        autoComplete: true,
+        isFinale: true,
+        waypoints: [
+          [100.8765564, 12.8936639],
+          [100.8687294, 12.9189201]
+        ],
+        rewardCash: 5000,
+        rewardRep: 50,
+        speaker: 'boss',
+        speakerName: 'БОСС',
+        avatar: 'avatar_boss.jpg',
+        callAudio: 'm6_call.mp3',
+        callText: 'Ну что, легенда? Новый образ сидит идеально. Тебе, я смотрю, даже понравилось. А весь район уже гудит о новом игроке! Теперь главное не крась губы, не суй в узды и иди уже в качалку. Поднимайся на самую высокую точку Пратамнака — к вышке. Посмотрим на этот город сверху, расскажу тебе основные правила игры и зафиксируем нашу прибыль.',
+        cutsceneAudio: 'm6_cutscene.mp3',
+        cutsceneText: 'Посмотри на эти огни... Вот она, наша Паттайя. Как тут говорят, дорогой: береги отверстия свои, даже если перед тобой девочка. Не целуйся со стримерами, тем более если она мальчик, не танцуй в стрингах, как Артурчик, и не посрами честь последнего оплота гетеросексуальных зрителей Таиланда. Ты прошёл первую главу и даже не посадил себя на лицо ледибойчика — это уже большой успех. Перевожу финальный куш на твой счёт. Отдыхай, герой, но телефон не выключай — мы за тобой ещё посмотрим. Скоро будет вторая серия...'
+      }
+    ];
+
     const WANTED_DURATIONS_SEC = {
       1: 15 * 60,
       2: 20 * 60,
@@ -1485,7 +1981,6 @@
     ];
 
     const QUEST_CATALOG = [
-      // 100 – 200 ₽
       { id: 'q_kiss',     price: 100,   icon: '💋', name: 'ПОЦЕЛОВАТЬ ОКСАНУ', desc: 'Поцеловать Оксану в прямом эфире.', coords: null },
       { id: 'q_bug',      price: 100,   icon: '🕹', name: 'БАГ ТЕКСТУР (10 СЕК)', desc: 'Застрять в стене или столбе и шагать на месте 10 секунд.', coords: null },
       { id: 'q_selfie',   price: 100,   icon: '🤳', name: 'НЕЛЕПОЕ СЕЛФИ', desc: 'Сделать селфи с самым странным знаком или объектом рядом и показать в камеру.', coords: null },
@@ -1496,8 +1991,6 @@
       { id: 'q_music',    price: 200,   icon: '🎵', name: 'ВКЛЮЧИТЬ МУЗЫКУ', desc: 'Врубить трек для вайба на стриме.', coords: null },
       { id: 'q_voice',    price: 200,   icon: '🤖', name: 'СМЕНА ГОЛОСА (2 МИН)', desc: '2 минуты говорить голосом робота, с акцентом или другим тембром.', coords: null },
       { id: 'q_tail',     price: 200,   icon: '🕵️', name: 'СЛЕЖКА (50 МЕТРОВ)', desc: 'Незаметно пройти за прохожим 50 метров в стиле стелс-миссии.', coords: null },
-
-      // 300 – 500 ₽
       { id: 'q_coconut',  price: 300,   icon: '🥥', name: 'ВЫПИТЬ КОКОС У МОРЯ', desc: 'Купить свежий кокос на набережной Донгтан/Бич Роуд и выпить в эфире.', coords: [100.8712, 12.9012] },
       { id: 'q_dogs',     price: 300,   icon: '🐕', name: 'ПОКОРМИТЬ СОБАК', desc: 'Купить сосиски/корм у 7-Eleven на Пратамнаке и покормить уличных собак.', coords: [100.8675, 12.9145] },
       { id: 'q_kick',     price: 300,   icon: '👢', name: 'ПИНОК ОТ ОКСАНЫ', desc: 'Получить постановочный пинок от Оксаны в кадре.', coords: null },
@@ -1510,13 +2003,11 @@
       { id: 'q_711',      price: 500,   icon: '🏪', name: 'ЗАКУПКА ПРОВИАНТА 7/11', desc: 'Зайти в 7-Eleven на Пратамнаке, купить самый странный продукт и озвучить как герой GTA.', coords: [100.8662, 12.9122] },
       { id: 'q_skin',     price: 500,   icon: '🕶', name: 'СМЕНА СКИНА (СОИ БУАКХАО)', desc: 'Купить дешёвые очки или кепку на развале Сои Буакхао и носить полчаса.', coords: [100.8855, 12.9302] },
       { id: 'q_bribe',    price: 500,   icon: '🍫', name: 'ВЗЯТКА МЕСТНЫМ', desc: 'Подарить шоколадку охраннику или курьеру: «Спасибо за крышу в районе».', coords: null },
-
-      // 600 – 1 000 ₽
       { id: 'q_exchange', price: 600,   icon: '🪙', name: 'СЕКРЕТНЫЙ РАЗМЕН (TREETOWN)', desc: 'Разменять купюру на мелочь в лавке у TreeTown с видом секретной операции.', coords: [100.8868, 12.9318] },
       { id: 'q_english',  price: 600,   icon: '🇺🇸', name: 'СМЕНА ФРАКЦИИ (15 МИН)', desc: '15 минут разговаривать исключительно на английском.', coords: null },
       { id: 'q_cargo',    price: 600,   icon: '📦', name: 'СЕКРЕТНЫЙ ГРУЗ (100 М)', desc: 'Нести пакет на вытянутой руке 100 метров, никого не задев.', coords: null },
       { id: 'q_drop',     price: 600,   icon: '📸', name: 'СБРОС ЛУТА В ТГ', desc: 'Выложить всё из карманов, сфоткать в Telegram-чат, забрать и убежать.', coords: null },
-      { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (5 МИН)', desc: 'Чат 5 минут управляет стримером командами (вперёд, назад, налево, направо, прыжок).', coords: null },
+      { id: 'q_autopilot',price: 700,   icon: '🎮', name: 'АВТОПИЛОТ (3 МИН)', desc: 'Чат 3 минуты управляет стримером командами (вперёд, назад, налево, направо, прыжок).', coords: null },
       { id: 'q_statue',   price: 700,   icon: '🗿', name: 'ЖИВАЯ СТАТУЯ (WALKING ST.)', desc: 'Замереть в пафосной позе на 60 секунд посреди оживлённой улицы.', coords: [100.8732, 12.9265] },
       { id: 'q_wanted1',  price: 1000,  icon: '⭐', name: 'РОЗЫСК: 1 ЗВЕЗДА (15 МИН)', desc: 'Лёгкий шухер: нужно скрываться и менять улицы 15 минут!', coords: null, wantedStars: 1 },
       { id: 'q_flowers',  price: 1000,  icon: '💐', name: 'КУПИТЬ ЦВЕТЫ ОКСАНЕ', desc: 'Найти цветочный ларёк у Централ Фестивал и подарить букет Оксане.', coords: [100.8832, 12.9348] },
@@ -1526,8 +2017,6 @@
       { id: 'q_dance',    price: 1000,  icon: '🕺', name: 'УЛИЧНЫЙ ТАНЕЦ', desc: 'Станцевать на улице под музыку на глазах у прохожих.', coords: [100.8735, 12.9268] },
       { id: 'q_tuktuk',   price: 1000,  icon: '🛺', name: 'РЕЙС НА ТУК-ТУКЕ (SECOND RD)', desc: 'Пересесть на сонгтео (тук-тук) на Второй улице и проехать 2 остановки.', coords: [100.8760, 12.9275] },
       { id: 'q_informer', price: 1000,  icon: '🕴', name: 'ВСТРЕЧА С ИНФОРМАТОРОМ', desc: 'Найти человека в загаданном цвете одежды и попросить передать привет донатеру.', coords: null },
-
-      // 1 200 – 5 000 ₽
       { id: 'q_lady200',  price: 1200,  icon: '💋', name: 'ЧАЕВЫЕ НА WALKING ST.', desc: 'Поговорить с девушкой на Walking Street и оставить 200 бат чаевых.', coords: [100.8730, 12.9262] },
       { id: 'q_taxi',     price: 1200,  icon: '🏍', name: 'ПОДВЕЗТИ ПОПУТЧИЦУ', desc: 'Подвезти девушку на байке по пути.', coords: null },
       { id: 'q_wanted2',  price: 2000,  icon: '⭐⭐', name: 'РОЗЫСК: 2 ЗВЕЗДЫ (20 МИН)', desc: 'Патруль на хвосте: нужно скрываться 20 минут и уходить дворами!', coords: null, wantedStars: 2 },
@@ -1584,16 +2073,33 @@
     }
 
     // =========================================================================
-    // АУДИО-ФАЙЛЫ ИЗ РЕПОЗИТОРИЯ (new_mission, mission_passed, wanted_siren, busted)
+    // АУДИО-ФАЙЛЫ ИЗ РЕПОЗИТОРИЯ (ЭФФЕКТЫ + ПОГОНЯ + 12 РЕПЛИК)
     // =========================================================================
     let audioCtx = null;
     let audioUnlocked = false;
+
     const customNewAudio    = new Audio('new_mission.mp3');
     const customPassAudio   = new Audio('mission_passed.mp3');
     const customSirenAudio  = new Audio('wanted_siren.mp3');
     const customBustedAudio = new Audio('busted.mp3');
+    const radioStaticAudio  = new Audio('radio_static.mp3');
+    const chaseMusicAudio   = new Audio('chase_music.mp3');
 
-    [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio].forEach(a => {
+    customSirenAudio.loop = true;
+    chaseMusicAudio.loop  = true;
+
+    const storyAudioCache = {};
+    function getStoryAudio(filename) {
+      if (!filename) return null;
+      if (!storyAudioCache[filename]) {
+        const a = new Audio(filename);
+        a.preload = 'auto';
+        storyAudioCache[filename] = a;
+      }
+      return storyAudioCache[filename];
+    }
+
+    [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio, radioStaticAudio, chaseMusicAudio].forEach(a => {
       a.preload = 'auto';
     });
 
@@ -1602,7 +2108,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       if (!audioUnlocked) {
         audioUnlocked = true;
-        [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio].forEach(a => {
+        [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio, radioStaticAudio, chaseMusicAudio].forEach(a => {
           a.volume = 0.01;
           a.play().then(() => { a.pause(); a.currentTime = 0; a.volume = 1.0; }).catch(() => { a.volume = 1.0; });
         });
@@ -1623,13 +2129,56 @@
       customPassAudio.play().catch(() => {});
     }
 
-    function playPoliceSirenSound() {
-      customSirenAudio.volume = 1.0;
+    function playRadioStaticSound() {
+      radioStaticAudio.volume = 0.85;
+      radioStaticAudio.currentTime = 0;
+      radioStaticAudio.play().catch(() => {});
+    }
+
+    let chaseActive = false;
+    function startChaseAudioAndLights(withMusic = true) {
+      chaseActive = true;
+      const overlay = document.getElementById('police-edge-overlay');
+      if (overlay) overlay.classList.add('active');
+
+      customSirenAudio.volume = 0.55;
+      if (customSirenAudio.paused) {
+        customSirenAudio.currentTime = 0;
+        customSirenAudio.play().catch(() => {});
+      }
+
+      if (withMusic) {
+        chaseMusicAudio.volume = 0.65;
+        if (chaseMusicAudio.paused) {
+          chaseMusicAudio.currentTime = 0;
+          chaseMusicAudio.play().catch(() => {});
+        }
+      }
+    }
+
+    function duckChaseAudio(ducked) {
+      if (!chaseActive) return;
+      customSirenAudio.volume = ducked ? 0.14 : 0.55;
+      chaseMusicAudio.volume  = ducked ? 0.18 : 0.65;
+    }
+
+    function stopChaseAudioAndLights() {
+      chaseActive = false;
+      const overlay = document.getElementById('police-edge-overlay');
+      if (overlay) overlay.classList.remove('active');
+
+      customSirenAudio.pause();
       customSirenAudio.currentTime = 0;
-      customSirenAudio.play().catch(() => {});
+      chaseMusicAudio.pause();
+      chaseMusicAudio.currentTime = 0;
+    }
+
+    function playPoliceSirenSound() {
+      startChaseAudioAndLights(true);
     }
 
     function playBustedSound() {
+      stopChaseAudioAndLights();
       customBustedAudio.volume = 1.0;
       customBustedAudio.currentTime = 0;
       customBustedAudio.play().catch(() => {});
@@ -1737,7 +2286,7 @@
       const adminCountEl = document.getElementById('admin-q-count');
       const statusBadge = document.getElementById('mqtt-status-badge');
 
-      let lastKnownStreamerPos = [100.8685, 12.9185];
+      let lastKnownStreamerPos = [100.8664895, 12.9155464];
       let latestTargetCoords = [100.8698, 12.9218];
       let currentAdminQueue = [];
 
@@ -1747,10 +2296,27 @@
         logEl.textContent = `[${new Date().toLocaleTimeString()}] ${txt}`;
       }
 
+      function updateAdminStoryUI(stageIdx, active) {
+        const badge = document.getElementById('admin-story-badge');
+        const info = document.getElementById('admin-story-info');
+        const select = document.getElementById('story-stage-select');
+        if (!active || stageIdx < 0 || stageIdx >= STORY_STAGES.length) {
+          badge.textContent = 'ВЫКЛ';
+          badge.style.background = '#334155';
+          info.textContent = 'Сюжет остановлен. Нажмите «▶️ Старт / Сброс Главы 1» или выберите этап для теста.';
+          return;
+        }
+        const st = STORY_STAGES[stageIdx];
+        select.value = String(stageIdx);
+        badge.textContent = `ЭТАП ${stageIdx + 1} / ${STORY_STAGES.length}`;
+        badge.style.background = '#9333ea';
+        info.innerHTML = `<strong>${st.chapter}: ${st.title}</strong><br><span style="color:#cbd5e1;">${st.hint}</span>`;
+      }
+
       mqttClient.on('connect', () => {
         statusBadge.textContent = '🟢 MQTT ONLINE';
         statusBadge.style.background = '#16a34a';
-        logMsg('Связь установлена! Звуки сирены и BUSTED подключены.');
+        logMsg('Связь установлена! Сюжет, YouTube-чат и эффекты готовы.');
         mqttClient.subscribe([MQTT_SYNC_TOPIC, MQTT_GPS_TOPIC]);
       });
 
@@ -1762,12 +2328,17 @@
       mqttClient.on('message', (topic, message) => {
         try {
           const data = JSON.parse(message.toString());
-          if (topic === MQTT_SYNC_TOPIC && Array.isArray(data.queue)) {
-            currentAdminQueue = data.queue;
-            if (currentAdminQueue.length > 0) {
-              latestTargetCoords = [currentAdminQueue[0].lng, currentAdminQueue[0].lat];
+          if (topic === MQTT_SYNC_TOPIC) {
+            if (Array.isArray(data.queue)) {
+              currentAdminQueue = data.queue;
+              if (currentAdminQueue.length > 0) {
+                latestTargetCoords = [currentAdminQueue[0].lng, currentAdminQueue[0].lat];
+              }
+              renderAdminQueue();
             }
-            renderAdminQueue();
+            if (typeof data.storyStage === 'number') {
+              updateAdminStoryUI(data.storyStage, Boolean(data.storyActive));
+            }
           } else if (topic === MQTT_GPS_TOPIC && data.lat && data.lon) {
             lastKnownStreamerPos = [parseFloat(data.lon), parseFloat(data.lat)];
             if (currentAdminQueue.length > 0) renderAdminQueue();
@@ -1775,47 +2346,82 @@
         } catch (e) {}
       });
 
-      document.querySelectorAll('[data-set-stars]').forEach(btn => {
-        btn.onclick = () => {
-          const stars = parseInt(btn.getAttribute('data-set-stars'), 10);
-          publishMqtt(MQTT_CMD_TOPIC, { action: 'set_stars', stars });
-          logMsg(`🚨 Включён розыск: ${stars}★ + сирена на радаре!`);
-        };
-      });
-
-      document.getElementById('stars-escaped-btn').onclick = () => {
-        publishMqtt(MQTT_CMD_TOPIC, { action: 'stars_escaped' });
-        logMsg('✅ Отрыв от погони засчитан! Звёзды сняты, кэш и репа начислены.');
+      // --- Кнопки управления сюжетом и баг-теста ---
+      document.getElementById('story-start-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'story_start', stageIndex: 0 });
+        updateAdminStoryUI(0, true);
+        logMsg('🎬 Запущена Глава 1 (Этап 1: Зелёный банкомат)!');
       };
 
-      document.getElementById('stars-busted-btn').onclick = () => {
-        publishMqtt(MQTT_CMD_TOPIC, { action: 'stars_busted' });
-        logMsg('🚨 Пойман (BUSTED)! Звук busted.mp3 запущен на радаре.');
+      document.getElementById('story-next-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'story_next' });
+        logMsg('⏭ Текущий этап сюжета засчитан, переход к следующему!');
       };
 
-      document.getElementById('cash-plus-btn').onclick = () => {
-        publishMqtt(MQTT_CMD_TOPIC, { action: 'add_cash', amount: 500, rep: 15 });
-        logMsg('💵 Начислено +$500 кэша и +15% репутации!');
+      document.getElementById('story-jump-btn').onclick = () => {
+        const idx = parseInt(document.getElementById('story-stage-select').value, 10) || 0;
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'story_start', stageIndex: idx });
+        updateAdminStoryUI(idx, true);
+        logMsg(`🚀 Переход на Этап ${idx + 1}: ${STORY_STAGES[idx].title}`);
       };
 
-      document.getElementById('cash-reset-btn').onclick = () => {
-        publishMqtt(MQTT_CMD_TOPIC, { action: 'reset_cash' });
-        logMsg('🔄 Кэш и репутация на радаре обнулены.');
+      document.getElementById('story-test-call-btn').onclick = () => {
+        const idx = parseInt(document.getElementById('story-stage-select').value, 10) || 0;
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'story_test_dialogue', stageIndex: idx, kind: 'call' });
+        logMsg(`📞 Тест звонка (_call) для этапа ${idx + 1}`);
       };
 
+      document.getElementById('story-test-cutscene-btn').onclick = () => {
+        const idx = parseInt(document.getElementById('story-stage-select').value, 10) || 0;
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'story_test_dialogue', stageIndex: idx, kind: 'cutscene' });
+        logMsg(`🎞 Тест кат-сцены (_cutscene) для этапа ${idx + 1}`);
+      };
+
+      document.getElementById('story-tp-btn').onclick = () => {
+        const idx = parseInt(document.getElementById('story-stage-select').value, 10) || 0;
+        const st = STORY_STAGES[idx];
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'sim_gps', lat: st.coords[1], lon: st.coords[0], speed: 0 });
+        logMsg(`📍 GPS телепортирован прямо на точку: ${st.title}`);
+      };
+
+      document.getElementById('story-stop-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'story_stop' });
+        updateAdminStoryUI(-1, false);
+        logMsg('⏹ Сюжетный режим выключен.');
+      };
+
+      // --- YouTube-чат и Автопилот ---
       const ytKeyInput = document.getElementById('yt-api-key');
       const ytUrlInput = document.getElementById('yt-video-url');
-      if (ytKeyInput) ytKeyInput.value = localStorage.getItem('yt_api_key') || '';
-      if (ytUrlInput) ytUrlInput.value = localStorage.getItem('yt_video_id') || '';
+      ytKeyInput.value = localStorage.getItem('yt_api_key') || DEFAULT_YT_API_KEY;
+      ytUrlInput.value = localStorage.getItem('yt_video_id') || '';
+
+      document.getElementById('yt-connect-btn').onclick = () => {
+        const apiKey = ytKeyInput.value.trim() || DEFAULT_YT_API_KEY;
+        const videoId = extractYouTubeVideoId(ytUrlInput.value);
+        if (!videoId) {
+          logMsg('⚠️ Вставьте ссылку на запущенный стрим YouTube или Video ID!', true);
+          return;
+        }
+        localStorage.setItem('yt_api_key', apiKey);
+        localStorage.setItem('yt_video_id', videoId);
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'yt_connect', apiKey, videoId });
+        logMsg('📡 Команда подключения к чату YouTube (3 сообщения на экран) отправлена!');
+      };
+
+      document.getElementById('yt-disconnect-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'yt_disconnect' });
+        logMsg('🔇 Чтение YouTube-чата остановлено.');
+      };
 
       document.getElementById('ap-start-btn').onclick = () => {
-        const apiKey = ytKeyInput.value.trim();
+        const apiKey = ytKeyInput.value.trim() || DEFAULT_YT_API_KEY;
         const videoId = extractYouTubeVideoId(ytUrlInput.value);
         if (apiKey) localStorage.setItem('yt_api_key', apiKey);
         if (videoId) localStorage.setItem('yt_video_id', videoId);
 
-        publishMqtt(MQTT_CMD_TOPIC, { action: 'ap_start', apiKey, videoId, durationSec: 300 });
-        logMsg(apiKey && videoId ? '🎮 Автопилот + YouTube чат ВКЛЮЧЕНЫ на 5 минут!' : '🎮 Автопилот ВКЛЮЧЕН на 5 минут!');
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'ap_start', apiKey, videoId, durationSec: 180 });
+        logMsg('🎮 Автопилот ВКЛЮЧЕН на 3 минуты!');
       };
 
       document.getElementById('ap-stop-btn').onclick = () => {
@@ -1839,10 +2445,38 @@
         };
       });
 
+      document.querySelectorAll('[data-set-stars]').forEach(btn => {
+        btn.onclick = () => {
+          const stars = parseInt(btn.getAttribute('data-set-stars'), 10);
+          publishMqtt(MQTT_CMD_TOPIC, { action: 'set_stars', stars });
+          logMsg(`🚨 Включён розыск: ${stars}★ + сирена + мигалки на радаре!`);
+        };
+      });
+
+      document.getElementById('stars-escaped-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'stars_escaped' });
+        logMsg('✅ Отрыв от погони засчитан! Звёзды и мигалки сняты.');
+      };
+
+      document.getElementById('stars-busted-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'stars_busted' });
+        logMsg('🚨 Пойман (BUSTED)! Звук busted.mp3 запущен на радаре.');
+      };
+
+      document.getElementById('cash-plus-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'add_cash', amount: 500, rep: 15 });
+        logMsg('💵 Начислено +$500 кэша и +15% репутации!');
+      };
+
+      document.getElementById('cash-reset-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'reset_cash' });
+        logMsg('🔄 Кэш и репутация на радаре обнулены.');
+      };
+
       function renderAdminQueue() {
         adminCountEl.textContent = currentAdminQueue.length;
         if (currentAdminQueue.length === 0) {
-          adminListEl.innerHTML = '<div style="font-size:12px; color:#94a3b8;">Сейчас активных заданий нет...</div>';
+          adminListEl.innerHTML = '<div style="font-size:12px; color:#94a3b8;">Сейчас активных побочных заданий нет...</div>';
           return;
         }
         adminListEl.innerHTML = '';
@@ -1874,7 +2508,7 @@
             currentAdminQueue = currentAdminQueue.filter(t => String(t.id) !== String(id));
             renderAdminQueue();
             publishMqtt(MQTT_CMD_TOPIC, { action: 'complete_id', id });
-            logMsg('Задание засчитано со звуком Mission Passed и начислением кэша!');
+            logMsg('Задание засчитано со звуком Mission Passed!');
           };
         });
 
@@ -1891,22 +2525,22 @@
 
       document.getElementById('t-sound-siren-radar').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'siren' });
-        logMsg('🚨 Сигнал «wanted_siren.mp3» отправлен на радар PRISM!');
+        logMsg('🚨 Сигнал Сирена + Бит + Мигалки отправлен на радар!');
       };
 
       document.getElementById('t-sound-busted-radar').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'busted' });
-        logMsg('💀 Сигнал «busted.mp3» отправлен на радар PRISM!');
+        logMsg('💀 Сигнал «busted.mp3» отправлен на радар!');
       };
 
       document.getElementById('t-sound-new-radar').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'new' });
-        logMsg('🔊 Сигнал «new_mission.mp3» отправлен на радар PRISM!');
+        logMsg('🔊 Сигнал «new_mission.mp3» отправлен на радар!');
       };
 
       document.getElementById('t-sound-pass-radar').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'play_sound', sound: 'passed' });
-        logMsg('🔊 Сигнал «mission_passed.mp3» отправлен на радар PRISM!');
+        logMsg('🔊 Сигнал «mission_passed.mp3» отправлен на радар!');
       };
 
       document.getElementById('t-add-free').onclick = () => {
@@ -1954,20 +2588,19 @@
           renderAdminQueue();
         }
         publishMqtt(MQTT_CMD_TOPIC, { action: 'complete_one' });
-        logMsg('Засчитана верхняя миссия (+Respect)');
+        logMsg('Засчитана верхняя побочная миссия (+Respect)');
       };
 
       document.getElementById('t-teleport').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'sim_gps', lat: latestTargetCoords[1], lon: latestTargetCoords[0], speed: 0 });
-        logMsg('Байк телепортирован к верхней цели!');
+        logMsg('Байк телепортирован к побочной цели!');
       };
 
       document.getElementById('t-clear-all').onclick = () => {
         currentAdminQueue = [];
         renderAdminQueue();
         publishMqtt(MQTT_CMD_TOPIC, { action: 'clear_all' });
-        publishMqtt(MQTT_SYNC_TOPIC, { queue: [] }, true);
-        logMsg('Список полностью очищен');
+        logMsg('Список побочных заданий полностью очищен');
       };
     }
 
@@ -1987,7 +2620,7 @@
 
       const connStatusEl = document.getElementById('viewer-conn-status');
 
-      let streamerPos = [100.8685, 12.9185];
+      let streamerPos = [100.8664895, 12.9155464];
       let selectedLngLat = null;
       let selectedPreset = null;
       let userMarker = null;
@@ -2535,7 +3168,7 @@
     }
 
     // =========================================================================
-    // РЕЖИМ 2: ПОЛНОЭКРАННЫЙ HUD В PRISM LIVE STUDIO (ЗВЁЗДЫ + КЭШ + РАДАР)
+    // РЕЖИМ 2: ПОЛНОЭКРАННЫЙ HUD В PRISM LIVE STUDIO (СЮЖЕТ + ЧАТ + РАДАР)
     // =========================================================================
     else {
       function updateClock() {
@@ -2550,7 +3183,7 @@
       updateClock();
       setInterval(updateClock, 1000);
 
-      let currentStreamerPos = [100.8685, 12.9185];
+      let currentStreamerPos = [100.8664895, 12.9155464];
       let questQueue = [];
 
       let gtaCash = parseInt(localStorage.getItem('gta_stream_cash') || '0', 10);
@@ -2603,6 +3236,7 @@
         if (wantedTimerInterval) clearInterval(wantedTimerInterval);
         document.getElementById('wanted-timer-pill').classList.remove('active');
         renderWantedStars();
+        stopChaseAudioAndLights();
 
         if (escapedSuccess && prevStars > 0) {
           const bonusCash = prevStars * 1000;
@@ -2615,14 +3249,14 @@
         }
       }
 
-      function activateWantedStars(starsCount) {
+      function activateWantedStars(starsCount, withMusic = true) {
         const lvl = Math.min(Math.max(parseInt(starsCount, 10) || 1, 1), 5);
         currentWantedStars = lvl;
         const durationSec = WANTED_DURATIONS_SEC[lvl] || 900;
         wantedEndTime = Date.now() + durationSec * 1000;
 
         renderWantedStars();
-        playPoliceSirenSound();
+        startChaseAudioAndLights(withMusic);
 
         const timerPill = document.getElementById('wanted-timer-pill');
         timerPill.classList.add('active');
@@ -2644,15 +3278,98 @@
         showBanner(`🚨 РОЗЫСК: ${lvl} ★`, `Скрывайтесь от погони ${durationSec / 60} мин!`, 'vip');
       }
 
-      let autopilotActive = false;
-      let autopilotEndTime = 0;
-      let autopilotTimerInterval = null;
+      // =======================================================================
+      // ДИАЛОГОВАЯ РАМКА (ПОРТРЕТ + СУБТИТРЫ + LETTERBOX)
+      // =======================================================================
+      let activeDialogueAudio = null;
+      let dialogueHideTimer = null;
+
+      function hideDialogueBox() {
+        const box = document.getElementById('dialogue-box');
+        box.classList.remove('active');
+        document.body.classList.remove('cutscene-active');
+        duckChaseAudio(false);
+        if (activeDialogueAudio) {
+          activeDialogueAudio.pause();
+          activeDialogueAudio.currentTime = 0;
+          activeDialogueAudio = null;
+        }
+      }
+
+      function playDialogueSequence({ speaker, speakerName, avatar, audioFile, text, isCutscene = false, playStaticBefore = true, onEnded = null }) {
+        clearTimeout(dialogueHideTimer);
+        if (activeDialogueAudio) {
+          activeDialogueAudio.pause();
+          activeDialogueAudio.currentTime = 0;
+        }
+
+        const box = document.getElementById('dialogue-box');
+        box.classList.remove('speaker-handler', 'speaker-informant', 'speaker-boss');
+        box.classList.add(`speaker-${speaker || 'handler'}`);
+
+        document.getElementById('dialogue-avatar-img').src = avatar || 'avatar_handler.jpg';
+        document.getElementById('dialogue-speaker-name').textContent = speakerName || 'СВЯЗНОЙ';
+        document.getElementById('dialogue-badge').textContent = isCutscene ? '🎬 КАТ-СЦЕНА' : '📞 ВХОДЯЩИЙ ВЫЗОВ';
+        document.getElementById('dialogue-subtitle-text').textContent = text || '';
+
+        if (isCutscene) {
+          document.body.classList.add('cutscene-active');
+        } else {
+          document.body.classList.remove('cutscene-active');
+        }
+
+        box.classList.add('active');
+        duckChaseAudio(true);
+
+        if (playStaticBefore) {
+          playRadioStaticSound();
+        }
+
+        const fallbackDurationMs = Math.max(6500, (text ? text.length * 68 : 8000));
+        let finished = false;
+        const finishCallback = () => {
+          if (finished) return;
+          finished = true;
+          clearTimeout(dialogueHideTimer);
+          box.classList.remove('active');
+          document.body.classList.remove('cutscene-active');
+          duckChaseAudio(false);
+          if (typeof onEnded === 'function') onEnded();
+        };
+
+        const audioObj = getStoryAudio(audioFile);
+        if (audioObj) {
+          activeDialogueAudio = audioObj;
+          audioObj.volume = 1.0;
+          audioObj.currentTime = 0;
+          audioObj.onended = () => {
+            setTimeout(finishCallback, 600);
+          };
+          audioObj.onerror = () => {
+            dialogueHideTimer = setTimeout(finishCallback, fallbackDurationMs);
+          };
+          audioObj.play().catch(() => {
+            dialogueHideTimer = setTimeout(finishCallback, fallbackDurationMs);
+          });
+        } else {
+          dialogueHideTimer = setTimeout(finishCallback, fallbackDurationMs);
+        }
+      }
+
+      // =======================================================================
+      // ПОСТОЯННОЕ ЧТЕНИЕ YOUTUBE-ЧАТА (3 ПОСЛЕДНИХ СООБЩЕНИЯ + КОМАНДЫ)
+      // =======================================================================
+      let ytConnected = false;
       let ytChatPollTimer = null;
       let ytNextPageToken = null;
       let ytRecentMessages = [];
       let lastCommandTimestamp = 0;
 
+      let autopilotActive = false;
+      let autopilotEndTime = 0;
+      let autopilotTimerInterval = null;
       let apHudTimeout = null;
+
       function triggerGameCommandHUD(label, icon, speechText, authorName, forceManual = false) {
         if (!autopilotActive && !forceManual) return;
 
@@ -2675,39 +3392,101 @@
 
       function renderYouTubeChatBox() {
         const box = document.getElementById('yt-chat-box');
-        if (!autopilotActive || ytRecentMessages.length === 0) {
+        const linesEl = document.getElementById('yt-chat-lines');
+        if (!ytConnected || ytRecentMessages.length === 0) {
           box.classList.remove('visible');
           return;
         }
         box.classList.add('visible');
-        box.innerHTML = ytRecentMessages.slice(-3).map(m => `
-          <div class="yt-msg-line"><span class="yt-author">${m.author}:</span>${m.text}</div>
+        linesEl.innerHTML = ytRecentMessages.slice(-3).map(m => `
+          <div class="yt-msg-line ${m.isCmd ? 'is-cmd' : ''}"><span class="yt-author">${m.author}:</span>${m.text}</div>
         `).join('');
       }
 
       function parseChatForGameCommands(author, text) {
-        if (!autopilotActive) return;
         const lower = text.toLowerCase().trim();
+        let matchedCmd = false;
+
         for (const cmd of CHAT_GAME_COMMANDS) {
           if (cmd.keys.some(k => lower === k || lower.startsWith(k + ' ') || lower.startsWith('!' + k))) {
-            if (Date.now() - lastCommandTimestamp > 2500) {
+            matchedCmd = true;
+            if (autopilotActive && (Date.now() - lastCommandTimestamp > 2200)) {
               lastCommandTimestamp = Date.now();
               triggerGameCommandHUD(cmd.label, cmd.icon, cmd.speech, author, false);
             }
             break;
           }
         }
+        return matchedCmd;
+      }
+
+      function disconnectYouTubeChat() {
+        ytConnected = false;
+        if (ytChatPollTimer) clearTimeout(ytChatPollTimer);
+        ytRecentMessages = [];
+        document.getElementById('yt-chat-box').classList.remove('visible');
+      }
+
+      async function connectYouTubeChat(apiKey, videoId) {
+        const useKey = apiKey || localStorage.getItem('yt_api_key') || DEFAULT_YT_API_KEY;
+        const useVid = videoId || localStorage.getItem('yt_video_id');
+        if (!useKey || !useVid) return;
+
+        disconnectYouTubeChat();
+        ytConnected = true;
+        ytNextPageToken = null;
+
+        try {
+          const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${useVid}&key=${useKey}`);
+          const vData = await vRes.json();
+          const liveChatId = vData.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
+          if (!liveChatId) {
+            ytConnected = false;
+            return;
+          }
+
+          async function pollMessages() {
+            if (!ytConnected) return;
+            try {
+              let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveChatId}&part=snippet,authorDetails&key=${useKey}`;
+              if (ytNextPageToken) url += `&pageToken=${ytNextPageToken}`;
+
+              const cRes = await fetch(url);
+              const cData = await cRes.json();
+              if (cData.nextPageToken) ytNextPageToken = cData.nextPageToken;
+
+              if (Array.isArray(cData.items)) {
+                cData.items.forEach(item => {
+                  const author = item.authorDetails?.displayName || 'Зритель';
+                  const msgText = item.snippet?.displayMessage || '';
+                  if (!msgText) return;
+
+                  const isCmd = parseChatForGameCommands(author, msgText);
+                  ytRecentMessages.push({ author, text: msgText, isCmd });
+                  if (ytRecentMessages.length > 6) ytRecentMessages.shift();
+                });
+                renderYouTubeChatBox();
+              }
+              if (ytConnected) {
+                const waitMs = Math.max(cData.pollingIntervalMillis || 4500, 4000);
+                ytChatPollTimer = setTimeout(pollMessages, waitMs);
+              }
+            } catch (err) {
+              if (ytConnected) ytChatPollTimer = setTimeout(pollMessages, 6000);
+            }
+          }
+          pollMessages();
+        } catch (e) {
+          ytConnected = false;
+        }
       }
 
       function stopAutopilotMode(completedNormally = false) {
         autopilotActive = false;
         if (autopilotTimerInterval) clearInterval(autopilotTimerInterval);
-        if (ytChatPollTimer) clearTimeout(ytChatPollTimer);
-        ytRecentMessages = [];
 
         document.getElementById('autopilot-status-bar').classList.remove('active');
         document.getElementById('autopilot-hud').classList.remove('active');
-        document.getElementById('yt-chat-box').classList.remove('visible');
 
         if (completedNormally) {
           gtaCash += 700;
@@ -2718,10 +3497,14 @@
         }
       }
 
-      async function startAutopilotMode(apiKey, videoId, durationSec = 300) {
+      function startAutopilotMode(apiKey, videoId, durationSec = 180) {
         stopAutopilotMode(false);
         autopilotActive = true;
         autopilotEndTime = Date.now() + durationSec * 1000;
+
+        if ((apiKey || videoId) && !ytConnected) {
+          connectYouTubeChat(apiKey, videoId);
+        }
 
         const statusBar = document.getElementById('autopilot-status-bar');
         const timerText = document.getElementById('ap-timer-text');
@@ -2737,50 +3520,6 @@
           const s = String(Math.floor((leftMs % 60000) / 1000)).padStart(2, '0');
           timerText.textContent = `${String(m).padStart(2, '0')}:${s}`;
         }, 1000);
-
-        const useKey = apiKey || localStorage.getItem('yt_api_key');
-        const useVid = videoId || localStorage.getItem('yt_video_id');
-        if (!useKey || !useVid) return;
-
-        ytNextPageToken = null;
-        try {
-          const vRes = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${useVid}&key=${useKey}`);
-          const vData = await vRes.json();
-          const liveChatId = vData.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
-          if (!liveChatId) return;
-
-          async function pollMessages() {
-            if (!autopilotActive) return;
-            try {
-              let url = `https://www.googleapis.com/youtube/v3/liveChat/messages?liveChatId=${liveChatId}&part=snippet,authorDetails&key=${useKey}`;
-              if (ytNextPageToken) url += `&pageToken=${ytNextPageToken}`;
-
-              const cRes = await fetch(url);
-              const cData = await cRes.json();
-              if (cData.nextPageToken) ytNextPageToken = cData.nextPageToken;
-
-              if (Array.isArray(cData.items)) {
-                cData.items.forEach(item => {
-                  const author = item.authorDetails?.displayName || 'Зритель';
-                  const msgText = item.snippet?.displayMessage || '';
-                  if (!msgText) return;
-
-                  ytRecentMessages.push({ author, text: msgText });
-                  if (ytRecentMessages.length > 6) ytRecentMessages.shift();
-                  parseChatForGameCommands(author, msgText);
-                });
-                renderYouTubeChatBox();
-              }
-              if (autopilotActive) {
-                const waitMs = Math.max(cData.pollingIntervalMillis || 4500, 4000);
-                ytChatPollTimer = setTimeout(pollMessages, waitMs);
-              }
-            } catch (err) {
-              if (autopilotActive) ytChatPollTimer = setTimeout(pollMessages, 6000);
-            }
-          }
-          pollMessages();
-        } catch (e) {}
       }
 
       function broadcastQueueState() {
@@ -2794,9 +3533,16 @@
           icon: q.icon,
           autoComplete: q.autoComplete
         }));
-        publishMqtt(MQTT_SYNC_TOPIC, { queue: cleanQueue }, true);
+        publishMqtt(MQTT_SYNC_TOPIC, {
+          queue: cleanQueue,
+          storyActive,
+          storyStage: storyStageIndex
+        }, true);
       }
 
+      // =======================================================================
+      // КАРТА И МАРКЕРЫ МИССИЙ В СТИЛЕ GTA (S, I, B, !, M, ★)
+      // =======================================================================
       const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/streets-v12',
@@ -2823,6 +3569,190 @@
         new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat(q.coords).addTo(map);
       });
 
+      // Иконки сюжетных локаций на карте (уникальные точки)
+      const storyBlipElements = {};
+      const uniqueBlips = [
+        { stageIdx: 0, coords: STORY_STAGES[0].coords, letter: 'S', color: '#00e5ff' },
+        { stageIdx: 1, coords: STORY_STAGES[1].coords, letter: 'S', color: '#00e5ff' },
+        { stageIdx: 2, coords: STORY_STAGES[2].coords, letter: 'I', color: '#f59e0b' },
+        { stageIdx: 3, coords: STORY_STAGES[3].coords, letter: 'B', color: '#ef4444' },
+        { stageIdx: 4, coords: STORY_STAGES[4].coords, letter: '!', color: '#ff1744' },
+        { stageIdx: 6, coords: STORY_STAGES[6].coords, letter: 'M', color: '#22c55e' },
+        { stageIdx: 7, coords: STORY_STAGES[7].coords, letter: '★', color: '#ffd54f' }
+      ];
+
+      uniqueBlips.forEach(b => {
+        const el = document.createElement('div');
+        el.className = 'gta-story-blip';
+        el.style.backgroundColor = b.color;
+        el.textContent = b.letter;
+        new mapboxgl.Marker({ element: el, anchor: 'center' }).setLngLat(b.coords).addTo(map);
+        storyBlipElements[b.stageIdx] = el;
+      });
+
+      function highlightStoryBlip(idx) {
+        Object.keys(storyBlipElements).forEach(k => {
+          const el = storyBlipElements[k];
+          const numK = parseInt(k, 10);
+          const isMatch = (numK === idx) || (idx === 5 && numK === 6);
+          el.classList.toggle('active-blip', isMatch);
+        });
+      }
+
+      // =======================================================================
+      // ЛОГИКА СЮЖЕТНОЙ КАМПАНИИ (8 ЭТАПОВ)
+      // =======================================================================
+      let storyActive = false;
+      let storyStageIndex = -1;
+      let storyCutsceneTriggered = false;
+      let storyWaypointIdx = 0;
+
+      function updateStoryHUD() {
+        const hudEl = document.getElementById('story-mission-hud');
+        if (!storyActive || storyStageIndex < 0 || storyStageIndex >= STORY_STAGES.length) {
+          hudEl.classList.remove('active');
+          highlightStoryBlip(-1);
+          return;
+        }
+        const st = STORY_STAGES[storyStageIndex];
+        const dist = Math.round(getDistanceMeters(currentStreamerPos[1], currentStreamerPos[0], st.coords[1], st.coords[0]));
+        const distStr = dist >= 1000 ? `${(dist / 1000).toFixed(1)} КМ` : `${dist} М`;
+
+        hudEl.classList.add('active');
+        document.getElementById('story-hud-chapter').textContent = `🎬 ${st.chapter}`;
+        document.getElementById('story-hud-dist').textContent = distStr;
+        document.getElementById('story-hud-title').textContent = st.title;
+        document.getElementById('story-hud-hint').textContent = st.hint;
+        highlightStoryBlip(storyStageIndex);
+
+        if (questQueue.length === 0) {
+          const tb = document.getElementById('target-badge');
+          tb.style.display = 'block';
+          tb.textContent = `🎬 ${distStr}`;
+        }
+      }
+
+      function rebuildActiveRoute() {
+        if (questQueue.length > 0) {
+          const activeTop = questQueue[0];
+          buildRealRoute(currentStreamerPos, [activeTop.lng, activeTop.lat], activeTop.vip ? '#ffd700' : '#ff00ff');
+          return;
+        }
+        if (storyActive && storyStageIndex >= 0 && storyStageIndex < STORY_STAGES.length) {
+          const st = STORY_STAGES[storyStageIndex];
+          const wps = (st.waypoints && storyWaypointIdx < st.waypoints.length)
+            ? st.waypoints.slice(storyWaypointIdx)
+            : [];
+          buildRealRoute(currentStreamerPos, st.coords, '#c084fc', wps);
+          return;
+        }
+        clearRouteLine();
+      }
+
+      function startStoryStage(idx) {
+        if (idx < 0 || idx >= STORY_STAGES.length) {
+          storyActive = false;
+          storyStageIndex = -1;
+          updateStoryHUD();
+          rebuildActiveRoute();
+          broadcastQueueState();
+          return;
+        }
+
+        storyActive = true;
+        storyStageIndex = idx;
+        storyCutsceneTriggered = false;
+        storyWaypointIdx = 0;
+
+        const st = STORY_STAGES[idx];
+        updateStoryHUD();
+        rebuildActiveRoute();
+        broadcastQueueState();
+
+        if (st.callAudio || st.callText) {
+          playDialogueSequence({
+            speaker: st.speaker,
+            speakerName: st.speakerName,
+            avatar: st.avatar,
+            audioFile: st.callAudio,
+            text: st.callText,
+            isCutscene: false,
+            playStaticBefore: true
+          });
+        }
+      }
+
+      function completeCurrentStoryStage() {
+        if (!storyActive || storyStageIndex < 0 || storyStageIndex >= STORY_STAGES.length) return;
+        const st = STORY_STAGES[storyStageIndex];
+
+        if (st.payNSprayFinish) {
+          clearWantedStars(true);
+        }
+
+        if (st.rewardCash > 0 || st.rewardRep > 0) {
+          gtaCash += st.rewardCash;
+          gtaRespectXp += st.rewardRep;
+          updateCashAndRespectUI();
+          playMissionPassedSound();
+
+          if (st.isFinale) {
+            showCenterSplash('ГЛАВА 1 ЗАВЕРШЕНА!', `+ RESPECT • +$${st.rewardCash}`, false);
+          } else {
+            showBanner('MISSION PASSED! + RESPECT', `${st.title} (+$${st.rewardCash})`, 'passed');
+          }
+        }
+
+        const nextIdx = storyStageIndex + 1;
+        if (nextIdx < STORY_STAGES.length) {
+          startStoryStage(nextIdx);
+        } else {
+          storyActive = false;
+          storyStageIndex = -1;
+          updateStoryHUD();
+          clearRouteLine();
+          broadcastQueueState();
+        }
+      }
+
+      function triggerStageArrival(st) {
+        if (storyCutsceneTriggered) return;
+        storyCutsceneTriggered = true;
+
+        const afterCutsceneActions = () => {
+          if (st.ambushAfterCutscene) {
+            // Засада у пирса Бали Хай: сначала мигалки (уже можно включить) и ровно ПОСЛЕ слов Босса врубается музыка + сирена!
+            activateWantedStars(3, true);
+          }
+          if (st.triggerAutopilotSec && st.triggerAutopilotSec > 0) {
+            startAutopilotMode(null, null, st.triggerAutopilotSec);
+          }
+          if (st.autoComplete) {
+            completeCurrentStoryStage();
+          }
+        };
+
+        if (st.cutsceneAudio || st.cutsceneText) {
+          // Если это засада (m4_cutscene), включаем визуальные мигалки по краям сразу для антуража,
+          // а громкую сирену и музыку погони запускаем строго в onEnded после слов Босса!
+          if (st.ambushAfterCutscene) {
+            document.getElementById('police-edge-overlay').classList.add('active');
+          }
+          playDialogueSequence({
+            speaker: st.speaker,
+            speakerName: st.speakerName,
+            avatar: st.avatar,
+            audioFile: st.cutsceneAudio,
+            text: st.cutsceneText,
+            isCutscene: true,
+            playStaticBefore: true,
+            onEnded: afterCutsceneActions
+          });
+        } else {
+          afterCutsceneActions();
+        }
+      }
+
       let bannerTimeout = null;
       function showBanner(subtitle, title, mode = 'normal') {
         const banner = document.getElementById('zone-banner');
@@ -2839,15 +3769,16 @@
         bannerTimeout = setTimeout(() => banner.classList.remove('active'), 7500);
       }
 
-      async function buildRealRoute(startLngLat, endLngLat, isVip) {
+      async function buildRealRoute(startLngLat, endLngLat, lineColor = '#ff00ff', waypoints = []) {
         try {
-          const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${startLngLat[0]},${startLngLat[1]};${endLngLat[0]},${endLngLat[1]}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+          const pts = [startLngLat, ...waypoints, endLngLat];
+          const coordsStr = pts.map(p => `${p[0]},${p[1]}`).join(';');
+          const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordsStr}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
           const res = await fetch(url);
           const json = await res.json();
           if (!json.routes || !json.routes[0]) return;
 
           const routeGeoJSON = { type: 'Feature', geometry: json.routes[0].geometry };
-          const lineColor = isVip ? '#ffd700' : '#ff00ff';
 
           if (map.getSource('viewer-route')) {
             map.getSource('viewer-route').setData(routeGeoJSON);
@@ -2879,7 +3810,8 @@
 
         if (questQueue.length === 0) {
           listBox.style.display = 'none';
-          clearRouteLine();
+          if (!storyActive) clearRouteLine();
+          else updateStoryHUD();
           return;
         }
 
@@ -2923,10 +3855,10 @@
 
         if (!silentRestore && isVip && !isProposal) {
           if (data.questId === 'q_autopilot') {
-            startAutopilotMode(null, null, 300);
+            startAutopilotMode(null, null, 180);
           }
           if (data.wantedStars && data.wantedStars > 0) {
-            activateWantedStars(data.wantedStars);
+            activateWantedStars(data.wantedStars, true);
           }
         }
 
@@ -2968,14 +3900,13 @@
           if (isProposal) {
             showBanner('💡 ПРЕДЛОЖЕННОЕ ЗАДАНИЕ (ЖДЁТ ДОНАТ)', `${task.title}`, 'proposal');
           } else {
-            showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 НОВОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
+            showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 ПОБОЧНОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
           }
           broadcastQueueState();
         }
 
         renderQuestList();
-        const activeTop = questQueue[0];
-        buildRealRoute(currentStreamerPos, [activeTop.lng, activeTop.lat], activeTop.vip);
+        rebuildActiveRoute();
       }
 
       function removeQuestByIndex(idx, isCompleted = false) {
@@ -2998,13 +3929,7 @@
 
         renderQuestList();
         broadcastQueueState();
-
-        if (questQueue.length > 0) {
-          const nextTask = questQueue[0];
-          buildRealRoute(currentStreamerPos, [nextTask.lng, nextTask.lat], nextTask.vip);
-        } else {
-          clearRouteLine();
-        }
+        rebuildActiveRoute();
       }
 
       setInterval(() => {
@@ -3027,11 +3952,32 @@
         else if (lng > 100.9000) distSubEl.textContent = 'EAST PATTAYA';
         else distSubEl.textContent = 'CENTRAL PATTAYA';
 
+        // 1. Проверка прогресса сюжетной кампании
+        if (storyActive && storyStageIndex >= 0 && storyStageIndex < STORY_STAGES.length) {
+          const st = STORY_STAGES[storyStageIndex];
+
+          if (st.waypoints && storyWaypointIdx < st.waypoints.length) {
+            const wp = st.waypoints[storyWaypointIdx];
+            if (getDistanceMeters(lat, lng, wp[1], wp[0]) <= 40) {
+              storyWaypointIdx++;
+              rebuildActiveRoute();
+            }
+          }
+
+          const distToStory = getDistanceMeters(lat, lng, st.coords[1], st.coords[0]);
+          updateStoryHUD();
+
+          if (distToStory <= (st.radius || 20) && !storyCutsceneTriggered) {
+            triggerStageArrival(st);
+          }
+        }
+
+        // 2. Проверка побочных заданий зрителей
         if (questQueue.length > 0) {
           for (let i = 0; i < questQueue.length; i++) {
             const task = questQueue[i];
             const dist = getDistanceMeters(lat, lng, task.lat, task.lng);
-            if (dist <= 45) {
+            if (dist <= 30) {
               if (task.autoComplete) {
                 removeQuestByIndex(i, true);
                 return;
@@ -3044,6 +3990,7 @@
           renderQuestList();
         }
 
+        // 3. Проверка локаций Паттайи
         for (const poi of POI_LOCATIONS) {
           const dist = getDistanceMeters(lat, lng, poi.coords[1], poi.coords[0]);
           if (dist <= 150 && lastBannerZone !== poi.name) {
@@ -3139,6 +4086,12 @@
         } catch (e) {}
       };
 
+      // Автоматическое подключение к чату, если videoId уже сохранён в памяти
+      const savedVid = localStorage.getItem('yt_video_id');
+      if (savedVid) {
+        connectYouTubeChat(localStorage.getItem('yt_api_key') || DEFAULT_YT_API_KEY, savedVid);
+      }
+
       let initialSyncDone = false;
       mqttClient.on('connect', () => {
         mqttClient.subscribe([MQTT_CMD_TOPIC, MQTT_SYNC_TOPIC]);
@@ -3158,7 +4111,51 @@
 
           if (topic !== MQTT_CMD_TOPIC) return;
 
-          if (data.action === 'clear_one') {
+          // --- Сюжетные команды ---
+          if (data.action === 'story_start') {
+            startStoryStage(typeof data.stageIndex === 'number' ? data.stageIndex : 0);
+          } else if (data.action === 'story_next') {
+            completeCurrentStoryStage();
+          } else if (data.action === 'story_stop') {
+            hideDialogueBox();
+            clearWantedStars(false);
+            startStoryStage(-1);
+          } else if (data.action === 'story_test_dialogue') {
+            const idx = typeof data.stageIndex === 'number' ? data.stageIndex : 0;
+            const st = STORY_STAGES[idx];
+            if (st) {
+              const isCut = data.kind === 'cutscene';
+              playDialogueSequence({
+                speaker: st.speaker,
+                speakerName: st.speakerName,
+                avatar: st.avatar,
+                audioFile: isCut ? st.cutsceneAudio : st.callAudio,
+                text: isCut ? st.cutsceneText : st.callText,
+                isCutscene: isCut,
+                playStaticBefore: true
+              });
+            }
+          }
+
+          // --- YouTube-чат и Автопилот ---
+          else if (data.action === 'yt_connect') {
+            if (data.apiKey) localStorage.setItem('yt_api_key', data.apiKey);
+            if (data.videoId) localStorage.setItem('yt_video_id', data.videoId);
+            connectYouTubeChat(data.apiKey, data.videoId);
+          } else if (data.action === 'yt_disconnect') {
+            disconnectYouTubeChat();
+          } else if (data.action === 'ap_start') {
+            if (data.apiKey) localStorage.setItem('yt_api_key', data.apiKey);
+            if (data.videoId) localStorage.setItem('yt_video_id', data.videoId);
+            startAutopilotMode(data.apiKey, data.videoId, data.durationSec || 180);
+          } else if (data.action === 'ap_stop') {
+            stopAutopilotMode(false);
+          } else if (data.action === 'game_cmd') {
+            triggerGameCommandHUD(data.label, data.icon, data.speech, data.author, Boolean(data.forceManual));
+          }
+
+          // --- Побочные задания, Звёзды, Кэш и Звуки ---
+          else if (data.action === 'clear_one') {
             removeQuestByIndex(0, false);
           } else if (data.action === 'complete_one') {
             removeQuestByIndex(0, true);
@@ -3171,7 +4168,7 @@
           } else if (data.action === 'clear_all') {
             while (questQueue.length > 0) removeQuestByIndex(0, false);
           } else if (data.action === 'set_stars') {
-            activateWantedStars(data.stars);
+            activateWantedStars(data.stars, true);
           } else if (data.action === 'stars_escaped') {
             clearWantedStars(true);
           } else if (data.action === 'stars_busted') {
@@ -3197,14 +4194,6 @@
             if (data.sound === 'passed') playMissionPassedSound();
             if (data.sound === 'siren') playPoliceSirenSound();
             if (data.sound === 'busted') playBustedSound();
-          } else if (data.action === 'ap_start') {
-            if (data.apiKey) localStorage.setItem('yt_api_key', data.apiKey);
-            if (data.videoId) localStorage.setItem('yt_video_id', data.videoId);
-            startAutopilotMode(data.apiKey, data.videoId, data.durationSec || 300);
-          } else if (data.action === 'ap_stop') {
-            stopAutopilotMode(false);
-          } else if (data.action === 'game_cmd') {
-            triggerGameCommandHUD(data.label, data.icon, data.speech, data.author, Boolean(data.forceManual));
           } else if (data.action === 'add' || data.action === 'set') {
             addQuestToQueue({
               id: data.id,
