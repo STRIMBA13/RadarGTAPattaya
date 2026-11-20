@@ -637,7 +637,8 @@
       position: fixed;
       left: 16px;
       right: 16px;
-      bottom: 38%;
+      top: 52%;
+      bottom: auto;
       max-width: 640px;
       margin: 0 auto;
       background: linear-gradient(135deg, rgba(11, 15, 25, 0.96) 0%, rgba(24, 16, 40, 0.96) 100%);
@@ -1101,7 +1102,8 @@
     /* ПЛАШКА АКТИВНОЙ ГЛАВЫ СЮЖЕТА ПОД РАДАРОМ */
     .story-mission-hud {
       display: none;
-      background: linear-gradient(90deg, rgba(88, 28, 135, 0.95), rgba(30, 27, 75, 0.95));
+      background: linear-gradient(90deg, rgba(88, 28, 135, 0.72), rgba(30, 27, 75, 0.72));
+      backdrop-filter: blur(4px);
       border-left: 4px solid #e879f9;
       border-radius: 6px;
       padding: 6px 10px;
@@ -1182,17 +1184,21 @@
       font-weight: 700;
     }
 
-    /* БЛОК ПОСЛЕДНИХ 3 СООБЩЕНИЙ YOUTUBE-ЧАТА */
+    /* БЛОК ПОСЛЕДНИХ 3 СООБЩЕНИЙ YOUTUBE-ЧАТА (ПОД RESPECT LVL В ПРАВОМ ВЕРХНЕМ УГЛУ) */
     .yt-chat-box {
       display: none;
       flex-direction: column;
       gap: 3px;
-      background: rgba(10, 14, 20, 0.84);
-      border-left: 3.5px solid #ef4444;
+      width: 295px;
+      margin-top: 6px;
+      background: rgba(10, 14, 20, 0.62);
+      backdrop-filter: blur(4px);
+      border-right: 3.5px solid #ef4444;
+      border-left: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 6px;
       padding: 6px 9px;
       font-family: 'Inter', sans-serif;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.75);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.65);
     }
     .yt-chat-box.visible { display: flex; }
 
@@ -1225,7 +1231,8 @@
     }
 
     .zone-banner {
-      background: rgba(12, 16, 22, 0.95);
+      background: rgba(12, 16, 22, 0.74);
+      backdrop-filter: blur(4px);
       border-left: 4px solid #ffcc00;
       border-right: 2px solid rgba(255, 255, 255, 0.15);
       padding: 0 12px;
@@ -1313,7 +1320,8 @@
     }
 
     .quest-item {
-      background: rgba(15, 20, 28, 0.88);
+      background: rgba(15, 20, 28, 0.68);
+      backdrop-filter: blur(3px);
       border-left: 3.5px solid #ff00ff;
       border-radius: 5px;
       padding: 5px 9px;
@@ -1327,12 +1335,12 @@
 
     .quest-item.is-vip {
       border-left-color: #ffd700;
-      background: rgba(32, 24, 12, 0.92);
+      background: rgba(32, 24, 12, 0.72);
     }
 
     .quest-item.is-proposal {
       border-left-color: #c084fc;
-      background: rgba(35, 16, 48, 0.92);
+      background: rgba(35, 16, 48, 0.72);
     }
 
     .quest-item.is-current {
@@ -1679,6 +1687,12 @@
           <div class="respect-bar-fill" id="respect-bar-fill"></div>
         </div>
       </div>
+
+      <!-- БЛОК 3 ПОСЛЕДНИХ СООБЩЕНИЙ ИЗ YOUTUBE-ЧАТА -->
+      <div class="yt-chat-box" id="yt-chat-box">
+        <div class="yt-chat-hdr">💬 LIVE ЧАТ (КОМАНДЫ АКТИВНЫ)</div>
+        <div id="yt-chat-lines"></div>
+      </div>
     </div>
 
     <!-- ПОЛНОЭКРАННАЯ ЦЕНТРАЛЬНАЯ ЗАСТАВКА (MISSION PASSED / BUSTED) -->
@@ -1740,11 +1754,7 @@
         <div class="ap-cmd-author" id="ap-cmd-author">@Viewer</div>
       </div>
 
-      <!-- БЛОК 3 ПОСЛЕДНИХ СООБЩЕНИЙ ИЗ YOUTUBE-ЧАТА -->
-      <div class="yt-chat-box" id="yt-chat-box">
-        <div class="yt-chat-hdr">💬 LIVE ЧАТ (КОМАНДЫ АКТИВНЫ)</div>
-        <div id="yt-chat-lines"></div>
-      </div>
+
 
       <div class="zone-banner" id="zone-banner">
         <div class="zone-banner-title" id="zone-banner-title">★ ЛОКАЦИЯ ОБНАРУЖЕНА</div>
@@ -3067,25 +3077,32 @@
         });
       });
 
-      const gpsStream = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
-      gpsStream.onmessage = (event) => {
-        try {
-          const packet = JSON.parse(event.data);
-          if (!packet.message) return;
-          const params = packet.message.trim().startsWith('{') ? JSON.parse(packet.message) : Object.fromEntries(new URLSearchParams(packet.message));
-          const lat = parseFloat(params.lat || params.latitude);
-          const lon = parseFloat(params.lon || params.lng || params.longitude);
-          if (!isNaN(lat) && !isNaN(lon)) {
-            streamerPos = [lon, lat];
-            streamerMarker.setLngLat(streamerPos);
-            if (autoFollow) vMap.easeTo({ center: streamerPos, duration: 600 });
-            if (vMap.getSource('allowed-zone')) {
-              vMap.getSource('allowed-zone').setData(createCircleGeoJSON(streamerPos, maxAllowedMeters));
+      function connectViewerNtfy() {
+        const gpsStream = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=1m`);
+        gpsStream.onmessage = (event) => {
+          try {
+            const packet = JSON.parse(event.data);
+            if (!packet.message) return;
+            const params = packet.message.trim().startsWith('{') ? JSON.parse(packet.message) : Object.fromEntries(new URLSearchParams(packet.message));
+            const lat = parseFloat(params.lat || params.latitude);
+            const lon = parseFloat(params.lon || params.lng || params.longitude);
+            if (!isNaN(lat) && !isNaN(lon)) {
+              streamerPos = [lon, lat];
+              streamerMarker.setLngLat(streamerPos);
+              if (autoFollow) vMap.easeTo({ center: streamerPos, duration: 600 });
+              if (vMap.getSource('allowed-zone')) {
+                vMap.getSource('allowed-zone').setData(createCircleGeoJSON(streamerPos, maxAllowedMeters));
+              }
+              if (liveQueue.length > 0) renderViewerQueue();
             }
-            if (liveQueue.length > 0) renderViewerQueue();
-          }
-        } catch (e) {}
-      };
+          } catch (e) {}
+        };
+        gpsStream.onerror = () => {
+          try { gpsStream.close(); } catch (e) {}
+          setTimeout(connectViewerNtfy, 4000);
+        };
+      }
+      connectViewerNtfy();
 
       const distInfo = document.getElementById('dist-info');
       const sendBtn = document.getElementById('send-pin-btn');
@@ -4068,23 +4085,65 @@
         northEl.style.transform = 'none';
       });
 
-      const gpsEvents = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=12h`);
-      gpsEvents.onmessage = (event) => {
+      let gpsEventSource = null;
+      let lastGpsPacketTs = Date.now();
+
+      function handleRawGpsMessage(rawMsg, packetTimeSec = null) {
         try {
-          const packet = JSON.parse(event.data);
-          if (!packet.message) return;
-          const isHistorical = packet.time && ((Date.now() / 1000 - packet.time) > 20);
-          const params = packet.message.trim().startsWith('{') ? JSON.parse(packet.message) : Object.fromEntries(new URLSearchParams(packet.message));
+          const isHistorical = packetTimeSec && ((Date.now() / 1000 - packetTimeSec) > 25);
+          const params = rawMsg.trim().startsWith('{')
+            ? JSON.parse(rawMsg)
+            : Object.fromEntries(new URLSearchParams(rawMsg));
           const lat = parseFloat(params.lat || params.latitude);
           const lon = parseFloat(params.lon || params.lng || params.longitude);
           const bearing = parseFloat(params.bearing || params.heading || params.course);
           const speed = parseFloat(params.speed);
           if (!isNaN(lat) && !isNaN(lon)) {
+            lastGpsPacketTs = Date.now();
             moveRadar(lon, lat, bearing, speed, isHistorical);
-            publishMqtt(MQTT_GPS_TOPIC, { lat, lon }, true);
+            publishMqtt(MQTT_GPS_TOPIC, { lat, lon, bearing, speed }, true);
           }
         } catch (e) {}
-      };
+      }
+
+      function connectNtfyGpsStream() {
+        if (gpsEventSource) {
+          try { gpsEventSource.close(); } catch (e) {}
+        }
+        gpsEventSource = new EventSource(`https://ntfy.sh/${NTFY_GPS_TOPIC}/sse?since=1m`);
+        gpsEventSource.onmessage = (event) => {
+          try {
+            const packet = JSON.parse(event.data);
+            if (packet && packet.message) {
+              handleRawGpsMessage(packet.message, packet.time || null);
+            }
+          } catch (e) {}
+        };
+        gpsEventSource.onerror = () => {
+          try { gpsEventSource.close(); } catch (e) {}
+          setTimeout(connectNtfyGpsStream, 4000);
+        };
+      }
+      connectNtfyGpsStream();
+
+      // Watchdog: если поток ntfy завис без ошибок > 35 сек — принудительно переподключаем + подтягиваем последнюю точку
+      setInterval(() => {
+        if (Date.now() - lastGpsPacketTs > 35000) {
+          connectNtfyGpsStream();
+          fetch(`https://ntfy.sh/${NTFY_GPS_TOPIC}/json?poll=1&since=2m`)
+            .then(r => r.text())
+            .then(txt => {
+              const lines = txt.trim().split('\n').filter(Boolean);
+              if (lines.length > 0) {
+                const lastObj = JSON.parse(lines[lines.length - 1]);
+                if (lastObj && lastObj.message) {
+                  handleRawGpsMessage(lastObj.message, lastObj.time || null);
+                }
+              }
+            })
+            .catch(() => {});
+        }
+      }, 15000);
 
       // Автоматическое подключение к чату, если videoId уже сохранён в памяти
       const savedVid = localStorage.getItem('yt_video_id');
