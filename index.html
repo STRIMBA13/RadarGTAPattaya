@@ -900,6 +900,8 @@
       font-weight: 700;
       color: #4ade80;
       margin-top: 6px;
+      max-width: 82vw;
+      line-height: 1.25;
       text-shadow: 0 2px 4px #000;
     }
     .center-gta-splash.busted .splash-sub-title {
@@ -3920,8 +3922,8 @@
 
           if (st.isFinale) {
             showCenterSplash('ГЛАВА 1 ЗАВЕРШЕНА!', `+ RESPECT • +$${st.rewardCash}`, false);
-          } else {
-            showBanner('MISSION PASSED! + RESPECT', `${st.title} (+$${st.rewardCash})`, 'passed');
+          } else if (!st.payNSprayFinish) {
+            showCenterSplash('MISSION PASSED!', `${st.title} • +$${st.rewardCash} • +RESPECT`, false);
           }
         }
 
@@ -4147,9 +4149,9 @@
 
           if (!data.wantedStars) playNewMissionSound();
           if (isProposal) {
-            showBanner('💡 ПРЕДЛОЖЕННОЕ ЗАДАНИЕ (ЖДЁТ ДОНАТ)', `${task.title}`, 'proposal');
+            showCenterTopLocation('💡 ПРЕДЛОЖЕНИЕ ОТ ЧАТА', `${task.title}`);
           } else {
-            showBanner(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 ПОБОЧНОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`, isVip ? 'vip' : 'normal');
+            showCenterTopLocation(isVip ? '👑 НОВАЯ VIP-МИССИЯ' : '📍 НОВОЕ ЗАДАНИЕ ОТ ЧАТА', `${task.title} (${distStr})`);
           }
           broadcastQueueState();
         }
@@ -4170,10 +4172,7 @@
           updateCashAndRespectUI();
 
           playMissionPassedSound();
-          showBanner('MISSION PASSED! + RESPECT', `${removed.title}`, 'passed');
-          if (reward >= 1000) {
-            showCenterSplash('MISSION PASSED!', `+ RESPECT • +$${reward}`, false);
-          }
+          showCenterSplash('MISSION PASSED!', `${removed.title} • +$${reward} • +RESPECT`, false);
         }
 
         renderQuestList();
