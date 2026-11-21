@@ -1102,7 +1102,7 @@
     /* ПЛАШКА АКТИВНОЙ ГЛАВЫ СЮЖЕТА ПОД РАДАРОМ */
     .story-mission-hud {
       display: none;
-      background: linear-gradient(90deg, rgba(88, 28, 135, 0.72), rgba(30, 27, 75, 0.72));
+      background: linear-gradient(90deg, rgba(88, 28, 135, 0.58), rgba(30, 27, 75, 0.58));
       backdrop-filter: blur(4px);
       border-left: 4px solid #e879f9;
       border-radius: 6px;
@@ -1188,17 +1188,17 @@
     .yt-chat-box {
       display: none;
       flex-direction: column;
-      gap: 3px;
-      width: 295px;
+      gap: 4px;
+      width: 300px;
       margin-top: 6px;
-      background: rgba(10, 14, 20, 0.62);
+      background: rgba(10, 14, 20, 0.50);
       backdrop-filter: blur(4px);
       border-right: 3.5px solid #ef4444;
-      border-left: 1px solid rgba(255, 255, 255, 0.12);
+      border-left: 1px solid rgba(255, 255, 255, 0.10);
       border-radius: 6px;
       padding: 6px 9px;
       font-family: 'Inter', sans-serif;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.65);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.55);
     }
     .yt-chat-box.visible { display: flex; }
 
@@ -1212,13 +1212,61 @@
     }
 
     .yt-msg-line {
-      font-size: 12px;
-      line-height: 1.28;
+      font-size: 11.5px;
+      line-height: 1.25;
       color: #f1f5f9;
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
+      word-break: break-word;
       text-shadow: 0 1px 2px #000;
+    }
+
+    /* КРУПНОЕ GTA-ОПОВЕЩЕНИЕ ПО ЦЕНТРУ СВЕРХУ ПРИ СМЕНЕ РАЙОНА ИЛИ ЛОКАЦИИ */
+    @keyframes districtBannerPop {
+      0% { transform: translateX(-50%) translateY(-18px) scale(0.9); opacity: 0; }
+      14% { transform: translateX(-50%) translateY(0) scale(1.03); opacity: 1; }
+      85% { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateX(-50%) translateY(-10px) scale(0.96); opacity: 0; }
+    }
+    .center-top-gta-location {
+      display: none;
+      position: absolute;
+      top: 16%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 46;
+      text-align: center;
+      pointer-events: none;
+      white-space: nowrap;
+      animation: districtBannerPop 4.2s forwards;
+    }
+    .center-top-gta-location.active { display: block; }
+    .ct-loc-sub {
+      font-family: 'Oswald', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #38bdf8;
+      text-shadow: 0 2px 4px #000, 0 0 8px #000;
+    }
+    .ct-loc-main {
+      font-family: 'Pricedown Bl', 'Pricedown', 'Anton', sans-serif;
+      font-size: 46px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      line-height: 1.02;
+      background: linear-gradient(180deg, #ffffff 0%, #fde047 65%, #f59e0b 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter:
+        drop-shadow(-2.5px -2.5px 0 #000)
+        drop-shadow( 2.5px -2.5px 0 #000)
+        drop-shadow(-2.5px  2.5px 0 #000)
+        drop-shadow( 2.5px  2.5px 0 #000)
+        drop-shadow( 0px    5px   8px rgba(0, 0, 0, 0.95));
     }
     .yt-msg-line.is-cmd {
       color: #67e8f9;
@@ -1231,7 +1279,7 @@
     }
 
     .zone-banner {
-      background: rgba(12, 16, 22, 0.74);
+      background: rgba(12, 16, 22, 0.62);
       backdrop-filter: blur(4px);
       border-left: 4px solid #ffcc00;
       border-right: 2px solid rgba(255, 255, 255, 0.15);
@@ -1320,7 +1368,7 @@
     }
 
     .quest-item {
-      background: rgba(15, 20, 28, 0.68);
+      background: rgba(15, 20, 28, 0.56);
       backdrop-filter: blur(3px);
       border-left: 3.5px solid #ff00ff;
       border-radius: 5px;
@@ -1335,12 +1383,12 @@
 
     .quest-item.is-vip {
       border-left-color: #ffd700;
-      background: rgba(32, 24, 12, 0.72);
+      background: rgba(32, 24, 12, 0.60);
     }
 
     .quest-item.is-proposal {
       border-left-color: #c084fc;
-      background: rgba(35, 16, 48, 0.72);
+      background: rgba(35, 16, 48, 0.60);
     }
 
     .quest-item.is-current {
@@ -1492,11 +1540,12 @@
         <button class="t-btn purple" id="story-jump-btn">🚀 Прыгнуть</button>
       </div>
       <div class="admin-grid">
+        <button class="t-btn gray" id="story-repeat-btn">🔄 Повторить реплику</button>
+        <button class="t-btn gray" id="story-tp-btn">📍 Телепорт GPS на точку</button>
         <button class="t-btn gray" id="story-test-call-btn">📞 Тест звонка (_call)</button>
         <button class="t-btn gray" id="story-test-cutscene-btn">🎞 Тест кат-сцены (_cutscene)</button>
-        <button class="t-btn gray" id="story-tp-btn">📍 Телепорт GPS на точку</button>
-        <button class="t-btn red" id="story-stop-btn">⏹ Выключить сюжет</button>
       </div>
+      <button class="t-btn red" id="story-stop-btn" style="width:100%;">⏹ Выключить сюжет</button>
     </div>
 
     <!-- YOUTUBE-ЧАТ И АВТОПИЛОТ (3 СООБЩЕНИЯ НА ЭКРАНЕ + КОМАНДЫ) -->
@@ -1511,6 +1560,7 @@
         <button class="t-btn red" id="ap-stop-btn">⏹ Стоп Автопилот</button>
       </div>
       <div class="cmd-grid">
+        <button class="t-btn cmd" data-cmd="ГОЛОС! ГАВ-ГАВ" data-icon="🐶">🐶 Гав</button>
         <button class="t-btn cmd" data-cmd="ВПЕРЁД" data-icon="⬆️">⬆️ Вперёд</button>
         <button class="t-btn cmd" data-cmd="НАЗАД" data-icon="⬇️">⬇️ Назад</button>
         <button class="t-btn cmd" data-cmd="НАЛЕВО" data-icon="⬅️">⬅️ Налево</button>
@@ -1518,7 +1568,14 @@
         <button class="t-btn cmd" data-cmd="БЕЖАТЬ" data-icon="🏃">🏃 Бежать</button>
         <button class="t-btn cmd" data-cmd="ПРЫЖОК" data-icon="🦘">🦘 Прыжок</button>
         <button class="t-btn cmd" data-cmd="СИДЕТЬ" data-icon="🪑">🪑 Сидеть</button>
-        <button class="t-btn cmd" data-cmd="СТОП" data-icon="🛑">🛑 Стоп</button>
+        <button class="t-btn cmd" data-cmd="ЛЕЖАТЬ" data-icon="🛌">🛌 Лежать</button>
+        <button class="t-btn cmd" data-cmd="УПАЛ — ОТЖАЛСЯ" data-icon="💪">💪 Отжался</button>
+        <button class="t-btn cmd" data-cmd="ПРИСЕЛ — ВСТАЛ" data-icon="🏋️">🏋️ Присел</button>
+        <button class="t-btn cmd" data-cmd="УЛИЧНЫЙ ТАНЕЦ" data-icon="🕺">🕺 Танец</button>
+        <button class="t-btn cmd" data-cmd="СЕЛФИ В КАМЕРУ" data-icon="🤳">🤳 Селфи</button>
+        <button class="t-btn cmd" data-cmd="РЕЖИМ СТЕЛС" data-icon="🕵️">🕵️ Стелс</button>
+        <button class="t-btn cmd" data-cmd="ПАФОСНАЯ ПОЗА" data-icon="🗿">🗿 Поза</button>
+        <button class="t-btn cmd" data-cmd="СТОП! ЗАМРИ" data-icon="🛑">🛑 Стоп</button>
       </div>
     </div>
 
@@ -1708,6 +1765,12 @@
         <div class="yt-chat-hdr">💬 LIVE ЧАТ (КОМАНДЫ АКТИВНЫ)</div>
         <div id="yt-chat-lines"></div>
       </div>
+    </div>
+
+    <!-- КРУПНОЕ GTA-ОПОВЕЩЕНИЕ ПО ЦЕНТРУ СВЕРХУ (РАЙОН / ЛОКАЦИЯ) -->
+    <div class="center-top-gta-location" id="center-top-gta-location">
+      <div class="ct-loc-sub" id="ct-loc-sub">★ НОВЫЙ РАЙОН</div>
+      <div class="ct-loc-main" id="ct-loc-main">JOMTIEN BEACH</div>
     </div>
 
     <!-- ПОЛНОЭКРАННАЯ ЦЕНТРАЛЬНАЯ ЗАСТАВКА (MISSION PASSED / BUSTED) -->
@@ -1909,8 +1972,9 @@
         title: 'УЙДИТЕ ОТ ПОГОНИ НА ПЛЯЖ ДЖОМТЬЕН',
         hint: 'Жмите газ в сторону Джомтьена! Мигалки висят до смены скина',
         coords: [100.8737066, 12.8913856],
-        radius: 160,
+        radius: 450,
         autoComplete: true,
+        playCallOnArrival: true,
         rewardCash: 0,
         rewardRep: 10,
         speaker: 'handler',
@@ -1994,15 +2058,25 @@
     const PROPOSAL_EXPIRE_MS = 10 * 60 * 1000;
 
     const CHAT_GAME_COMMANDS = [
-      { keys: ['прыжок', 'прыгай', 'jump'], label: 'ПРЫЖОК!', icon: '🦘', speech: 'Команда чата: Прыжок!' },
-      { keys: ['вперед', 'вперёд', 'прямо', 'go'], label: 'ВПЕРЁД!', icon: '⬆️', speech: 'Вперёд!' },
-      { keys: ['назад', 'back'], label: 'НАЗАД!', icon: '⬇️', speech: 'Назад!' },
-      { keys: ['налево', 'влево', 'left'], label: 'НАЛЕВО!', icon: '⬅️', speech: 'Налево!' },
-      { keys: ['направо', 'вправо', 'right'], label: 'НАПРАВО!', icon: '➡️', speech: 'Направо!' },
-      { keys: ['бежать', 'беги', 'спринт', 'run'], label: 'БЕЖАТЬ!', icon: '🏃', speech: 'Беги!' },
-      { keys: ['сидеть', 'сядь', 'присядь', 'sit'], label: 'СИДЕТЬ!', icon: '🪑', speech: 'Сидеть!' },
-      { keys: ['лежать', 'ляг', 'ложись', 'lie'], label: 'ЛЕЖАТЬ!', icon: '🛌', speech: 'Лежать!' },
-      { keys: ['стоп', 'стой', 'замри', 'stop'], label: 'СТОП! ЗАМРИ!', icon: '🛑', speech: 'Стоп! Замри!' }
+      { id: 'bark',       keys: ['гав', 'голос', 'лай', 'bark', 'woof'], label: 'ГОЛОС! ГАВ-ГАВ!', icon: '🐶', cooldownMs: 5000 },
+      { id: 'jump',       keys: ['прыжок', 'прыгай', 'jump'], label: 'ПРЫЖОК!', icon: '🦘', cooldownMs: 5000 },
+      { id: 'forward',    keys: ['вперед', 'вперёд', 'прямо', 'go'], label: 'ВПЕРЁД!', icon: '⬆️', cooldownMs: 4000 },
+      { id: 'back',       keys: ['назад', 'back'], label: 'НАЗАД!', icon: '⬇️', cooldownMs: 4000 },
+      { id: 'left',       keys: ['налево', 'влево', 'left'], label: 'НАЛЕВО!', icon: '⬅️', cooldownMs: 4000 },
+      { id: 'right',      keys: ['направо', 'вправо', 'right'], label: 'НАПРАВО!', icon: '➡️', cooldownMs: 4000 },
+      { id: 'run',        keys: ['бежать', 'беги', 'спринт', 'run'], label: 'БЕЖАТЬ!', icon: '🏃', cooldownMs: 6000 },
+      { id: 'sit',        keys: ['сидеть', 'сядь', 'sit'], label: 'СИДЕТЬ!', icon: '🪑', cooldownMs: 6000 },
+      { id: 'lie',        keys: ['лежать', 'ляг', 'ложись', 'lie'], label: 'ЛЕЖАТЬ!', icon: '🛌', cooldownMs: 8000 },
+      { id: 'stop',       keys: ['стоп', 'стой', 'замри', 'stop'], label: 'СТОП! ЗАМРИ!', icon: '🛑', cooldownMs: 5000 },
+      { id: 'pushup',     keys: ['отжимание', 'отжимайся', 'упор', 'pushup'], label: 'УПАЛ — ОТЖАЛСЯ!', icon: '💪', cooldownMs: 10000 },
+      { id: 'squat',      keys: ['присед', 'присядь', 'приседание', 'squat'], label: 'ПРИСЕЛ — ВСТАЛ!', icon: '🏋️', cooldownMs: 9000 },
+      { id: 'dance',      keys: ['танец', 'танцуй', 'dance'], label: 'УЛИЧНЫЙ ТАНЕЦ!', icon: '🕺', cooldownMs: 8000 },
+      { id: 'wave',       keys: ['привет', 'помаши', 'руку', 'wave'], label: 'ПОМАХАТЬ ПРОХОЖИМ!', icon: '👋', cooldownMs: 6000 },
+      { id: 'selfie',     keys: ['селфи', 'камера', 'selfie'], label: 'СЕЛФИ В КАМЕРУ!', icon: '🤳', cooldownMs: 7000 },
+      { id: 'spin',       keys: ['крутись', 'разворот', '360', 'spin'], label: 'РАЗВОРОТ НА 360°!', icon: '🔄', cooldownMs: 6000 },
+      { id: 'stealth',    keys: ['стелс', 'крадись', 'тихо', 'stealth'], label: 'РЕЖИМ СТЕЛС!', icon: '🕵️', cooldownMs: 7000 },
+      { id: 'compliment', keys: ['комплимент', 'подкат'], label: 'КОМПЛИМЕНТ ПРОХОЖЕМУ!', icon: '💬', cooldownMs: 10000 },
+      { id: 'pose',       keys: ['пафос', 'поза', 'статуя', 'pose'], label: 'ПАФОСНАЯ ПОЗА!', icon: '🗿', cooldownMs: 8000 }
     ];
 
     const QUEST_CATALOG = [
@@ -2044,6 +2118,7 @@
       { id: 'q_informer', price: 1000,  icon: '🕴', name: 'ВСТРЕЧА С ИНФОРМАТОРОМ', desc: 'Найти человека в загаданном цвете одежды и попросить передать привет донатеру.', coords: null },
       { id: 'q_lady200',  price: 1200,  icon: '💋', name: 'ЧАЕВЫЕ НА WALKING ST.', desc: 'Поговорить с девушкой на Walking Street и оставить 200 бат чаевых.', coords: [100.8730, 12.9262] },
       { id: 'q_taxi',     price: 1200,  icon: '🏍', name: 'ПОДВЕЗТИ ПОПУТЧИЦУ', desc: 'Подвезти девушку на байке по пути.', coords: null },
+      { id: 'q_beer',     price: 1500,  icon: '🍺', name: 'КУПИТЬ ПИВО', desc: 'Заехать в 7-Eleven или бар и купить холодного пива в эфире.', coords: null },
       { id: 'q_wanted2',  price: 2000,  icon: '⭐⭐', name: 'РОЗЫСК: 2 ЗВЕЗДЫ (20 МИН)', desc: 'Патруль на хвосте: нужно скрываться 20 минут и уходить дворами!', coords: null, wantedStars: 2 },
       { id: 'q_massage',  price: 2000,  icon: '💆', name: 'ТАЙСКИЙ МАССАЖ НОГ', desc: 'Зайти в салон на Сои Буакхао и сделать массаж ног в эфире.', coords: [100.8855, 12.9302] },
       { id: 'q_rps',      price: 2000,  icon: '✊', name: 'УЛИЧНАЯ РАЗБОРКА (К-Н-Б)', desc: 'Сыграть в «Камень-ножницы-бумага» с прохожим на интерес.', coords: null },
@@ -2064,6 +2139,8 @@
       { id: 'q_wanted5',  price: 5000,  icon: '⭐⭐⭐⭐⭐', name: 'РОЗЫСК: 5 ЗВЁЗД (45 МИН)', desc: 'МАКСИМАЛЬНЫЙ УРОВЕНЬ! 45 минут хардкорного выживания в городе!', coords: null, wantedStars: 5 },
       { id: 'q_hotel',    price: 5000,  icon: '🏨', name: 'НОМЕР В ОТЕЛЕ НА СУТКИ', desc: 'Заехать в отель у Централ Фестивал и снять номер на сутки для стрима.', coords: [100.8835, 12.9340] },
       { id: 'q_abandoned',price: 5000,  icon: '🏚', name: 'ЗАБРОШКА У ПИРСА (WATERFRONT)', desc: 'Поехать к заброшенному небоскрёбу Waterfront у пирса Бали Хай.', coords: [100.8652, 12.9235] },
+      { id: 'q_whisky',   price: 5000,  icon: '🥃', name: 'КУПИТЬ ВИСКИ', desc: 'Заехать в магазин/бар и взять бутылку виски на стрим!', coords: null },
+      { id: 'q_alko',     price: 10000, icon: '🍻', name: 'ЗАПУСТИТЬ АЛКО СТРИМ', desc: 'Легендарный режим: переводим трансляцию в полноценный алко-стрим!', coords: null },
       { id: 'q_beard',    price: 70000, icon: '🪒', name: 'СБРИТЬ БОРОДУ В ЭФИРЕ', desc: 'Легендарный челлендж: заехать в барбершоп в центре и сбрить бороду полностью!', coords: [100.8845, 12.9320] }
     ];
 
@@ -2209,30 +2286,30 @@
       customBustedAudio.play().catch(() => {});
     }
 
-    function speakGameCommand(text) {
-      try {
-        unlockAudio();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.15);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.16);
+    const customCmdSound = new Audio('cmd_sound.mp3');
+    customCmdSound.preload = 'auto';
 
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const utter = new SpeechSynthesisUtterance(text);
-          utter.lang = 'ru-RU';
-          utter.rate = 1.15;
-          utter.pitch = 1.05;
-          window.speechSynthesis.speak(utter);
-        }
-      } catch (e) {}
+    function playCommandChime() {
+      // Если в репозитории есть твой файл cmd_sound.mp3 (например, прыжок из Марио) — играет его; иначе приятный 8-bit jump-звук без TTS
+      customCmdSound.volume = 0.95;
+      customCmdSound.currentTime = 0;
+      customCmdSound.play().catch(() => {
+        try {
+          unlockAudio();
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(330, now);
+          osc.frequency.exponentialRampToValueAtTime(990, now + 0.16);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.19);
+        } catch (e) {}
+      });
     }
 
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
@@ -2495,11 +2572,23 @@
         logMsg(`📍 GPS телепортирован прямо на точку: ${st.title}`);
       };
 
+      document.getElementById('story-repeat-btn').onclick = () => {
+        publishMqtt(MQTT_CMD_TOPIC, { action: 'story_repeat' });
+        logMsg('🔄 Повтор текущей реплики отправлен на радар!');
+      };
+
       document.getElementById('story-stop-btn').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'story_stop' });
         updateAdminStoryUI(-1, false);
         logMsg('⏹ Сюжетный режим выключен.');
       };
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && geoWatchId !== null) {
+          requestScreenWakeLock();
+          document.getElementById('gps-beacon-start').click();
+        }
+      });
 
       // --- YouTube-чат и Автопилот ---
       const ytKeyInput = document.getElementById('yt-api-key');
@@ -3482,6 +3571,7 @@
       let ytNextPageToken = null;
       let ytRecentMessages = [];
       let lastCommandTimestamp = 0;
+      const commandCooldownMap = {};
 
       let autopilotActive = false;
       let autopilotEndTime = 0;
@@ -3500,7 +3590,7 @@
         void hud.offsetWidth;
         hud.classList.add('active');
 
-        speakGameCommand(speechText || label);
+        playCommandChime();
 
         clearTimeout(apHudTimeout);
         apHudTimeout = setTimeout(() => {
@@ -3528,9 +3618,13 @@
         for (const cmd of CHAT_GAME_COMMANDS) {
           if (cmd.keys.some(k => lower === k || lower.startsWith(k + ' ') || lower.startsWith('!' + k))) {
             matchedCmd = true;
-            if (autopilotActive && (Date.now() - lastCommandTimestamp > 2200)) {
-              lastCommandTimestamp = Date.now();
-              triggerGameCommandHUD(cmd.label, cmd.icon, cmd.speech, author, false);
+            const now = Date.now();
+            const cmdCd = cmd.cooldownMs || 6000;
+            const lastSame = commandCooldownMap[cmd.id] || 0;
+            if (autopilotActive && (now - lastCommandTimestamp > 2200) && (now - lastSame >= cmdCd)) {
+              lastCommandTimestamp = now;
+              commandCooldownMap[cmd.id] = now;
+              triggerGameCommandHUD(cmd.label, cmd.icon, '', author, false);
             }
             break;
           }
@@ -3767,6 +3861,9 @@
         clearRouteLine();
       }
 
+      let lastDialoguePayload = null;
+      let lastStoryAdvanceTs = 0;
+
       function startStoryStage(idx) {
         if (idx < 0 || idx >= STORY_STAGES.length) {
           storyActive = false;
@@ -3787,8 +3884,8 @@
         rebuildActiveRoute();
         broadcastQueueState();
 
-        if (st.callAudio || st.callText) {
-          playDialogueSequence({
+        if (!st.playCallOnArrival && (st.callAudio || st.callText)) {
+          lastDialoguePayload = {
             speaker: st.speaker,
             speakerName: st.speakerName,
             avatar: st.avatar,
@@ -3796,12 +3893,17 @@
             text: st.callText,
             isCutscene: false,
             playStaticBefore: true
-          });
+          };
+          playDialogueSequence(lastDialoguePayload);
         }
       }
 
-      function completeCurrentStoryStage() {
+      function completeCurrentStoryStage(isManualNext = false) {
         if (!storyActive || storyStageIndex < 0 || storyStageIndex >= STORY_STAGES.length) return;
+        const now = Date.now();
+        if (isManualNext && (now - lastStoryAdvanceTs < 1200)) return;
+        lastStoryAdvanceTs = now;
+
         const st = STORY_STAGES[storyStageIndex];
 
         if (st.payNSprayFinish) {
@@ -3812,7 +3914,9 @@
           gtaCash += st.rewardCash;
           gtaRespectXp += st.rewardRep;
           updateCashAndRespectUI();
-          playMissionPassedSound();
+          if (!st.payNSprayFinish) {
+            playMissionPassedSound();
+          }
 
           if (st.isFinale) {
             showCenterSplash('ГЛАВА 1 ЗАВЕРШЕНА!', `+ RESPECT • +$${st.rewardCash}`, false);
@@ -3839,24 +3943,33 @@
 
         const afterCutsceneActions = () => {
           if (st.ambushAfterCutscene) {
-            // Засада у пирса Бали Хай: сначала мигалки (уже можно включить) и ровно ПОСЛЕ слов Босса врубается музыка + сирена!
             activateWantedStars(3, true);
           }
           if (st.triggerAutopilotSec && st.triggerAutopilotSec > 0) {
             startAutopilotMode(null, null, st.triggerAutopilotSec);
           }
           if (st.autoComplete) {
-            completeCurrentStoryStage();
+            completeCurrentStoryStage(false);
           }
         };
 
-        if (st.cutsceneAudio || st.cutsceneText) {
-          // Если это засада (m4_cutscene), включаем визуальные мигалки по краям сразу для антуража,
-          // а громкую сирену и музыку погони запускаем строго в onEnded после слов Босса!
+        if (st.playCallOnArrival && (st.callAudio || st.callText)) {
+          lastDialoguePayload = {
+            speaker: st.speaker,
+            speakerName: st.speakerName,
+            avatar: st.avatar,
+            audioFile: st.callAudio,
+            text: st.callText,
+            isCutscene: false,
+            playStaticBefore: true,
+            onEnded: afterCutsceneActions
+          };
+          playDialogueSequence(lastDialoguePayload);
+        } else if (st.cutsceneAudio || st.cutsceneText) {
           if (st.ambushAfterCutscene) {
             document.getElementById('police-edge-overlay').classList.add('active');
           }
-          playDialogueSequence({
+          lastDialoguePayload = {
             speaker: st.speaker,
             speakerName: st.speakerName,
             avatar: st.avatar,
@@ -3865,7 +3978,8 @@
             isCutscene: true,
             playStaticBefore: true,
             onEnded: afterCutsceneActions
-          });
+          };
+          playDialogueSequence(lastDialoguePayload);
         } else {
           afterCutsceneActions();
         }
@@ -3887,8 +4001,23 @@
         bannerTimeout = setTimeout(() => banner.classList.remove('active'), 7500);
       }
 
+      let currentRouteCoords = [];
+      let lastRouteBuildTs = 0;
+
+      function minDistanceToRouteMeters(lng, lat) {
+        if (!currentRouteCoords || currentRouteCoords.length === 0) return Infinity;
+        let minD = Infinity;
+        for (let i = 0; i < currentRouteCoords.length; i++) {
+          const pt = currentRouteCoords[i];
+          const d = getDistanceMeters(lat, lng, pt[1], pt[0]);
+          if (d < minD) minD = d;
+        }
+        return minD;
+      }
+
       async function buildRealRoute(startLngLat, endLngLat, lineColor = '#ff00ff', waypoints = []) {
         try {
+          lastRouteBuildTs = Date.now();
           const pts = [startLngLat, ...waypoints, endLngLat];
           const coordsStr = pts.map(p => `${p[0]},${p[1]}`).join(';');
           const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coordsStr}?geometries=geojson&access_token=${MAPBOX_TOKEN}`;
@@ -3896,6 +4025,7 @@
           const json = await res.json();
           if (!json.routes || !json.routes[0]) return;
 
+          currentRouteCoords = json.routes[0].geometry.coordinates || [];
           const routeGeoJSON = { type: 'Feature', geometry: json.routes[0].geometry };
 
           if (map.getSource('viewer-route')) {
@@ -3915,6 +4045,7 @@
       }
 
       function clearRouteLine() {
+        currentRouteCoords = [];
         if (map.getSource('viewer-route')) {
           map.getSource('viewer-route').setData({ type: 'FeatureCollection', features: [] });
         }
@@ -4060,15 +4191,35 @@
       }, 15000);
 
       let lastBannerZone = '';
+      let lastDistrictName = '';
+      let centerLocTimeout = null;
+
+      function showCenterTopLocation(subLabel, mainTitle) {
+        const box = document.getElementById('center-top-gta-location');
+        document.getElementById('ct-loc-sub').textContent = subLabel;
+        document.getElementById('ct-loc-main').textContent = mainTitle;
+        box.classList.remove('active');
+        void box.offsetWidth;
+        box.classList.add('active');
+        clearTimeout(centerLocTimeout);
+        centerLocTimeout = setTimeout(() => box.classList.remove('active'), 4200);
+      }
+
       function checkProgress(lng, lat) {
         const distSubEl = document.getElementById('district-sub');
-        if (lng < 100.8100) distSubEl.textContent = 'KOH LARN ISLAND';
-        else if (lat < 12.8750) distSubEl.textContent = 'NA JOMTIEN';
-        else if (lat < 12.9035) distSubEl.textContent = 'JOMTIEN BEACH';
-        else if (lat >= 12.9035 && lat <= 12.9225 && lng < 100.8730) distSubEl.textContent = 'PRATAMNAK HILL';
-        else if (lat > 12.9500) distSubEl.textContent = 'NAKLUA';
-        else if (lng > 100.9000) distSubEl.textContent = 'EAST PATTAYA';
-        else distSubEl.textContent = 'CENTRAL PATTAYA';
+        let newDistrict = 'CENTRAL PATTAYA';
+        if (lng < 100.8100) newDistrict = 'KOH LARN ISLAND';
+        else if (lat < 12.8750) newDistrict = 'NA JOMTIEN';
+        else if (lat < 12.9035) newDistrict = 'JOMTIEN BEACH';
+        else if (lat >= 12.9035 && lat <= 12.9225 && lng < 100.8730) newDistrict = 'PRATAMNAK HILL';
+        else if (lat > 12.9500) newDistrict = 'NAKLUA';
+        else if (lng > 100.9000) newDistrict = 'EAST PATTAYA';
+
+        distSubEl.textContent = newDistrict;
+        if (lastDistrictName && lastDistrictName !== newDistrict) {
+          showCenterTopLocation('★ РАЙОН ГОРОДА', newDistrict);
+        }
+        lastDistrictName = newDistrict;
 
         // 1. Проверка прогресса сюжетной кампании
         if (storyActive && storyStageIndex >= 0 && storyStageIndex < STORY_STAGES.length) {
@@ -4113,7 +4264,7 @@
           const dist = getDistanceMeters(lat, lng, poi.coords[1], poi.coords[0]);
           if (dist <= 150 && lastBannerZone !== poi.name) {
             lastBannerZone = poi.name;
-            showBanner('★ ЛОКАЦИЯ ОБНАРУЖЕНА', poi.name, 'normal');
+            showCenterTopLocation('★ ЛОКАЦИЯ ОБНАРУЖЕНА', poi.name);
             break;
           }
         }
@@ -4126,6 +4277,16 @@
         map.easeTo(cameraOptions);
 
         checkProgress(lng, lat);
+
+        // Умное перестроение маршрута: если ушёл с линии > 35м (объезд) или прошло > 14 сек
+        const hasTarget = (questQueue.length > 0) || (storyActive && storyStageIndex >= 0);
+        if (hasTarget && !isHistorical) {
+          const now = Date.now();
+          const offRouteDist = minDistanceToRouteMeters(lng, lat);
+          if ((offRouteDist > 35 && now - lastRouteBuildTs > 4500) || (now - lastRouteBuildTs > 14000)) {
+            rebuildActiveRoute();
+          }
+        }
 
         if (isHistorical) {
           document.getElementById('speed-badge').textContent = '0 KM/H';
@@ -4275,7 +4436,11 @@
           if (data.action === 'story_start') {
             startStoryStage(typeof data.stageIndex === 'number' ? data.stageIndex : 0);
           } else if (data.action === 'story_next') {
-            completeCurrentStoryStage();
+            completeCurrentStoryStage(true);
+          } else if (data.action === 'story_repeat') {
+            if (lastDialoguePayload) {
+              playDialogueSequence({ ...lastDialoguePayload, onEnded: null });
+            }
           } else if (data.action === 'story_stop') {
             hideDialogueBox();
             clearWantedStars(false);
