@@ -1648,9 +1648,9 @@
         <button class="t-btn purple" id="story-jump-btn">🚀 Прыгнуть</button>
       </div>
       <div class="admin-grid">
-        <button class="t-btn" id="openworld-toggle-btn">🗺 Свободный выбор (GTA 3)</button>
-        <button class="t-btn gold" id="photo-snap-btn">📸 Снимок прицелом / Засчитать</button>
-        <button class="t-btn gray" id="scope-toggle-btn">🎯 Вкл/Выкл Прицел на HUD</button>
+        <button class="t-btn" id="openworld-toggle-btn">🗺 Свободный выбор (GTA 6 IRL)</button>
+        <button class="t-btn gold" id="photo-snap-btn">📸 Снимок прицелом (+1)</button>
+        <button class="t-btn gray" id="scope-toggle-btn">🎯 Прицел: 3 снимка (Вкл/Выкл)</button>
         <button class="t-btn gray" id="story-repeat-btn">🔄 Повторить реплику</button>
         <button class="t-btn gray" id="story-tp-btn">📍 Телепорт GPS на точку</button>
         <button class="t-btn gray" id="story-test-cutscene-btn">🎞 Тест кат-сцены</button>
@@ -1899,7 +1899,7 @@
     <!-- ВИЗУАЛЬНЫЙ ФОТО-ПРИЦЕЛ GTA (TARGET SCAN) И ВСПЫШКА КАМЕРЫ -->
     <div class="gta-photo-scope" id="gta-photo-scope">
       <div class="scope-reticle-box">
-        <div class="scope-top-tag">📷 GTA TARGET SCAN • ZOOM x2.0</div>
+        <div class="scope-top-tag" id="scope-counter-tag">📷 TARGET SCAN • СНИМКИ: 0 / 3</div>
         <div class="scope-bottom-tag" id="scope-target-label">НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ</div>
       </div>
     </div>
@@ -2339,7 +2339,7 @@
       return storyAudioCache[filename];
     }
 
-    [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio, radioStaticAudio, chaseMusicAudio].forEach(a => {
+    [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio, radioStaticAudio, chaseMusicAudio, customShutterAudio, customCmdSound].forEach(a => {
       a.preload = 'auto';
     });
 
@@ -2348,7 +2348,7 @@
       if (audioCtx.state === 'suspended') audioCtx.resume();
       if (!audioUnlocked) {
         audioUnlocked = true;
-        [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio, radioStaticAudio, chaseMusicAudio].forEach(a => {
+        [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio, radioStaticAudio, chaseMusicAudio, customShutterAudio, customCmdSound].forEach(a => {
           a.volume = 0.01;
           a.play().then(() => { a.pause(); a.currentTime = 0; a.volume = 1.0; }).catch(() => { a.volume = 1.0; });
         });
@@ -2426,6 +2426,64 @@
 
     const customCmdSound = new Audio('cmd_sound.mp3');
     customCmdSound.preload = 'auto';
+
+    const customShutterAudio = new Audio('camera_shutter.mp3');
+    customShutterAudio.preload = 'auto';
+
+    function playCameraShutterSound() {
+      customShutterAudio.volume = 1.0;
+      customShutterAudio.currentTime = 0;
+      customShutterAudio.play().catch(() => {
+        // Реалистичный механический щелчок затвора + заряд вспышки через WebAudio (если нет camera_shutter.mp3)
+        try {
+          unlockAudio();
+          const now = audioCtx.currentTime;
+          // 1. Механический щелчок затвора (белый шум 45 мс)
+          const bufferSize = Math.floor(audioCtx.sampleRate * 0.045);
+          const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+          }
+          const whiteNoise = audioCtx.createBufferSource();
+          whiteNoise.buffer = noiseBuffer;
+          const filter = audioCtx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(2400, now);
+          const noiseGain = audioCtx.createGain();
+          noiseGain.gain.setValueAtTime(0.65, now);
+          noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.045);
+          whiteNoise.connect(filter);
+          filter.connect(noiseGain);
+          noiseGain.connect(audioCtx.destination);
+          whiteNoise.start(now);
+
+          // 2. Второй щелчок шторки через 65 мс
+          const whiteNoise2 = audioCtx.createBufferSource();
+          whiteNoise2.buffer = noiseBuffer;
+          const noiseGain2 = audioCtx.createGain();
+          noiseGain2.gain.setValueAtTime(0.45, now + 0.065);
+          noiseGain2.gain.exponentialRampToValueAtTime(0.01, now + 0.11);
+          whiteNoise2.connect(filter);
+          whiteNoise2.connect(noiseGain2);
+          noiseGain2.connect(audioCtx.destination);
+          whiteNoise2.start(now + 0.065);
+
+          // 3. Писк зарядки вспышки
+          const osc = audioCtx.createOscillator();
+          const fGain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1800, now + 0.12);
+          osc.frequency.exponentialRampToValueAtTime(4200, now + 0.38);
+          fGain.gain.setValueAtTime(0.06, now + 0.12);
+          fGain.gain.exponentialRampToValueAtTime(0.001, now + 0.40);
+          osc.connect(fGain);
+          fGain.connect(audioCtx.destination);
+          osc.start(now + 0.12);
+          osc.stop(now + 0.41);
+        } catch (e) {}
+      });
+    }
 
     function playCommandChime() {
       // Если в репозитории есть твой файл cmd_sound.mp3 (например, прыжок из Марио) — играет его; иначе приятный 8-bit jump-звук без TTS
@@ -2732,17 +2790,21 @@
 
       document.getElementById('openworld-toggle-btn').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'openworld_hub' });
-        logMsg('🗺 Режим свободного выбора GTA 3 включён! Подъедь к маркеру S, I или B на 3 сек.');
+        logMsg('🗺 Режим свободного выбора GTA 6 IRL включён! Подъедь к маркеру S, I или B на 3 сек.');
       };
 
       document.getElementById('scope-toggle-btn').onclick = () => {
-        publishMqtt(MQTT_CMD_TOPIC, { action: 'scope_toggle', label: 'НАВЕДИТЕ ПРИЦЕЛ НА ОБЪЕКТ' });
-        logMsg('🎯 Фото-прицел переключён на экране стрима!');
+        publishMqtt(MQTT_CMD_TOPIC, {
+          action: 'scope_toggle',
+          totalShots: 3,
+          label: 'СФОТКАЙТЕ 3 ОБЪЕКТА / ЦЕЛИ'
+        });
+        logMsg('🎯 Фото-прицел (серия из 3 снимков) переключён на экране стрима!');
       };
 
       document.getElementById('photo-snap-btn').onclick = () => {
         publishMqtt(MQTT_CMD_TOPIC, { action: 'photo_snap' });
-        logMsg('📸 Снимок прицелом выполнен! Цель зафиксирована.');
+        logMsg('📸 Снимок прицелом выполнен!');
       };
 
       document.getElementById('test-timer-btn').onclick = () => {
@@ -3971,7 +4033,7 @@
       }
 
       // =======================================================================
-      // ДВИЖОК ОТКРЫТОГО МИРА GTA 3 (МУЛЬТИ-МАРКЕРЫ + ТАЙМЕР + СКОРОСТЬ + ПРИЦЕЛ)
+      // ДВИЖОК ОТКРЫТОГО МИРА GTA 6 IRL (МУЛЬТИ-МАРКЕРЫ + ТАЙМЕР + СКОРОСТЬ + ПРИЦЕЛ)
       // =======================================================================
       let storyActive = false;
       let openWorldHubActive = false;
@@ -4082,27 +4144,60 @@
         }
       }
 
-      // 3. Визуальный фото-прицел GTA (TARGET SCAN)
+      // 3. Визуальный фото-прицел GTA (TARGET SCAN) с поддержкой серии снимков (1/N ... N/N)
       let photoScopeActive = false;
-      function togglePhotoScope(forceState = null, labelText = 'НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ') {
-        photoScopeActive = forceState !== null ? forceState : !photoScopeActive;
+      let photoShotsDone = 0;
+      let photoShotsTotal = 3;
+      let photoBaseLabel = 'НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ';
+
+      function updatePhotoScopeUI() {
         const scopeEl = document.getElementById('gta-photo-scope');
-        document.getElementById('scope-target-label').textContent = labelText;
+        document.getElementById('scope-counter-tag').textContent = `📷 TARGET SCAN • СНИМКИ: ${photoShotsDone} / ${photoShotsTotal}`;
+        document.getElementById('scope-target-label').textContent = photoBaseLabel;
         scopeEl.classList.toggle('active', photoScopeActive);
       }
 
+      function togglePhotoScope(forceState = null, labelText = 'НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ', totalShots = 3) {
+        photoScopeActive = forceState !== null ? forceState : !photoScopeActive;
+        if (photoScopeActive) {
+          photoShotsDone = 0;
+          photoShotsTotal = Math.max(1, parseInt(totalShots, 10) || 1);
+          photoBaseLabel = labelText || 'НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ';
+        }
+        updatePhotoScopeUI();
+      }
+
       function triggerPhotoSnap() {
+        // Вспышка экрана и реалистичный звук затвора фотоаппарата
         const flashEl = document.getElementById('camera-flash-overlay');
         flashEl.classList.remove('flash');
         void flashEl.offsetWidth;
         flashEl.classList.add('flash');
+        playCameraShutterSound();
 
-        playCommandChime();
+        // Если прицел не был включён заранее — считаем как одиночный быстрый снимок (1/1)
+        if (!photoScopeActive) {
+          photoShotsDone = 0;
+          photoShotsTotal = 1;
+        }
+
+        photoShotsDone++;
+
+        if (photoShotsDone < photoShotsTotal) {
+          // Промежуточный снимок (например 1/3 или 2/3) — миссия ещё не завершена!
+          updatePhotoScopeUI();
+          showCenterTopLocation(`📸 СНИМОК ${photoShotsDone} ИЗ ${photoShotsTotal} ГОТОВ`, `ОСТАЛОСЬ СНЯТЬ: ${photoShotsTotal - photoShotsDone}`);
+          return;
+        }
+
+        // Все снимки из серии выполнены!
         togglePhotoScope(false);
-        showCenterSplash('TARGET LOCKED!', 'СНИМОК ОТПРАВЛЕН БОССУ • +$500', false);
-        gtaCash += 500;
-        gtaRespectXp += 15;
+        const reward = photoShotsTotal * 300;
+        gtaCash += reward;
+        gtaRespectXp += (photoShotsTotal * 10);
         updateCashAndRespectUI();
+        playMissionPassedSound();
+        showCenterSplash('MISSION PASSED!', `ВСЕ СНИМКИ (${photoShotsDone}/${photoShotsTotal}) ОТПРАВЛЕНЫ БОССУ • +$${reward}`, false);
 
         if (storyActive && storyStageIndex >= 0) {
           completeCurrentStoryStage(true);
@@ -4166,7 +4261,7 @@
 
         const hudEl = document.getElementById('story-mission-hud');
         hudEl.classList.add('active');
-        document.getElementById('story-hud-chapter').textContent = '🗺 ОТКРЫТЫЙ МИР GTA 3';
+        document.getElementById('story-hud-chapter').textContent = '🗺 ОТКРЫТЫЙ МИР GTA 6 IRL';
         document.getElementById('story-hud-dist').textContent = 'ВЫБОР';
         document.getElementById('story-hud-title').textContent = 'ВЫБЕРИТЕ БОССА НА РАДАРЕ';
         document.getElementById('story-hud-hint').textContent = 'Подъедьте к маркеру S, I или B и остановитесь на 3 сек';
@@ -4549,7 +4644,7 @@
         }
         lastDistrictName = newDistrict;
 
-        // 0. Режим открытого мира GTA 3: остановка на 3 секунды у маркера S, I или B запускает ветку
+        // 0. Режим открытого мира GTA 6 IRL: остановка на 3 секунды у маркера S, I или B запускает ветку
         if (openWorldHubActive && !storyActive) {
           let nearHub = null;
           for (const h of GTA3_HUB_MARKERS) {
@@ -4790,7 +4885,7 @@
           } else if (data.action === 'openworld_hub') {
             enterOpenWorldHub();
           } else if (data.action === 'scope_toggle') {
-            togglePhotoScope(null, data.label || 'НАВЕДИТЕ ПРИЦЕЛ НА ОБЪЕКТ');
+            togglePhotoScope(null, data.label || 'НАВЕДИТЕ ПРИЦЕЛ НА ОБЪЕКТ', data.totalShots || 3);
           } else if (data.action === 'photo_snap') {
             triggerPhotoSnap();
           } else if (data.action === 'start_mission_timer') {
