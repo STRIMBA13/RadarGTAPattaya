@@ -2339,6 +2339,9 @@
       return storyAudioCache[filename];
     }
 
+    const customCmdSound     = new Audio('cmd_sound.mp3');
+    const customShutterAudio = new Audio('camera_shutter.mp3');
+
     [customNewAudio, customPassAudio, customSirenAudio, customBustedAudio, radioStaticAudio, chaseMusicAudio, customShutterAudio, customCmdSound].forEach(a => {
       a.preload = 'auto';
     });
@@ -2424,11 +2427,7 @@
       customBustedAudio.play().catch(() => {});
     }
 
-    const customCmdSound = new Audio('cmd_sound.mp3');
-    customCmdSound.preload = 'auto';
 
-    const customShutterAudio = new Audio('camera_shutter.mp3');
-    customShutterAudio.preload = 'auto';
 
     function playCameraShutterSound() {
       customShutterAudio.volume = 1.0;
