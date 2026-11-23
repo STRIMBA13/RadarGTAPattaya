@@ -1639,11 +1639,12 @@
           <option value="0">Этап 1: Зелёный банкомат (Звонок m1_call)</option>
           <option value="1">Этап 2: Кофейня — Айс-латте (m1_cutscene)</option>
           <option value="2">Этап 3: Ночной рынок Пратамнак (m2_cutscene + 3 мин вирус)</option>
-          <option value="3">Этап 4: Руины / Письканосный храм — Тайник (m3_cutscene)</option>
-          <option value="4">Этап 5: Пирс Бали Хай под буквами PATTAYA (m4_cutscene + ОБЛАВА)</option>
-          <option value="5">Этап 6: Подъезд к Джомтьену (Звонок m5_call + Погоня)</option>
-          <option value="6">Этап 7: Пляж Джомтьен — Маскировка Pay'n'Spray (m5_cutscene)</option>
-          <option value="7">Этап 8: Финал — Вышка Пратамнака (m6_cutscene + Куш)</option>
+          <option value="3">Этап 4: Колизей — Таймер 6 мин + 3 фото (m2_5_call / m2_5_cutscene)</option>
+          <option value="4">Этап 5: Руины / Письканосный храм — Тайник (m3_cutscene)</option>
+          <option value="5">Этап 6: Пирс Бали Хай под буквами PATTAYA (m4_cutscene + ОБЛАВА)</option>
+          <option value="6">Этап 7: Подъезд к Джомтьену (Звонок m5_call + Погоня)</option>
+          <option value="7">Этап 8: Пляж Джомтьен — Маскировка Pay'n'Spray (m5_cutscene)</option>
+          <option value="8">Этап 9: Финал — Вышка Пратамнака (m6_cutscene + Куш)</option>
         </select>
         <button class="t-btn purple" id="story-jump-btn">🚀 Прыгнуть</button>
       </div>
@@ -2063,6 +2064,32 @@
       },
       {
         id: 3,
+        blipLetter: 'I',
+        blipColor: '#f59e0b',
+        chapter: 'ГЛАВА 1 • МИССИЯ 2.5 (ТАЙМЕР 6 МИН + 3 ФОТО)',
+        title: 'ГОНКА К КОЛИЗЕЮ: УЛИКИ И СВЕРТОК',
+        hint: 'За 6 мин доедьте до Колизея -> 3 фото в прицеле (здание, селфи, свёрток)',
+        coords: [100.8842, 12.9087],
+        radius: 30,
+        autoComplete: false,
+        missionTimerSec: 360,
+        photoSequence: [
+          '1/3: СФОТКАЙТЕ САМ КОЛИЗЕЙ',
+          '2/3: СДЕЛАЙТЕ СЕЛФИ НА ФОНЕ КОЛИЗЕЯ',
+          '3/3: СФОТКАЙТЕ СВЁРТОК ДЛЯ СВЯЗНОГО'
+        ],
+        rewardCash: 1200,
+        rewardRep: 25,
+        speaker: 'informant',
+        speakerName: 'ИНФОРМАТОР',
+        avatar: 'avatar_informant.jpg',
+        callAudio: 'm2_5_call.mp3',
+        callText: 'Ой-вей, Стримба, шухер! Пока ты там жевал эту рыночную дичь, на твой хвост сели шестёрки конкурентов с Бички! Нас обложили со всех сторон! У нас ровно шесть минут, чтобы долететь до Колизея на Теппразите, скинуть им доказательства, что район под нами, и оставить свёрток для людей Босса! Таймер пошёл!',
+        cutsceneAudio: 'm2_5_cutscene.mp3',
+        cutsceneText: 'Фух, успел впритык! Тихо, включаю прицел. Нужно три кадра для Босса! Первый — сам Колизей! Второй — твоё селфи на фоне, пусть знают, кто тут главный! И третий — свёрток для связного у входа! Наводи прицел и жми спуск!'
+      },
+      {
+        id: 4,
         blipLetter: 'B',
         blipColor: '#ef4444',
         chapter: 'ГЛАВА 1 • МИССИЯ 3',
@@ -2082,7 +2109,7 @@
         cutsceneText: 'Так, ты на месте, дорогой. Давай, иди вдоль стеночки письканосного храма и ищи тайник. Только смотри не нагибайся, чтобы вместо флешки не поймать варана или змею в задницу — страховка у нас в бюджет не заложена, понял? Как достанешь свёрток — жми подтверждение, едем забирать наш куш.'
       },
       {
-        id: 4,
+        id: 5,
         blipLetter: '!',
         blipColor: '#ff1744',
         chapter: 'ГЛАВА 1 • МИССИЯ 4 (ОБЛАВА!)',
@@ -2103,7 +2130,7 @@
         cutsceneText: 'Вах, твою мать, Стримба, это облава! Нас сдали эти конкуренты с петушиных стримов! Туристическая полиция уже выехала на своих мопедах! Бросай всё, заводи коня и уходи вверх по серпантину в сторону Джомтьена! Жми на газ, дорогой, я тебя прикрою... морально прикрою!'
       },
       {
-        id: 5,
+        id: 6,
         blipLetter: 'M',
         blipColor: '#22c55e',
         chapter: 'ГЛАВА 1 • ПОГОНЯ (УХОД НА ДЖОМТЬЕН)',
@@ -2124,7 +2151,7 @@
         cutsceneText: null
       },
       {
-        id: 6,
+        id: 7,
         blipLetter: 'M',
         blipColor: '#22c55e',
         chapter: 'ГЛАВА 1 • МИССИЯ 5 (PAY’N’SPRAY)',
@@ -2145,7 +2172,7 @@
         cutsceneText: 'Так, включаем режим невидимки. Я не хочу, чтобы нас загребли в первый же день. Найди на набережной уличный лоток и купи самые нелепые очки или панамку. Либо подойди к морю и умойся святой водой Сиамского залива, чтобы сбить жар погони. Как сменишь скин или умоешь лицо в обоссанной фембойчиками с перепоя воде — дай знать.'
       },
       {
-        id: 7,
+        id: 8,
         blipLetter: '★',
         blipColor: '#ffd54f',
         chapter: 'ГЛАВА 1 • ФИНАЛ',
@@ -4007,10 +4034,11 @@
         { stageIdx: 0, coords: STORY_STAGES[0].coords, letter: 'S', color: '#00e5ff' },
         { stageIdx: 1, coords: STORY_STAGES[1].coords, letter: 'S', color: '#00e5ff' },
         { stageIdx: 2, coords: STORY_STAGES[2].coords, letter: 'I', color: '#f59e0b' },
-        { stageIdx: 3, coords: STORY_STAGES[3].coords, letter: 'B', color: '#ef4444' },
-        { stageIdx: 4, coords: STORY_STAGES[4].coords, letter: '!', color: '#ff1744' },
-        { stageIdx: 6, coords: STORY_STAGES[6].coords, letter: 'M', color: '#22c55e' },
-        { stageIdx: 7, coords: STORY_STAGES[7].coords, letter: '★', color: '#ffd54f' }
+        { stageIdx: 3, coords: STORY_STAGES[3].coords, letter: 'C', color: '#f59e0b' },
+        { stageIdx: 4, coords: STORY_STAGES[4].coords, letter: 'B', color: '#ef4444' },
+        { stageIdx: 5, coords: STORY_STAGES[5].coords, letter: '!', color: '#ff1744' },
+        { stageIdx: 7, coords: STORY_STAGES[7].coords, letter: 'M', color: '#22c55e' },
+        { stageIdx: 8, coords: STORY_STAGES[8].coords, letter: '★', color: '#ffd54f' }
       ];
 
       uniqueBlips.forEach(b => {
@@ -4148,58 +4176,69 @@
       let photoShotsDone = 0;
       let photoShotsTotal = 3;
       let photoBaseLabel = 'НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ';
+      let photoStepsList = null;
+
+      function getCurrentPhotoStepLabel() {
+        if (Array.isArray(photoStepsList) && photoStepsList.length > 0) {
+          const idx = Math.min(photoShotsDone, photoStepsList.length - 1);
+          return photoStepsList[idx];
+        }
+        return photoBaseLabel;
+      }
 
       function updatePhotoScopeUI() {
         const scopeEl = document.getElementById('gta-photo-scope');
         document.getElementById('scope-counter-tag').textContent = `📷 TARGET SCAN • СНИМКИ: ${photoShotsDone} / ${photoShotsTotal}`;
-        document.getElementById('scope-target-label').textContent = photoBaseLabel;
+        document.getElementById('scope-target-label').textContent = getCurrentPhotoStepLabel();
         scopeEl.classList.toggle('active', photoScopeActive);
       }
 
-      function togglePhotoScope(forceState = null, labelText = 'НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ', totalShots = 3) {
+      function togglePhotoScope(forceState = null, labelText = 'НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ', totalShots = 3, stepsList = null) {
         photoScopeActive = forceState !== null ? forceState : !photoScopeActive;
         if (photoScopeActive) {
           photoShotsDone = 0;
-          photoShotsTotal = Math.max(1, parseInt(totalShots, 10) || 1);
+          photoStepsList = Array.isArray(stepsList) && stepsList.length > 0 ? stepsList : null;
+          photoShotsTotal = photoStepsList ? photoStepsList.length : Math.max(1, parseInt(totalShots, 10) || 1);
           photoBaseLabel = labelText || 'НАВЕДИТЕ ПРИЦЕЛ НА ЦЕЛЬ';
+        } else {
+          photoStepsList = null;
         }
         updatePhotoScopeUI();
       }
 
       function triggerPhotoSnap() {
-        // Вспышка экрана и реалистичный звук затвора фотоаппарата
         const flashEl = document.getElementById('camera-flash-overlay');
         flashEl.classList.remove('flash');
         void flashEl.offsetWidth;
         flashEl.classList.add('flash');
         playCameraShutterSound();
 
-        // Если прицел не был включён заранее — считаем как одиночный быстрый снимок (1/1)
         if (!photoScopeActive) {
           photoShotsDone = 0;
           photoShotsTotal = 1;
+          photoStepsList = null;
         }
 
+        const justCompletedStepText = getCurrentPhotoStepLabel();
         photoShotsDone++;
 
         if (photoShotsDone < photoShotsTotal) {
-          // Промежуточный снимок (например 1/3 или 2/3) — миссия ещё не завершена!
           updatePhotoScopeUI();
           showCenterTopLocation(`📸 СНИМОК ${photoShotsDone} ИЗ ${photoShotsTotal} ГОТОВ`, `ОСТАЛОСЬ СНЯТЬ: ${photoShotsTotal - photoShotsDone}`);
           return;
         }
 
-        // Все снимки из серии выполнены!
+        const totalCount = photoShotsTotal;
         togglePhotoScope(false);
-        const reward = photoShotsTotal * 300;
-        gtaCash += reward;
-        gtaRespectXp += (photoShotsTotal * 10);
-        updateCashAndRespectUI();
-        playMissionPassedSound();
-        showCenterSplash('MISSION PASSED!', `ВСЕ СНИМКИ (${photoShotsDone}/${photoShotsTotal}) ОТПРАВЛЕНЫ БОССУ • +$${reward}`, false);
-
         if (storyActive && storyStageIndex >= 0) {
           completeCurrentStoryStage(true);
+        } else {
+          const reward = totalCount * 400;
+          gtaCash += reward;
+          gtaRespectXp += (totalCount * 10);
+          updateCashAndRespectUI();
+          playMissionPassedSound();
+          showCenterSplash('MISSION PASSED!', `ВСЕ СНИМКИ (${totalCount}/${totalCount}) ОТПРАВЛЕНЫ БОССУ • +$${reward}`, false);
         }
       }
 
@@ -4298,6 +4337,10 @@
         storyWaypointIdx = 0;
 
         const st = STORY_STAGES[idx];
+        stopMissionTimer();
+        if (st.missionTimerSec && st.missionTimerSec > 0) {
+          startMissionTimer(st.missionTimerSec);
+        }
         updateStoryHUD();
         rebuildActiveRoute();
         broadcastQueueState();
@@ -4365,8 +4408,12 @@
       function triggerStageArrival(st) {
         if (storyCutsceneTriggered) return;
         storyCutsceneTriggered = true;
+        stopMissionTimer();
 
         const afterCutsceneActions = () => {
+          if (Array.isArray(st.photoSequence) && st.photoSequence.length > 0) {
+            togglePhotoScope(true, st.photoSequence[0], st.photoSequence.length, st.photoSequence);
+          }
           if (st.ambushAfterCutscene) {
             activateWantedStars(3, true);
           }
