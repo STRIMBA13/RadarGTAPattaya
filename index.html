@@ -2095,7 +2095,7 @@
         chapter: 'ГЛАВА 1 • МИССИЯ 3',
         title: 'ТАЙНИК В РУИНАХ ПРАТАМНАКА',
         hint: 'Включите фонарик и найдите свёрток у руин храма',
-        coords: [100.8773819, 12.9055468],
+        coords: [100.87734659772899, 12.905304991653635],
         radius: 15,
         autoComplete: false,
         rewardCash: 1500,
@@ -3758,11 +3758,18 @@
         }
       }
 
+      let radioStaticFallbackTimer = null;
+
       function playDialogueSequence({ speaker, speakerName, avatar, audioFile, text, isCutscene = false, playStaticBefore = true, onEnded = null }) {
         clearTimeout(dialogueHideTimer);
+        clearTimeout(radioStaticFallbackTimer);
+        radioStaticAudio.onended = null;
+        radioStaticAudio.onerror = null;
+
         if (activeDialogueAudio) {
           activeDialogueAudio.pause();
           activeDialogueAudio.currentTime = 0;
+          activeDialogueAudio = null;
         }
 
         const box = document.getElementById('dialogue-box');
@@ -3780,12 +3787,7 @@
           document.body.classList.remove('cutscene-active');
         }
 
-        box.classList.add('active');
         duckChaseAudio(true);
-
-        if (playStaticBefore) {
-          playRadioStaticSound();
-        }
 
         const fallbackDurationMs = Math.max(6500, (text ? text.length * 68 : 8000));
         let finished = false;
@@ -3793,28 +3795,55 @@
           if (finished) return;
           finished = true;
           clearTimeout(dialogueHideTimer);
+          clearTimeout(radioStaticFallbackTimer);
           box.classList.remove('active');
           document.body.classList.remove('cutscene-active');
           duckChaseAudio(false);
           if (typeof onEnded === 'function') onEnded();
         };
 
-        const audioObj = getStoryAudio(audioFile);
-        if (audioObj) {
-          activeDialogueAudio = audioObj;
-          audioObj.volume = 1.0;
-          audioObj.currentTime = 0;
-          audioObj.onended = () => {
-            setTimeout(finishCallback, 600);
-          };
-          audioObj.onerror = () => {
+        const startVoiceAfterRadio = () => {
+          clearTimeout(radioStaticFallbackTimer);
+          radioStaticAudio.onended = null;
+          radioStaticAudio.onerror = null;
+          if (finished) return;
+
+          box.classList.add('active');
+          const audioObj = getStoryAudio(audioFile);
+          if (audioObj) {
+            activeDialogueAudio = audioObj;
+            audioObj.volume = 1.0;
+            audioObj.currentTime = 0;
+            audioObj.onended = () => {
+              setTimeout(finishCallback, 550);
+            };
+            audioObj.onerror = () => {
+              dialogueHideTimer = setTimeout(finishCallback, fallbackDurationMs);
+            };
+            audioObj.play().catch(() => {
+              dialogueHideTimer = setTimeout(finishCallback, fallbackDurationMs);
+            });
+          } else {
             dialogueHideTimer = setTimeout(finishCallback, fallbackDurationMs);
+          }
+        };
+
+        if (playStaticBefore) {
+          let radioDone = false;
+          const onRadioDone = () => {
+            if (radioDone) return;
+            radioDone = true;
+            setTimeout(startVoiceAfterRadio, 180);
           };
-          audioObj.play().catch(() => {
-            dialogueHideTimer = setTimeout(finishCallback, fallbackDurationMs);
-          });
+          radioStaticAudio.pause();
+          radioStaticAudio.currentTime = 0;
+          radioStaticAudio.volume = 0.9;
+          radioStaticAudio.onended = onRadioDone;
+          radioStaticAudio.onerror = onRadioDone;
+          radioStaticFallbackTimer = setTimeout(onRadioDone, 2200);
+          radioStaticAudio.play().catch(onRadioDone);
         } else {
-          dialogueHideTimer = setTimeout(finishCallback, fallbackDurationMs);
+          startVoiceAfterRadio();
         }
       }
 
@@ -4338,12 +4367,15 @@
 
         const st = STORY_STAGES[idx];
         stopMissionTimer();
-        if (st.missionTimerSec && st.missionTimerSec > 0) {
-          startMissionTimer(st.missionTimerSec);
-        }
         updateStoryHUD();
         rebuildActiveRoute();
         broadcastQueueState();
+
+        const afterCallStartTimer = () => {
+          if (storyActive && storyStageIndex === idx && st.missionTimerSec && st.missionTimerSec > 0) {
+            startMissionTimer(st.missionTimerSec);
+          }
+        };
 
         if (!st.playCallOnArrival && (st.callAudio || st.callText)) {
           lastDialoguePayload = {
@@ -4353,9 +4385,12 @@
             audioFile: st.callAudio,
             text: st.callText,
             isCutscene: false,
-            playStaticBefore: true
+            playStaticBefore: true,
+            onEnded: afterCallStartTimer
           };
           playDialogueSequence(lastDialoguePayload);
+        } else {
+          afterCallStartTimer();
         }
       }
 
@@ -4378,12 +4413,27 @@
           clearWantedStars(true);
         }
 
+        const nextIdx = storyStageIndex + 1;
+        const proceedToNextStage = () => {
+          if (nextIdx < STORY_STAGES.length) {
+            startStoryStage(nextIdx);
+          } else {
+            storyActive = false;
+            storyStageIndex = -1;
+            updateStoryHUD();
+            clearRouteLine();
+            broadcastQueueState();
+          }
+        };
+
+        let playedPassAudio = false;
         if (st.rewardCash > 0 || st.rewardRep > 0) {
           gtaCash += st.rewardCash;
           gtaRespectXp += st.rewardRep;
           updateCashAndRespectUI();
           if (!st.payNSprayFinish) {
             playMissionPassedSound();
+            playedPassAudio = true;
           }
 
           if (st.isFinale) {
@@ -4393,15 +4443,21 @@
           }
         }
 
-        const nextIdx = storyStageIndex + 1;
-        if (nextIdx < STORY_STAGES.length) {
-          startStoryStage(nextIdx);
+        if (playedPassAudio) {
+          let movedOn = false;
+          const finishPassThenNext = () => {
+            if (movedOn) return;
+            movedOn = true;
+            clearTimeout(passSafetyTimer);
+            customPassAudio.onended = null;
+            customPassAudio.onerror = null;
+            setTimeout(proceedToNextStage, 450);
+          };
+          customPassAudio.onended = finishPassThenNext;
+          customPassAudio.onerror = finishPassThenNext;
+          const passSafetyTimer = setTimeout(finishPassThenNext, 3800);
         } else {
-          storyActive = false;
-          storyStageIndex = -1;
-          updateStoryHUD();
-          clearRouteLine();
-          broadcastQueueState();
+          setTimeout(proceedToNextStage, 650);
         }
       }
 
